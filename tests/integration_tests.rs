@@ -22,6 +22,7 @@ mod integration_tests {
         let count3 = timer1.get_tick_counter();
         timer1.stop();
 
+        // Exact values cannot be presented because of threads
         assert!(count1 <= 2);
         assert!(count2 <= 12);
         assert!(count3 <= 5);
