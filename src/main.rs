@@ -9,12 +9,12 @@ fn main() {
     let timer = Timer::new(0);
 
     timer.start();
-    println!("Ticks time: {}", timer.get_count());
+    println!("Ticks time: {}", timer.get_tick_counter());
     thread::sleep(Duration::from_millis(5));
-    println!("Ticks time: {}", timer.get_count());
+    println!("Ticks time: {}", timer.get_tick_counter());
     thread::sleep(Duration::from_millis(3));
     timer.stop();
 
-    println!("Final ticks time: {}", timer.get_count());
+    println!("Final ticks time: {}", timer.get_tick_counter());
 }
 

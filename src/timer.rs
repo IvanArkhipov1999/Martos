@@ -6,9 +6,8 @@ use std::time::Duration;
 type TickType = u32;
 
 /// The definition of the timers themselves.
-#[derive(Debug)]
 pub struct Timer {
-    /// Number of ticks in timer by now
+    /// Number of ticks in timer
     tick_counter: Arc<Mutex<TickType>>,
     /// Flag is timer running
     running: Arc<Mutex<bool>>,
@@ -37,11 +36,13 @@ impl Timer {
         });
     }
 
+    /// Stops timer ticking.
     pub fn stop(&self) {
         *self.running.lock().unwrap() = false;
     }
 
-    pub fn get_count(&self) -> TickType {
+    /// Returns tick counter.
+    pub fn get_tick_counter(&self) -> TickType {
         *self.tick_counter.lock().unwrap()
     }
 }
