@@ -6,10 +6,15 @@ use std::time::Duration;
 pub mod timer;
 
 fn main() {
-    let my_timer = Timer::new(String::from("timer"), 0, 20);
-    Timer::start_timer(Box::leak(Box::new(my_timer)));
+    let timer = Timer::new(0);
 
-    thread::sleep(Duration::from_millis(7));
+    timer.start();
+    println!("Ticks time: {}", timer.get_count());
+    thread::sleep(Duration::from_millis(5));
+    println!("Ticks time: {}", timer.get_count());
+    thread::sleep(Duration::from_millis(3));
+    timer.stop();
 
-    // println!("MA-RTOS {:?}!", my_timer);
+    println!("Final ticks time: {}", timer.get_count());
 }
+
