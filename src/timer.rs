@@ -5,6 +5,8 @@ type TickType = u32;
 pub struct Timer {
     /// Name of timer. It may be useful for debugging and users.
     pub name: String,
+    /// Number of ticks in timer by now
+    pub now_time: TickType,
     /// Number of ticks, after what timer will be expired.
     pub expired_time: TickType,
 }
