@@ -5,6 +5,18 @@ mod unit_tests {
     use ma_rtos::timer::Timer;
 
     #[test]
+    /// Tests new function of timer.
+    fn test_timer_new() {
+        let timer1 = Timer::new(0);
+        let timer2 = Timer::new(42);
+        let count1 = timer1.get_tick_counter();
+        let count2 = timer2.get_tick_counter();
+
+        assert_eq!(count1, 0);
+        assert_eq!(count2, 42);
+    }
+
+    #[test]
     /// Tests start function of timer.
     fn test_timer_start() {
         let timer = Timer::new(0);
