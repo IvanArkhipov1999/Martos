@@ -5,6 +5,7 @@ mod unit_tests {
     use ma_rtos::timer::Timer;
 
     #[test]
+    /// Tests start function of timer.
     fn test_timer_start() {
         let timer = Timer::new(0);
         timer.start();
@@ -15,6 +16,7 @@ mod unit_tests {
     }
 
     #[test]
+    /// Tests stop function of timer.
     fn test_timer_stop() {
         let timer = Timer::new(0);
         timer.start();
@@ -26,6 +28,7 @@ mod unit_tests {
     }
 
     #[test]
+    /// Tests get_tick_counter function of timer.
     fn test_timer_get_tick_counter() {
         let timer = Timer::new(0);
         timer.start();
