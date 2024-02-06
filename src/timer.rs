@@ -21,6 +21,7 @@ impl Timer {
 
     /// Starts timer ticking.
     /// TODO: this ticking should be added as a privilege task in task manager. Now it is in a separate thread.
+    /// TODO: this ticking should work with hardware ticks or with system ticks. 
     pub fn start(&self) {
         let counter = self.tick_counter.clone();
         let running = self.running.clone();
