@@ -21,8 +21,17 @@ pub struct Timer {
 
 impl Timer {
     /// Creates new timer.
-    pub fn new(tick_counter: TickType, synchronization_period: TickType, synchronization_scale: f64) -> Timer {
-        Timer { tick_counter: Arc::new(Mutex::new(tick_counter)), running: Arc::new(Mutex::new(false)), synchronization_period, synchronization_scale }
+    pub fn new(
+        tick_counter: TickType,
+        synchronization_period: TickType,
+        synchronization_scale: f64,
+    ) -> Timer {
+        Timer {
+            tick_counter: Arc::new(Mutex::new(tick_counter)),
+            running: Arc::new(Mutex::new(false)),
+            synchronization_period,
+            synchronization_scale,
+        }
     }
 
     /// Starts timer ticking.
@@ -66,7 +75,8 @@ impl Timer {
         // Local vote protocol.
         let old_count = **_count;
         for info in timers_information {
-            **_count += (synchronization_scale * (old_count - info).abs() as f64).round() as TickType;
+            **_count +=
+                (synchronization_scale * (old_count - info).abs() as f64).round() as TickType;
         }
     }
 }

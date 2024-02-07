@@ -1,8 +1,8 @@
 #[cfg(test)]
 mod integration_tests {
+    use ma_rtos::timer::Timer;
     use std::thread;
     use std::time::Duration;
-    use ma_rtos::timer::Timer;
 
     #[test]
     /// Tests work of several timers.

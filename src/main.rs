@@ -3,8 +3,8 @@ use crate::timer::Timer;
 use std::thread;
 use std::time::Duration;
 
-mod timer;
 mod connection;
+mod timer;
 
 fn main() {
     let timer = Timer::new(0, 5, 0.1);
@@ -18,4 +18,3 @@ fn main() {
 
     println!("Final ticks time: {}", timer.get_tick_counter());
 }
-
