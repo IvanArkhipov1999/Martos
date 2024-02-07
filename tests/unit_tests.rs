@@ -7,8 +7,8 @@ mod unit_tests {
     #[test]
     /// Tests new function of timer.
     fn test_timer_new() {
-        let timer1 = Timer::new(0);
-        let timer2 = Timer::new(42);
+        let timer1 = Timer::new(0, 42);
+        let timer2 = Timer::new(42, 42);
         let count1 = timer1.get_tick_counter();
         let count2 = timer2.get_tick_counter();
 
@@ -19,7 +19,7 @@ mod unit_tests {
     #[test]
     /// Tests start function of timer.
     fn test_timer_start() {
-        let timer = Timer::new(0);
+        let timer = Timer::new(0, 42);
         timer.start();
         thread::sleep(Duration::from_millis(2));
         let count = timer.get_tick_counter();
@@ -31,7 +31,7 @@ mod unit_tests {
     #[test]
     /// Tests stop function of timer.
     fn test_timer_stop() {
-        let timer = Timer::new(0);
+        let timer = Timer::new(0, 42);
         timer.start();
         thread::sleep(Duration::from_millis(3));
         timer.stop();
@@ -44,7 +44,7 @@ mod unit_tests {
     #[test]
     /// Tests get_tick_counter function of timer.
     fn test_timer_get_tick_counter() {
-        let timer = Timer::new(0);
+        let timer = Timer::new(0, 42);
         timer.start();
         let count0 = timer.get_tick_counter();
         thread::sleep(Duration::from_millis(3));

@@ -6,7 +6,7 @@ use std::time::Duration;
 pub mod timer;
 
 fn main() {
-    let timer = Timer::new(0);
+    let timer = Timer::new(0, 5);
 
     timer.start();
     println!("Ticks time: {}", timer.get_tick_counter());
