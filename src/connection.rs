@@ -13,5 +13,5 @@ pub fn send_timer_information(_timer_information: TimerInformation) {
 /// Gets timer information from neighbour timers.
 pub fn get_timers_information() -> TimersInformation {
     // TODO: Some code, receiving information from other timers. It may be hardware dependent.
-    vec![1, 2 ,3]
+    vec![10, 2, 3]
 }

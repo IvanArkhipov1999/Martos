@@ -4,8 +4,8 @@ use std::time::Duration;
 
 use crate::connection;
 
-/// Type for tick counting.
-pub type TickType = u128;
+/// Type for tick counting. It is signed for synchronization. It should be u128.
+pub type TickType = i128;
 
 /// The definition of the timers themselves.
 pub struct Timer {
@@ -57,13 +57,13 @@ impl Timer {
         *self.tick_counter.lock().unwrap()
     }
 
-    #[warn(unused_mut)]
     /// Synchronizes tick counter by information from other timers
     fn synchronize(_count: &mut MutexGuard<TickType>) {
-        // TODO: Some synchronization code
-        // let timers_information = connection::get_timers_information();
-        // for info in timers_information {
-        //     **_count += info;
-        // }
+        let timers_information = connection::get_timers_information();
+        // Local vote protocol.
+        let old_count = **_count;
+        for info in timers_information {
+            **_count += (0.1 * (old_count - info).abs() as f64).round() as TickType;
+        }
     }
 }
