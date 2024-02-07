@@ -2,8 +2,10 @@ use std::sync::{Arc, Mutex, MutexGuard};
 use std::thread;
 use std::time::Duration;
 
+use crate::connection;
+
 /// Type for tick counting.
-type TickType = u128;
+pub type TickType = u128;
 
 /// The definition of the timers themselves.
 pub struct Timer {
@@ -22,7 +24,6 @@ impl Timer {
     }
 
     /// Starts timer ticking.
-    // TODO: this ticking should be added as a privilege task in task manager. Now it is in a separate thread.
     pub fn start(&self) {
         let counter = self.tick_counter.clone();
         let running = self.running.clone();
@@ -30,6 +31,7 @@ impl Timer {
 
         *running.lock().unwrap() = true;
 
+        // TODO: this ticking should be added as a privilege task in task manager. Now it is in a separate thread.
         thread::spawn(move || {
             while *running.lock().unwrap() {
                 thread::sleep(Duration::from_millis(1));
@@ -37,8 +39,10 @@ impl Timer {
                 // TODO: this ticking should work with hardware ticks or with system ticks, not '+1'
                 *count += 1;
                 if *count % synchronization_period == 0 {
-                    Timer::synchronize(count)
+                    Timer::synchronize(&mut count);
                 }
+
+                connection::send_timer_information(*count);
             }
         });
     }
@@ -55,8 +59,11 @@ impl Timer {
 
     #[warn(unused_mut)]
     /// Synchronizes tick counter by information from other timers
-    fn synchronize(mut _count: MutexGuard<TickType>) {
-        // Some synchronization code
-        // *_count += 30;
+    fn synchronize(_count: &mut MutexGuard<TickType>) {
+        // TODO: Some synchronization code
+        // let timers_information = connection::get_timers_information();
+        // for info in timers_information {
+        //     **_count += info;
+        // }
     }
 }

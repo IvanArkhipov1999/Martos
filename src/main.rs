@@ -3,7 +3,8 @@ use crate::timer::Timer;
 use std::thread;
 use std::time::Duration;
 
-pub mod timer;
+mod timer;
+mod connection;
 
 fn main() {
     let timer = Timer::new(0, 5);
