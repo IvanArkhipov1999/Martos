@@ -7,8 +7,8 @@ mod integration_tests {
     #[test]
     /// Tests work of several timers.
     fn test_several_timers() {
-        let timer1 = Timer::new(0, 42);
-        let timer2 = Timer::new(10, 42);
+        let timer1 = Timer::new(0, 10000, 0.1);
+        let timer2 = Timer::new(10, 10000, 0.1);
 
         timer1.start();
         thread::sleep(Duration::from_millis(2));

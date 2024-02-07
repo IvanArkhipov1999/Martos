@@ -7,7 +7,7 @@ mod timer;
 mod connection;
 
 fn main() {
-    let timer = Timer::new(0, 5);
+    let timer = Timer::new(0, 5, 0.1);
 
     timer.start();
     println!("Ticks time: {}", timer.get_tick_counter());
