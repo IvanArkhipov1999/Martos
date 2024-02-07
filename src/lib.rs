@@ -14,7 +14,6 @@ lazy_static! {
 pub extern "C" fn init_timer() {
     TIMER.start();
     thread::sleep(Duration::from_millis(5));
-    TIMER.stop();
 }
 
 #[no_mangle]
