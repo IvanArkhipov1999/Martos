@@ -5,7 +5,7 @@ use std::time::Duration;
 use crate::connection;
 
 /// Type for tick counting. It is signed for synchronization. It should be u128.
-pub type TickType = i128;
+pub type TickType = i64;
 
 /// The definition of the timers themselves.
 pub struct Timer {

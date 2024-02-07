@@ -1,7 +1,7 @@
 use std::thread;
 use std::time::Duration;
 use lazy_static::lazy_static;
-use crate::timer::Timer;
+use crate::timer::{TickType, Timer};
 
 pub mod connection;
 pub mod timer;
@@ -13,8 +13,17 @@ static ref TIMER: Timer = Timer::new(0, 5, 0.1);
 #[no_mangle]
 pub extern "C" fn init_timer() {
     TIMER.start();
-    println!("Ticks time: {}", TIMER.get_tick_counter());
     thread::sleep(Duration::from_millis(5));
-    println!("Ticks time: {}", TIMER.get_tick_counter());
     TIMER.stop();
+}
+
+#[no_mangle]
+pub extern "C" fn stop_timer() {
+    thread::sleep(Duration::from_millis(5));
+    TIMER.stop();
+}
+
+#[no_mangle]
+pub extern "C" fn get_tick_counter() -> TickType {
+    TIMER.get_tick_counter()
 }
