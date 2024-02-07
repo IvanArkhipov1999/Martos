@@ -1,13 +1,13 @@
+use crate::timer::{TickType, Timer};
+use lazy_static::lazy_static;
 use std::thread;
 use std::time::Duration;
-use lazy_static::lazy_static;
-use crate::timer::{TickType, Timer};
 
 pub mod connection;
 pub mod timer;
 
 lazy_static! {
-static ref TIMER: Timer = Timer::new(0, 5, 0.1);
+    static ref TIMER: Timer = Timer::new(0, 5, 0.1);
 }
 
 #[no_mangle]
