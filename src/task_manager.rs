@@ -1,6 +1,3 @@
-#![no_std]
-#![no_main]
-
 use core::future::Future;
 use core::pin::Pin;
 use core::task::{Context, Poll, RawWaker, RawWakerVTable, Waker};
@@ -24,8 +21,6 @@ struct FutureTask {
     task: Task,
     /// Marker for setup function completion.
     is_setup_completed: bool,
-    /// Waker for future.
-    waker: Option<Waker>,
 }
 
 impl Future for FutureTask {
@@ -92,11 +87,9 @@ impl TaskExecutor {
             loop_fn,
             stop_condition_fn,
         };
-        let waker = task_waker();
         let future_task = FutureTask {
             task,
             is_setup_completed: false,
-            waker: Option::from(waker),
         };
         self.tasks.push(future_task)
     }
