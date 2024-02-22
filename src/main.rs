@@ -2,7 +2,6 @@ use crate::timer::Timer;
 
 use core::sync::atomic::{AtomicU32, Ordering};
 
-mod connection;
 mod task_manager;
 mod timer;
 
