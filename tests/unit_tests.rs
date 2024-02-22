@@ -5,6 +5,8 @@ mod unit_tests {
     use std::thread::{sleep, spawn};
     use std::time::Duration;
 
+    // TODO: refactor unit tests. They should check less. Separate tests for setup, loop and stop functions.
+
     #[test]
     /// Tests if task manager without tasks works during 1 second without panic.
     fn test_empty_task_manager() {

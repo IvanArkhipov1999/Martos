@@ -99,6 +99,7 @@ impl TaskExecutor {
 
     /// Starts task manager work.
     // TODO: Support priorities.
+    // TODO: Delete tasks from task vector if they are pending
     pub fn start_task_manager(&mut self) -> ! {
         loop {
             if !self.tasks.is_empty() {
