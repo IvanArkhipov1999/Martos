@@ -11,18 +11,23 @@ mod unit_tests {
             task_executor.start_task_manager()
         });
         std::thread::sleep(std::time::Duration::from_secs(1));
-        assert_eq!(dbg!(fun_thread.is_finished()), false);
+        assert_eq!(fun_thread.is_finished(), false);
     }
 
-    static COUNTER: AtomicU32 = AtomicU32::new(1);
+    /// Counter for task for test_one_task_task_manager.
+    static TEST_ONE_TASK_TASK_MANAGER_COUNTER: AtomicU32 = AtomicU32::new(1);
 
-    fn setup_fn() {}
-    fn loop_fn() {
-        COUNTER.fetch_add(1, Ordering::Relaxed);
+    /// Setup function for task for test_one_task_task_manager.
+    fn test_one_task_task_manager_setup_fn() {}
+
+    /// Loop function for task for test_one_task_task_manager.
+    fn test_one_task_task_manager_loop_fn() {
+        TEST_ONE_TASK_TASK_MANAGER_COUNTER.fetch_add(1, Ordering::Relaxed);
     }
 
-    fn stop_condition_fn() -> bool {
-        let value = unsafe { COUNTER.as_ptr().read() };
+    /// Stop function for task for test_one_task_task_manager.
+    fn test_one_task_task_manager_stop_condition_fn() -> bool {
+        let value = unsafe { TEST_ONE_TASK_TASK_MANAGER_COUNTER.as_ptr().read() };
         if value % 50 == 0 {
             return true;
         }
@@ -30,15 +35,22 @@ mod unit_tests {
     }
 
     #[test]
-    /// Tests if task manager with task works during 1 second without panic.
+    /// Tests if task manager with task works correctly during 1 second without panic.
     fn test_one_task_task_manager() {
         let fun_thread = std::thread::spawn(|| {
             let mut task_executor = task_manager::TaskExecutor::new();
-            task_executor.add_task(setup_fn, loop_fn, stop_condition_fn);
+            task_executor.add_task(
+                test_one_task_task_manager_setup_fn,
+                test_one_task_task_manager_loop_fn,
+                test_one_task_task_manager_stop_condition_fn,
+            );
             task_executor.start_task_manager()
         });
         std::thread::sleep(std::time::Duration::from_secs(1));
-        assert_eq!(dbg!(fun_thread.is_finished()), false);
-        assert_eq!(unsafe { COUNTER.as_ptr().read() }, 50);
+        assert_eq!(fun_thread.is_finished(), false);
+        assert_eq!(
+            unsafe { TEST_ONE_TASK_TASK_MANAGER_COUNTER.as_ptr().read() },
+            50
+        );
     }
 }
