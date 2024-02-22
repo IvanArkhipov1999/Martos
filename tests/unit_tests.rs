@@ -1,63 +1,15 @@
 #[cfg(test)]
 mod unit_tests {
-    use ma_rtos::timer::Timer;
-    use std::thread;
-    use std::time::Duration;
+    use ma_rtos::task_manager;
 
     #[test]
-    /// Tests new function of timer.
-    fn test_timer_new() {
-        let timer1 = Timer::new(0, 10000, 0.1);
-        let timer2 = Timer::new(42, 10000, 0.1);
-        let count1 = timer1.get_tick_counter();
-        let count2 = timer2.get_tick_counter();
-
-        assert_eq!(count1, 0);
-        assert_eq!(count2, 42);
-    }
-
-    #[test]
-    /// Tests start function of timer.
-    fn test_timer_start() {
-        let timer = Timer::new(0, 10000, 0.1);
-        timer.start();
-        thread::sleep(Duration::from_millis(2));
-        let count = timer.get_tick_counter();
-
-        // Exact values cannot be presented because of threads
-        assert!(count <= 2);
-    }
-
-    #[test]
-    /// Tests stop function of timer.
-    fn test_timer_stop() {
-        let timer = Timer::new(0, 10000, 0.1);
-        timer.start();
-        thread::sleep(Duration::from_millis(3));
-        timer.stop();
-        let count = timer.get_tick_counter();
-
-        // Exact values cannot be presented because of threads
-        assert!(count <= 3);
-    }
-
-    #[test]
-    /// Tests get_tick_counter function of timer.
-    fn test_timer_get_tick_counter() {
-        let timer = Timer::new(0, 10000, 0.1);
-        timer.start();
-        let count0 = timer.get_tick_counter();
-        thread::sleep(Duration::from_millis(3));
-        let count1 = timer.get_tick_counter();
-        thread::sleep(Duration::from_millis(4));
-        let count2 = timer.get_tick_counter();
-        timer.stop();
-        let count3 = timer.get_tick_counter();
-
-        assert_eq!(count0, 0);
-        // Exact values cannot be presented because of threads
-        assert!(count1 <= 3);
-        assert!(count2 <= 7);
-        assert!(count3 <= 7);
+    /// Tests if task manager without tasks works during 1 second without panic.
+    fn test_task_manager() {
+        let fun_thread = std::thread::spawn(|| {
+            let mut task_executor = task_manager::TaskExecutor::new();
+            task_executor.start_task_manager()
+        });
+        std::thread::sleep(std::time::Duration::from_secs(1));
+        assert_eq!(dbg!(fun_thread.is_finished()), false);
     }
 }

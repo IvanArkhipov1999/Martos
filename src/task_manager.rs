@@ -11,13 +11,13 @@ struct Task {
     setup_fn: fn() -> (),
     /// Loop function, that is called in loop.
     loop_fn: fn() -> (),
-    /// Condition for stopping loop function execution.
+    /// Condition function for stopping loop function execution.
     stop_condition_fn: fn() -> bool,
 }
 
-/// Future shell for task for execution
+/// Future shell for task for execution.
 struct FutureTask {
-    /// Task to execute.
+    /// Task to execute in task manager.
     task: Task,
     /// Marker for setup function completion.
     is_setup_completed: bool,
@@ -60,9 +60,11 @@ fn task_waker() -> Waker {
     unsafe { Waker::from_raw(raw_waker) }
 }
 
-/// Task executor representation.
+/// Task executor representation. Based on round-robin scheduling without priorities.
 pub struct TaskExecutor {
+    /// Vector of tasks to execute.
     tasks: Vec<FutureTask>,
+    /// Index of task, that should be executed.
     task_to_execute_index: TaskNumberType,
 }
 
@@ -75,7 +77,8 @@ impl TaskExecutor {
         }
     }
 
-    /// Add task to task executor. You should pass setup and loop functions.
+    /// Add task to task executor. You should pass setup, loop and condition functions.
+    // TODO: Maybe it is better to pass tasks here. Functions are done for C compatibility.
     pub fn add_task(
         &mut self,
         setup_fn: fn() -> (),
@@ -95,19 +98,22 @@ impl TaskExecutor {
     }
 
     /// Starts task manager work.
+    // TODO: Support priorities.
     pub fn start_task_manager(&mut self) -> ! {
         loop {
-            let waker = task_waker();
-            let task = &mut self.tasks[self.task_to_execute_index];
-            let mut task_future_pin = Pin::new(task);
-            let _ = task_future_pin
-                .as_mut()
-                .poll(&mut Context::from_waker(&waker));
+            if !self.tasks.is_empty() {
+                let waker = task_waker();
+                let task = &mut self.tasks[self.task_to_execute_index];
+                let mut task_future_pin = Pin::new(task);
+                let _ = task_future_pin
+                    .as_mut()
+                    .poll(&mut Context::from_waker(&waker));
 
-            if self.task_to_execute_index < self.tasks.len() - 1 {
-                self.task_to_execute_index += 1;
-            } else {
-                self.task_to_execute_index = 0;
+                if self.task_to_execute_index + 1 < self.tasks.len() {
+                    self.task_to_execute_index += 1;
+                } else {
+                    self.task_to_execute_index = 0;
+                }
             }
         }
     }
