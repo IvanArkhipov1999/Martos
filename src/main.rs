@@ -47,7 +47,7 @@ fn loop_time() {
     println!("{}", Timer::get_tick_counter())
 }
 fn stop_condition_time() -> bool {
-    if Timer::get_tick_counter() == 100 {
+    if Timer::get_tick_counter() > 100 {
         return true;
     }
     return false;

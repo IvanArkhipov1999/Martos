@@ -1,11 +1,13 @@
 #[cfg(test)]
 mod unit_tests {
     use ma_rtos::task_manager;
+    use ma_rtos::timer::Timer;
     use std::sync::atomic::{AtomicU32, Ordering};
     use std::thread::{sleep, spawn};
     use std::time::Duration;
 
     // TODO: refactor unit tests. They should check less. Separate tests for setup, loop and stop functions.
+    // TODO: refactor unit tests. Task manager and timer tests should be in different files in one directory.
 
     #[test]
     /// Tests if task manager without tasks works during 1 second without panic.
@@ -286,5 +288,32 @@ mod unit_tests {
             unsafe { TEST_SETUP_TASK_MANAGER_COUNTER.as_ptr().read() },
             42
         );
+    }
+
+    #[test]
+    /// Tests getting tick counter.
+    fn test_get_tick_counter_timer() {
+        assert_eq!(Timer::get_tick_counter(), 0);
+    }
+
+    #[test]
+    /// Tests setup timer function.
+    fn test_setup_timer() {
+        Timer::setup_timer();
+        assert_eq!(Timer::get_tick_counter(), 0);
+    }
+
+    #[test]
+    /// Tests loop timer function.
+    fn test_loop_timer() {
+        Timer::setup_timer();
+        Timer::loop_timer();
+        assert_eq!(Timer::get_tick_counter(), 1);
+    }
+
+    #[test]
+    /// Tests stop condition timer function.
+    fn test_stop_condition_timer() {
+        assert_eq!(Timer::stop_condition_timer(), false);
     }
 }

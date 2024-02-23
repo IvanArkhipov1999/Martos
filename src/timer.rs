@@ -15,7 +15,11 @@ static mut TIMER: Timer = Timer { tick_counter: 0 };
 
 impl Timer {
     /// Setup function. May be used for setting configuration parameters.
-    pub fn setup_timer() {}
+    pub fn setup_timer() {
+        unsafe {
+            TIMER.tick_counter = 0;
+        }
+    }
 
     /// Starts timer ticking.
     // TODO: What should happen after overflow?
