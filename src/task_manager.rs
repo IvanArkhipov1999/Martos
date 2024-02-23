@@ -1,9 +1,14 @@
+use core::array::from_fn;
 use core::future::Future;
 use core::pin::Pin;
 use core::task::{Context, Poll, RawWaker, RawWakerVTable, Waker};
 
 /// The number of tasks can fit into a type usize.
 pub type TaskNumberType = usize;
+
+/// Max number of tasks.
+// TODO: Should be dynamic array of tasks.
+const MAX_NUMBER_OF_TASKS: TaskNumberType = 20;
 
 /// Task representation for task manager.
 struct Task {
@@ -27,6 +32,8 @@ impl Future for FutureTask {
     type Output = ();
 
     fn poll(mut self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<Self::Output> {
+        let mut array: [usize; 8] = core::array::from_fn(|i| i);
+        array[0] = 5;
         if (self.task.stop_condition_fn)() {
             Poll::Ready(())
         } else {
@@ -62,18 +69,39 @@ fn task_waker() -> Waker {
 
 /// Task executor representation. Based on round-robin scheduling without priorities.
 pub struct TaskExecutor {
-    /// Vector of tasks to execute.
-    tasks: Vec<FutureTask>,
+    /// Static array of tasks to execute.
+    tasks: [FutureTask; MAX_NUMBER_OF_TASKS],
     /// Index of task, that should be executed.
     task_to_execute_index: TaskNumberType,
+    /// Number of tasks to execute.
+    tasks_number: TaskNumberType,
 }
 
 impl TaskExecutor {
     /// Creates new task executor.
     pub fn new() -> TaskExecutor {
+        fn setup_fn() {}
+        fn loop_fn() {}
+        fn stop_condition_fn() -> bool {
+            return true;
+        }
+
+        let tasks: [FutureTask; MAX_NUMBER_OF_TASKS] = from_fn(|_| {
+            let task = Task {
+                setup_fn: setup_fn,
+                loop_fn: loop_fn,
+                stop_condition_fn: stop_condition_fn,
+            };
+            FutureTask {
+                task: task,
+                is_setup_completed: true,
+            }
+        });
+
         TaskExecutor {
-            tasks: vec![],
+            tasks: tasks,
             task_to_execute_index: 0,
+            tasks_number: 0,
         }
     }
 
@@ -94,7 +122,8 @@ impl TaskExecutor {
             task,
             is_setup_completed: false,
         };
-        self.tasks.push(future_task)
+        self.tasks[self.tasks_number] = future_task;
+        self.tasks_number += 1
     }
 
     /// Starts task manager work.
