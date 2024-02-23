@@ -1,0 +1,8 @@
+[package]
+name = "example_xtensa_esp32"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# TODO: path should be from git, then from crates.io
+ma_rtos = { path = "../../../" }
