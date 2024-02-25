@@ -39,6 +39,7 @@ jobs:
       - uses: actions/checkout@v3
       - name: Fmt
         run: cd ./examples/rust-examples/xtensa-esp32 && cargo fmt --all -- --check
+        # TODO: to avoid setupping, ci should pass on prepared dockers on self-hosted runners
       - name: Setup build environment
         run: cargo install espup && espup install
       - name: Build
