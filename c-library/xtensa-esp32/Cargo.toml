@@ -1,12 +1,21 @@
 [package]
-name = "xtensa_esp32_dynamic_lib"
+name = "xtensa_esp32_static_lib"
 version = "0.1.0"
 edition = "2021"
 
 [lib]
-name = "xtensa_esp32_dynamic_lib"
-crate-type = ["cdylib"]
+name = "xtensa_esp32_static_lib"
+crate-type = ["staticlib"]
+
+[profile.release]
+debug = true
 
 [dependencies]
 # TODO: path should be from git, then from crates.io
 ma_rtos = { path = "../../" }
+esp32-hal = "0.18.0"
+esp-backtrace = { version = "0.11.0", features = ["esp32", "panic-handler", "exception-handler", "println"] }
+esp-println = { version = "0.9.0", features = ["esp32"] }
+
+[features]
+default = ["esp32-hal/xtal-40mhz"]
