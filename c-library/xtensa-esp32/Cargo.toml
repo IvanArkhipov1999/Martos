@@ -1,0 +1,12 @@
+[package]
+name = "xtensa_esp32_dynamic_lib"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "xtensa_esp32_dynamic_lib"
+crate-type = ["cdylib"]
+
+[dependencies]
+# TODO: path should be from git, then from crates.io
+ma_rtos = { path = "../../" }
