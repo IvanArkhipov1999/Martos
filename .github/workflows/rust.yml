@@ -5,6 +5,8 @@ name: Rust
 #    branches: [ "main" ]
 #  pull_request:
 #    branches: [ "main" ]
+on:
+  - push
 
 env:
   CARGO_TERM_COLOR: always
