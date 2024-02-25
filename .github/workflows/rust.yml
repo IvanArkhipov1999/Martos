@@ -1,10 +1,10 @@
 name: Rust
 
-on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+#on:
+#  push:
+#    branches: [ "main" ]
+#  pull_request:
+#    branches: [ "main" ]
 
 env:
   CARGO_TERM_COLOR: always
@@ -13,20 +13,33 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-    - name: Build
-      run: cargo build --verbose
+      - name: Build
+        uses: actions/checkout@v3
+        run: cargo build --verbose
 
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
       - name: Run tests
+        uses: actions/checkout@v3
         run: cargo test --verbose
 
   fmt:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
       - name: Fmt
+        uses: actions/checkout@v3
         run: cargo fmt --all -- --check
+
+  xtensa-esp32-example:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup build env
+        uses: actions/checkout@v3
+        run: cargo install espup && espup install
+      - name: Build
+        uses: actions/checkout@v3
+        run: cd ./examples/rust-examples/xtensa-esp32 && . $HOME/export-esp.sh && cargo build
+      - name: Fmt
+        uses: actions/checkout@v3
+        run: cd ./examples/rust-examples/xtensa-esp32 && cargo fmt --all -- --check
