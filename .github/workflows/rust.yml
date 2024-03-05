@@ -33,6 +33,7 @@ jobs:
       - name: Fmt
         run: cargo fmt --all -- --check
 
+# TODO: change to cargo build --example
   xtensa-esp32-rust-example:
     runs-on: ubuntu-latest
     steps:
