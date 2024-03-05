@@ -1,6 +1,6 @@
 #![no_std]
 
-use ma_rtos::timer::{Timer, TickType};
+use ma_rtos::timer::{TickType, Timer};
 
 #[panic_handler]
 fn panic(_info: &core::panic::PanicInfo) -> ! {
