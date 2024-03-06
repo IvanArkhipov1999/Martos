@@ -1,6 +1,6 @@
 # Martos
 
-Martos is a simple RTOS for developing multiagent realtime systems. 
+Martos is a simple RTOS for developing multi-agent real-time systems. 
 Software for Martos can be written on both Rust (recommended) and C languages.
 
 In current version it has only primitive task manager and timer counter.
