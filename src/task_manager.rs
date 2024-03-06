@@ -6,20 +6,42 @@ use core::task::{Context, Poll, RawWaker, RawWakerVTable, Waker};
 /// The number of tasks can fit into a type usize.
 pub type TaskNumberType = usize;
 
+// TODO: rewrite with cfg!
+#[cfg(not(feature = "c-library"))]
+/// Type of setup function, that is called once at the beginning of task.
+type TaskSetupFunctionType = fn() -> ();
+#[cfg(feature = "c-library")]
+/// Type of setup function, that is called once at the beginning of task.
+type TaskSetupFunctionType = extern "C" fn() -> ();
+#[cfg(not(feature = "c-library"))]
+/// Type of loop function, that is called in loop.
+type TaskLoopFunctionType = fn() -> ();
+#[cfg(feature = "c-library")]
+/// Type of loop function, that is called in loop.
+type TaskLoopFunctionType = extern "C" fn() -> ();
+#[cfg(not(feature = "c-library"))]
+/// Type of condition function for stopping loop function execution.
+type TaskStopConditionFunctionType = fn() -> bool;
+#[cfg(feature = "c-library")]
+/// Type of condition function for stopping loop function execution.
+type TaskStopConditionFunctionType = extern "C" fn() -> bool;
+
 /// Max number of tasks.
 // TODO: Should be dynamic array of tasks.
 const MAX_NUMBER_OF_TASKS: TaskNumberType = 20;
 
+#[repr(C)]
 /// Task representation for task manager.
 struct Task {
     /// Setup function, that is called once at the beginning of task.
-    setup_fn: fn() -> (),
+    setup_fn: TaskSetupFunctionType,
     /// Loop function, that is called in loop.
-    loop_fn: fn() -> (),
+    loop_fn: TaskLoopFunctionType,
     /// Condition function for stopping loop function execution.
-    stop_condition_fn: fn() -> bool,
+    stop_condition_fn: TaskStopConditionFunctionType,
 }
 
+#[repr(C)]
 /// Future shell for task for execution.
 struct FutureTask {
     /// Task to execute in task manager.
@@ -67,6 +89,7 @@ fn task_waker() -> Waker {
     unsafe { Waker::from_raw(raw_waker) }
 }
 
+#[repr(C)]
 /// Task executor representation. Based on round-robin scheduling without priorities.
 pub struct TaskExecutor {
     /// Static array of tasks to execute.
@@ -80,9 +103,20 @@ pub struct TaskExecutor {
 impl TaskExecutor {
     /// Creates new task executor.
     pub fn new() -> TaskExecutor {
+        #[cfg(not(feature = "c-library"))]
         fn setup_fn() {}
+        #[cfg(not(feature = "c-library"))]
         fn loop_fn() {}
+        #[cfg(not(feature = "c-library"))]
         fn stop_condition_fn() -> bool {
+            return true;
+        }
+        #[cfg(feature = "c-library")]
+        extern "C" fn setup_fn() {}
+        #[cfg(feature = "c-library")]
+        extern "C" fn loop_fn() {}
+        #[cfg(feature = "c-library")]
+        extern "C" fn stop_condition_fn() -> bool {
             return true;
         }
 
@@ -109,9 +143,9 @@ impl TaskExecutor {
     // TODO: Maybe it is better to pass tasks here. Functions are done for C compatibility.
     pub fn add_task(
         &mut self,
-        setup_fn: fn() -> (),
-        loop_fn: fn() -> (),
-        stop_condition_fn: fn() -> bool,
+        setup_fn: TaskSetupFunctionType,
+        loop_fn: TaskLoopFunctionType,
+        stop_condition_fn: TaskStopConditionFunctionType,
     ) {
         let task = Task {
             setup_fn,
