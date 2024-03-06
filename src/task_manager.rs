@@ -28,7 +28,7 @@ type TaskStopConditionFunctionType = extern "C" fn() -> bool;
 
 /// Max number of tasks.
 // TODO: Should be dynamic array of tasks.
-const MAX_NUMBER_OF_TASKS: TaskNumberType = 20;
+const MAX_NUMBER_OF_TASKS: TaskNumberType = 2;
 
 #[repr(C)]
 /// Task representation for task manager.
@@ -100,9 +100,11 @@ pub struct TaskExecutor {
     tasks_number: TaskNumberType,
 }
 
+static mut TASKEXECUTOR: TaskExecutor = TaskExecutor::new();
+
 impl TaskExecutor {
     /// Creates new task executor.
-    pub fn new() -> TaskExecutor {
+    const fn new() -> TaskExecutor {
         #[cfg(not(feature = "c-library"))]
         fn setup_fn() {}
         #[cfg(not(feature = "c-library"))]
@@ -120,17 +122,43 @@ impl TaskExecutor {
             return true;
         }
 
-        let tasks: [FutureTask; MAX_NUMBER_OF_TASKS] = from_fn(|_| {
-            let task = Task {
-                setup_fn: setup_fn,
-                loop_fn: loop_fn,
-                stop_condition_fn: stop_condition_fn,
-            };
-            FutureTask {
-                task: task,
-                is_setup_completed: true,
-            }
-        });
+        // TODO: THIS IS AWFUL SOLUTION!!!
+
+        let task1 = Task {
+            setup_fn: setup_fn,
+            loop_fn: loop_fn,
+            stop_condition_fn: stop_condition_fn,
+        };
+
+        let task2 = Task {
+            setup_fn: setup_fn,
+            loop_fn: loop_fn,
+            stop_condition_fn: stop_condition_fn,
+        };
+
+        let future_task1 = FutureTask {
+            task: task1,
+            is_setup_completed: true,
+        };
+
+        let future_task2 = FutureTask {
+            task: task2,
+            is_setup_completed: true,
+        };
+
+        let tasks: [FutureTask; MAX_NUMBER_OF_TASKS] = [future_task1, future_task2];
+
+        // let tasks: [FutureTask; MAX_NUMBER_OF_TASKS] = from_fn(|_| {
+        //     let task = Task {
+        //         setup_fn: setup_fn,
+        //         loop_fn: loop_fn,
+        //         stop_condition_fn: stop_condition_fn,
+        //     };
+        //     FutureTask {
+        //         task: task,
+        //         is_setup_completed: true,
+        //     }
+        // });
 
         TaskExecutor {
             tasks: tasks,
