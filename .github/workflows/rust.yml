@@ -5,6 +5,8 @@ on:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
+#on:
+#  - push
 
 env:
   CARGO_TERM_COLOR: always
@@ -13,9 +15,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-    - name: Build
-      run: cargo build --verbose
+      - uses: actions/checkout@v3
+      - name: Build --lib
+        run: cargo build --verbose
 
   test:
     runs-on: ubuntu-latest
@@ -30,3 +32,39 @@ jobs:
       - uses: actions/checkout@v3
       - name: Fmt
         run: cargo fmt --all -- --check
+
+# TODO: change to cargo build --example
+  xtensa-esp32-rust-example:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        # TODO: to avoid setupping, ci should pass on prepared dockers on self-hosted runners
+      - name: Setup build environment
+        run: cargo install espup && espup install
+      - name: Build
+        run: cd ./examples/rust-examples/xtensa-esp32 && . $HOME/export-esp.sh && cargo build
+      - name: Fmt
+        run: cd ./examples/rust-examples/xtensa-esp32 && cargo fmt --all -- --check
+
+  xtensa-esp32-static-library:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        # TODO: to avoid setupping, ci should pass on prepared dockers on self-hosted runners
+      - name: Setup build environment
+        run: cargo install espup && espup install
+      - name: Build
+        run: cd ./c-library/xtensa-esp32 && . $HOME/export-esp.sh && cargo build
+      - name: Fmt
+        run: cd ./c-library/xtensa-esp32 && cargo fmt --all -- --check
+
+  xtensa-esp32-c-example:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        # TODO: to avoid setupping, ci should pass on prepared dockers on self-hosted runners
+      - name: Setup build environment
+        run: cargo install espup && espup install && sudo apt-get install -y git wget flex bison gperf python3 python3-pip python3-venv cmake ninja-build ccache libffi-dev libssl-dev dfu-util libusb-1.0-0 && mkdir -p ~/esp && cd ~/esp && git clone -b v5.2 --recursive https://github.com/espressif/esp-idf.git && cd ~/esp/esp-idf && ./install.sh esp32
+        # TODO: to avoid building static library, this job should use artifacts from xtensa-esp32-static-library job
+      - name: Build
+        run: cd ./c-library/xtensa-esp32 && . $HOME/export-esp.sh && cargo build && cd ../../examples/c-examples/xtensa-esp32 && . $HOME/esp/esp-idf/export.sh && idf.py build

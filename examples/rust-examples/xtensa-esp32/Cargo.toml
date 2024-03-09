@@ -1,0 +1,17 @@
+[package]
+name = "example_xtensa_esp32"
+version = "0.1.0"
+edition = "2021"
+
+[profile.release]
+debug = true
+
+[dependencies]
+# TODO: path should be from git, then from crates.io
+ma_rtos = { path = "../../../" }
+esp32-hal = "0.18.0"
+esp-backtrace = { version = "0.11.0", features = ["esp32", "panic-handler", "exception-handler", "println"] }
+esp-println = { version = "0.9.0", features = ["esp32"] }
+
+[features]
+default = ["esp32-hal/xtal-40mhz"]

@@ -3,5 +3,6 @@ name = "ma_rtos"
 version = "0.1.0"
 edition = "2021"
 
-[dependencies]
-lazy_static = "1.4"
+[features]
+default = []
+c-library = []
