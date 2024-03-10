@@ -251,4 +251,11 @@ impl TaskExecutor {
             }
         }
     }
+
+    /// Drops task executor to default state.
+    pub fn drop_task_executor() {
+        unsafe {
+            TASKEXECUTOR = TaskExecutor::new();
+        }
+    }
 }
