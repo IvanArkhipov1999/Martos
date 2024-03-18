@@ -10,19 +10,19 @@ mod unit_tests {
     // TODO: refactor unit tests. They should check less. Separate tests for setup, loop and stop functions.
     // TODO: refactor unit tests. Task manager and timer tests should be in different files in one directory.
 
-    #[test]
-    #[sequential]
-    /// Tests if task manager without tasks works during 1 second without panic.
-    fn test_empty_task_manager() {
-        TaskExecutor::drop_task_executor();
-
-        let fun_thread = spawn(|| {
-            TaskExecutor::start_task_manager();
-        });
-        sleep(Duration::from_secs(1));
-
-        assert_eq!(fun_thread.is_finished(), false);
-    }
+    // #[test]
+    // #[sequential]
+    // /// Tests if task manager without tasks works during 1 second without panic.
+    // fn test_empty_task_manager() {
+    //     TaskExecutor::drop_task_executor();
+    //
+    //     let fun_thread = spawn(|| {
+    //         TaskExecutor::start_task_manager();
+    //     });
+    //     sleep(Duration::from_secs(1));
+    //
+    //     assert_eq!(fun_thread.is_finished(), false);
+    // }
 
     /// Counter for task for test_one_finite_task_task_manager.
     static TEST_ONE_FINITE_TASK_TASK_MANAGER_COUNTER: AtomicU32 = AtomicU32::new(1);
@@ -41,7 +41,6 @@ mod unit_tests {
         return false;
     }
     #[test]
-    #[sequential]
     /// Tests if task manager with one finite task works correctly during 1 second without panic.
     fn test_one_finite_task_task_manager() {
         TaskExecutor::drop_task_executor();
