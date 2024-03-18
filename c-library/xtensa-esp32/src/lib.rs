@@ -31,6 +31,13 @@ pub extern "C" fn get_tick_counter() -> TickType {
 }
 
 #[no_mangle]
-pub extern "C" fn new_task_executor() -> TaskExecutor {
-    TaskExecutor::new()
+pub extern "C" fn add_task(setup_fn: extern "C" fn() -> (),
+                           loop_fn: extern "C" fn() -> (),
+                           stop_condition_fn: extern "C" fn() -> bool) {
+    TaskExecutor::add_task(setup_fn, loop_fn, stop_condition_fn)
+}
+
+#[no_mangle]
+pub extern "C" fn start_task_manager() {
+    TaskExecutor::start_task_manager()
 }
