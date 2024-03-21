@@ -61,7 +61,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: static-library
-          path: c-library/target/debug/libxtensa_esp32_static_lib.a
+          path: c-library/xtensa-esp32/target/debug/libxtensa_esp32_static_lib.a
           retention-days: 1
 
   xtensa-esp32-c-example:
