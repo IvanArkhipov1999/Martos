@@ -89,8 +89,8 @@ fn task_waker() -> Waker {
 }
 
 #[repr(C)]
-/// Task executor representation. Based on round-robin scheduling without priorities.
-pub struct TaskExecutor {
+/// Task manager representation. Based on round-robin scheduling without priorities.
+pub struct TaskManager {
     /// Static array of tasks to execute.
     tasks: [FutureTask; MAX_NUMBER_OF_TASKS],
     /// Index of task, that should be executed.
@@ -100,11 +100,11 @@ pub struct TaskExecutor {
 }
 
 /// Operating system task manager.
-static mut TASKEXECUTOR: TaskExecutor = TaskExecutor::new();
+static mut TASK_MANAGER: TaskManager = TaskManager::new();
 
-impl TaskExecutor {
-    /// Creates new task executor.
-    const fn new() -> TaskExecutor {
+impl TaskManager {
+    /// Creates new task manager.
+    const fn new() -> TaskManager {
         #[cfg(not(feature = "c-library"))]
         fn setup_fn() {}
         #[cfg(not(feature = "c-library"))]
@@ -125,39 +125,39 @@ impl TaskExecutor {
         // TODO: THIS IS AWFUL SOLUTION!!! PLEASE, FIX IT!!! AT LEAST IMPLEMENT core::marker::Copy FOR FutureTask!!! OR MAKE MEMORY MANAGEMENT!!!
 
         let task1 = Task {
-            setup_fn: setup_fn,
-            loop_fn: loop_fn,
-            stop_condition_fn: stop_condition_fn,
+            setup_fn,
+            loop_fn,
+            stop_condition_fn,
         };
 
         let task2 = Task {
-            setup_fn: setup_fn,
-            loop_fn: loop_fn,
-            stop_condition_fn: stop_condition_fn,
+            setup_fn,
+            loop_fn,
+            stop_condition_fn,
         };
 
         let task3 = Task {
-            setup_fn: setup_fn,
-            loop_fn: loop_fn,
-            stop_condition_fn: stop_condition_fn,
+            setup_fn,
+            loop_fn,
+            stop_condition_fn,
         };
 
         let task4 = Task {
-            setup_fn: setup_fn,
-            loop_fn: loop_fn,
-            stop_condition_fn: stop_condition_fn,
+            setup_fn,
+            loop_fn,
+            stop_condition_fn,
         };
 
         let task5 = Task {
-            setup_fn: setup_fn,
-            loop_fn: loop_fn,
-            stop_condition_fn: stop_condition_fn,
+            setup_fn,
+            loop_fn,
+            stop_condition_fn,
         };
 
         let task6 = Task {
-            setup_fn: setup_fn,
-            loop_fn: loop_fn,
-            stop_condition_fn: stop_condition_fn,
+            setup_fn,
+            loop_fn,
+            stop_condition_fn,
         };
 
         let future_task1 = FutureTask {
@@ -199,14 +199,14 @@ impl TaskExecutor {
             future_task6,
         ];
 
-        TaskExecutor {
-            tasks: tasks,
+        TaskManager {
+            tasks,
             task_to_execute_index: 0,
             tasks_number: 0,
         }
     }
 
-    /// Add task to task executor. You should pass setup, loop and condition functions.
+    /// Add task to task manager. You should pass setup, loop and condition functions.
     pub fn add_task(
         setup_fn: TaskSetupFunctionType,
         loop_fn: TaskLoopFunctionType,
@@ -222,8 +222,8 @@ impl TaskExecutor {
             is_setup_completed: false,
         };
         unsafe {
-            TASKEXECUTOR.tasks[TASKEXECUTOR.tasks_number] = future_task;
-            TASKEXECUTOR.tasks_number += 1
+            TASK_MANAGER.tasks[TASK_MANAGER.tasks_number] = future_task;
+            TASK_MANAGER.tasks_number += 1
         }
     }
 
@@ -232,30 +232,23 @@ impl TaskExecutor {
     // TODO: Delete tasks from task vector if they are pending
     pub fn start_task_manager() -> ! {
         loop {
-            if unsafe { !TASKEXECUTOR.tasks.is_empty() } {
+            if unsafe { !TASK_MANAGER.tasks.is_empty() } {
                 let waker = task_waker();
 
-                let task = unsafe { &mut TASKEXECUTOR.tasks[TASKEXECUTOR.task_to_execute_index] };
+                let task = unsafe { &mut TASK_MANAGER.tasks[TASK_MANAGER.task_to_execute_index] };
                 let mut task_future_pin = Pin::new(task);
                 let _ = task_future_pin
                     .as_mut()
                     .poll(&mut Context::from_waker(&waker));
 
                 unsafe {
-                    if TASKEXECUTOR.task_to_execute_index + 1 < TASKEXECUTOR.tasks.len() {
-                        TASKEXECUTOR.task_to_execute_index += 1;
+                    if TASK_MANAGER.task_to_execute_index + 1 < TASK_MANAGER.tasks.len() {
+                        TASK_MANAGER.task_to_execute_index += 1;
                     } else {
-                        TASKEXECUTOR.task_to_execute_index = 0;
+                        TASK_MANAGER.task_to_execute_index = 0;
                     }
                 }
             }
-        }
-    }
-
-    /// Drops task executor to default state.
-    pub fn drop_task_executor() {
-        unsafe {
-            TASKEXECUTOR = TaskExecutor::new();
         }
     }
 }

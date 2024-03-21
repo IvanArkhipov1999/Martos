@@ -1,10 +1,10 @@
 #[cfg(test)]
 mod unit_tests {
+    use ma_rtos::task_manager::TaskManager;
     use ma_rtos::timer::Timer;
     use std::sync::atomic::{AtomicU32, Ordering};
     use std::thread::{sleep, spawn};
     use std::time::Duration;
-    use ma_rtos::task_manager::TaskExecutor;
 
     // TODO: fix tests for task manager. They can't be run in parallel because of static task manager
     // TODO: refactor unit tests. They should check less. Separate tests for setup, loop and stop functions.
@@ -42,15 +42,13 @@ mod unit_tests {
     #[test]
     /// Tests if task manager with one finite task works correctly during 1 second without panic.
     fn test_one_finite_task_task_manager() {
-        TaskExecutor::drop_task_executor();
-
         let fun_thread = spawn(|| {
-            TaskExecutor::add_task(
+            TaskManager::add_task(
                 test_one_finite_task_task_manager_setup_fn,
                 test_one_finite_task_task_manager_loop_fn,
                 test_one_finite_task_task_manager_stop_condition_fn,
             );
-            TaskExecutor::start_task_manager()
+            TaskManager::start_task_manager()
         });
         sleep(Duration::from_secs(1));
 
