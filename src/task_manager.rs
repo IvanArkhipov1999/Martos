@@ -1,4 +1,3 @@
-use core::array::from_fn;
 use core::future::Future;
 use core::pin::Pin;
 use core::task::{Context, Poll, RawWaker, RawWakerVTable, Waker};
@@ -28,7 +27,7 @@ type TaskStopConditionFunctionType = extern "C" fn() -> bool;
 
 /// Max number of tasks.
 // TODO: Should be dynamic array of tasks.
-const MAX_NUMBER_OF_TASKS: TaskNumberType = 20;
+const MAX_NUMBER_OF_TASKS: TaskNumberType = 6;
 
 #[repr(C)]
 /// Task representation for task manager.
@@ -90,8 +89,8 @@ fn task_waker() -> Waker {
 }
 
 #[repr(C)]
-/// Task executor representation. Based on round-robin scheduling without priorities.
-pub struct TaskExecutor {
+/// Task manager representation. Based on round-robin scheduling without priorities.
+pub struct TaskManager {
     /// Static array of tasks to execute.
     tasks: [FutureTask; MAX_NUMBER_OF_TASKS],
     /// Index of task, that should be executed.
@@ -100,9 +99,12 @@ pub struct TaskExecutor {
     tasks_number: TaskNumberType,
 }
 
-impl TaskExecutor {
-    /// Creates new task executor.
-    pub fn new() -> TaskExecutor {
+/// Operating system task manager.
+static mut TASK_MANAGER: TaskManager = TaskManager::new();
+
+impl TaskManager {
+    /// Creates new task manager.
+    const fn new() -> TaskManager {
         #[cfg(not(feature = "c-library"))]
         fn setup_fn() {}
         #[cfg(not(feature = "c-library"))]
@@ -120,29 +122,92 @@ impl TaskExecutor {
             return true;
         }
 
-        let tasks: [FutureTask; MAX_NUMBER_OF_TASKS] = from_fn(|_| {
-            let task = Task {
-                setup_fn: setup_fn,
-                loop_fn: loop_fn,
-                stop_condition_fn: stop_condition_fn,
-            };
-            FutureTask {
-                task: task,
-                is_setup_completed: true,
-            }
-        });
+        // TODO: THIS IS AWFUL SOLUTION!!! PLEASE, FIX IT!!! AT LEAST IMPLEMENT core::marker::Copy FOR FutureTask!!! OR MAKE MEMORY MANAGEMENT!!!
 
-        TaskExecutor {
-            tasks: tasks,
+        let task1 = Task {
+            setup_fn,
+            loop_fn,
+            stop_condition_fn,
+        };
+
+        let task2 = Task {
+            setup_fn,
+            loop_fn,
+            stop_condition_fn,
+        };
+
+        let task3 = Task {
+            setup_fn,
+            loop_fn,
+            stop_condition_fn,
+        };
+
+        let task4 = Task {
+            setup_fn,
+            loop_fn,
+            stop_condition_fn,
+        };
+
+        let task5 = Task {
+            setup_fn,
+            loop_fn,
+            stop_condition_fn,
+        };
+
+        let task6 = Task {
+            setup_fn,
+            loop_fn,
+            stop_condition_fn,
+        };
+
+        let future_task1 = FutureTask {
+            task: task1,
+            is_setup_completed: true,
+        };
+
+        let future_task2 = FutureTask {
+            task: task2,
+            is_setup_completed: true,
+        };
+
+        let future_task3 = FutureTask {
+            task: task3,
+            is_setup_completed: true,
+        };
+
+        let future_task4 = FutureTask {
+            task: task4,
+            is_setup_completed: true,
+        };
+
+        let future_task5 = FutureTask {
+            task: task5,
+            is_setup_completed: true,
+        };
+
+        let future_task6 = FutureTask {
+            task: task6,
+            is_setup_completed: true,
+        };
+
+        let tasks: [FutureTask; MAX_NUMBER_OF_TASKS] = [
+            future_task1,
+            future_task2,
+            future_task3,
+            future_task4,
+            future_task5,
+            future_task6,
+        ];
+
+        TaskManager {
+            tasks,
             task_to_execute_index: 0,
             tasks_number: 0,
         }
     }
 
-    /// Add task to task executor. You should pass setup, loop and condition functions.
-    // TODO: Maybe it is better to pass tasks here. Functions are done for C compatibility.
+    /// Add task to task manager. You should pass setup, loop and condition functions.
     pub fn add_task(
-        &mut self,
         setup_fn: TaskSetupFunctionType,
         loop_fn: TaskLoopFunctionType,
         stop_condition_fn: TaskStopConditionFunctionType,
@@ -156,27 +221,32 @@ impl TaskExecutor {
             task,
             is_setup_completed: false,
         };
-        self.tasks[self.tasks_number] = future_task;
-        self.tasks_number += 1
+        unsafe {
+            TASK_MANAGER.tasks[TASK_MANAGER.tasks_number] = future_task;
+            TASK_MANAGER.tasks_number += 1
+        }
     }
 
     /// Starts task manager work.
     // TODO: Support priorities.
     // TODO: Delete tasks from task vector if they are pending
-    pub fn start_task_manager(&mut self) -> ! {
+    pub fn start_task_manager() -> ! {
         loop {
-            if !self.tasks.is_empty() {
+            if unsafe { !TASK_MANAGER.tasks.is_empty() } {
                 let waker = task_waker();
-                let task = &mut self.tasks[self.task_to_execute_index];
+
+                let task = unsafe { &mut TASK_MANAGER.tasks[TASK_MANAGER.task_to_execute_index] };
                 let mut task_future_pin = Pin::new(task);
                 let _ = task_future_pin
                     .as_mut()
                     .poll(&mut Context::from_waker(&waker));
 
-                if self.task_to_execute_index + 1 < self.tasks.len() {
-                    self.task_to_execute_index += 1;
-                } else {
-                    self.task_to_execute_index = 0;
+                unsafe {
+                    if TASK_MANAGER.task_to_execute_index + 1 < TASK_MANAGER.tasks.len() {
+                        TASK_MANAGER.task_to_execute_index += 1;
+                    } else {
+                        TASK_MANAGER.task_to_execute_index = 0;
+                    }
                 }
             }
         }

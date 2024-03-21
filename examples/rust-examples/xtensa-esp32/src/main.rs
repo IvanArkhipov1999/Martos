@@ -5,7 +5,7 @@ use core::sync::atomic::{AtomicU32, Ordering};
 use esp32_hal::entry;
 use esp_backtrace as _;
 use esp_println::println;
-use ma_rtos::task_manager;
+use ma_rtos::task_manager::TaskManager;
 
 /// Counter to work with in loop.
 static COUNTER: AtomicU32 = AtomicU32::new(1);
@@ -33,10 +33,8 @@ fn stop_condition_fn() -> bool {
 
 #[entry]
 fn main() -> ! {
-    // Creating task executer.
-    let mut task_executor = task_manager::TaskExecutor::new();
     // Add task to execute.
-    task_executor.add_task(setup_fn, loop_fn, stop_condition_fn);
+    TaskManager::add_task(setup_fn, loop_fn, stop_condition_fn);
     // Start task manager.
-    task_executor.start_task_manager();
+    TaskManager::start_task_manager();
 }

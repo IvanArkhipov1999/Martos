@@ -2,7 +2,7 @@
 
 #![no_std]
 
-use ma_rtos::task_manager::TaskExecutor;
+use ma_rtos::task_manager::TaskManager;
 use ma_rtos::timer::{TickType, Timer};
 
 #[panic_handler]
@@ -31,6 +31,15 @@ pub extern "C" fn get_tick_counter() -> TickType {
 }
 
 #[no_mangle]
-pub extern "C" fn new_task_executor() -> TaskExecutor {
-    TaskExecutor::new()
+pub extern "C" fn add_task(
+    setup_fn: extern "C" fn() -> (),
+    loop_fn: extern "C" fn() -> (),
+    stop_condition_fn: extern "C" fn() -> bool,
+) {
+    TaskManager::add_task(setup_fn, loop_fn, stop_condition_fn)
+}
+
+#[no_mangle]
+pub extern "C" fn start_task_manager() {
+    TaskManager::start_task_manager()
 }
