@@ -1,10 +1,12 @@
 name: Rust
 
+#on:
+#  push:
+#    branches: [ "main" ]
+#  pull_request:
+#    branches: [ "main" ]
 on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+  - push
 
 env:
   CARGO_TERM_COLOR: always
@@ -53,6 +55,10 @@ jobs:
         run: cargo install espup && espup install
       - name: Build
         run: cd ./c-library/xtensa-esp32 && . $HOME/export-esp.sh && cargo build
+        with:
+          name: static_library
+          path: c-library/target/debug/libxtensa_esp32_static_lib.a
+          retention-days: 1
       - name: Fmt
         run: cd ./c-library/xtensa-esp32 && cargo fmt --all -- --check
 
