@@ -55,12 +55,14 @@ jobs:
         run: cargo install espup && espup install
       - name: Build
         run: cd ./c-library/xtensa-esp32 && . $HOME/export-esp.sh && cargo build
-        with:
-          name: static_library
-          path: c-library/target/debug/libxtensa_esp32_static_lib.a
-          retention-days: 1
       - name: Fmt
         run: cd ./c-library/xtensa-esp32 && cargo fmt --all -- --check
+      - name: Archive production artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: static-library
+          path: c-library/target/debug/libxtensa_esp32_static_lib.a
+          retention-days: 1
 
   xtensa-esp32-c-example:
     runs-on: ubuntu-latest
