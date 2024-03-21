@@ -65,12 +65,16 @@ jobs:
           retention-days: 1
 
   xtensa-esp32-c-example:
+    needs: xtensa-esp32-static-library
     runs-on: ubuntu-latest
     steps:
+      - name: Download static library
+        uses: actions/download-artifact@v4
+        with:
+          name: static-library
       - uses: actions/checkout@v3
         # TODO: to avoid setupping, ci should pass on prepared dockers on self-hosted runners
       - name: Setup build environment
-        run: cargo install espup && espup install && sudo apt-get install -y git wget flex bison gperf python3 python3-pip python3-venv cmake ninja-build ccache libffi-dev libssl-dev dfu-util libusb-1.0-0 && mkdir -p ~/esp && cd ~/esp && git clone -b v5.2 --recursive https://github.com/espressif/esp-idf.git && cd ~/esp/esp-idf && ./install.sh esp32
-        # TODO: to avoid building static library, this job should use artifacts from xtensa-esp32-static-library job
+        run: sudo apt-get install -y git wget flex bison gperf python3 python3-pip python3-venv cmake ninja-build ccache libffi-dev libssl-dev dfu-util libusb-1.0-0 && mkdir -p ~/esp && cd ~/esp && git clone -b v5.2 --recursive https://github.com/espressif/esp-idf.git && cd ~/esp/esp-idf && ./install.sh esp32
       - name: Build
-        run: cd ./c-library/xtensa-esp32 && . $HOME/export-esp.sh && cargo build && cd ../../examples/c-examples/xtensa-esp32 && . $HOME/esp/esp-idf/export.sh && idf.py build
+        run: cp libxtensa_esp32_static_lib.a c-library/xtensa-esp32/target/xtensa-esp32-none-elf/debug/libxtensa_esp32_static_lib.a && cd ../../examples/c-examples/xtensa-esp32 && . $HOME/esp/esp-idf/export.sh && idf.py build
