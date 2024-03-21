@@ -4,14 +4,13 @@ mod unit_tests {
     use std::sync::atomic::{AtomicU32, Ordering};
     use std::thread::{sleep, spawn};
     use std::time::Duration;
-    use sequential_test::sequential;
     use ma_rtos::task_manager::TaskExecutor;
 
+    // TODO: fix tests for task manager. They can't be run in parallel because of static task manager
     // TODO: refactor unit tests. They should check less. Separate tests for setup, loop and stop functions.
     // TODO: refactor unit tests. Task manager and timer tests should be in different files in one directory.
 
     // #[test]
-    // #[sequential]
     // /// Tests if task manager without tasks works during 1 second without panic.
     // fn test_empty_task_manager() {
     //     TaskExecutor::drop_task_executor();

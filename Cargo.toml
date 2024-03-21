@@ -6,6 +6,3 @@ edition = "2021"
 [features]
 default = []
 c-library = []
-
-[dev-dependencies]
-sequential-test = "0.2.4"
