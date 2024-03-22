@@ -77,5 +77,5 @@ jobs:
         with:
           name: xtensa-esp32-static-library
       - name: Build
-        run: ls
-#        run: cp libxtensa_esp32_static_lib.a c-library/xtensa-esp32/target/xtensa-esp32-none-elf/debug/libxtensa_esp32_static_lib.a && cd ../../examples/c-examples/xtensa-esp32 && . $HOME/esp/esp-idf/export.sh && idf.py build
+        run: ls && cp ./libxtensa_esp32_static_lib.a ./c-library/xtensa-esp32/target/xtensa-esp32-none-elf/debug/
+#        run: cp ./libxtensa_esp32_static_lib.a ./c-library/xtensa-esp32/target/xtensa-esp32-none-elf/debug/ && cd ../../examples/c-examples/xtensa-esp32 && . $HOME/esp/esp-idf/export.sh && idf.py build
