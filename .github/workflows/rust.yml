@@ -60,7 +60,7 @@ jobs:
         with:
           name: xtensa-esp32-static-library
           path: c-library/xtensa-esp32/target/xtensa-esp32-none-elf/debug/libxtensa_esp32_static_lib.a
-          retention-days: 1
+          retention-days: 7
 
   xtensa-esp32-c-example:
     needs: xtensa-esp32-static-library
