@@ -68,10 +68,10 @@ jobs:
     needs: xtensa-esp32-static-library
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-        # TODO: to avoid setupping, ci should pass on prepared dockers on self-hosted runners
-      - name: Setup build environment
-        run: sudo apt-get install -y git wget flex bison gperf python3 python3-pip python3-venv cmake ninja-build ccache libffi-dev libssl-dev dfu-util libusb-1.0-0 && mkdir -p ~/esp && cd ~/esp && git clone -b v5.2 --recursive https://github.com/espressif/esp-idf.git && cd ~/esp/esp-idf && ./install.sh esp32
+#      - uses: actions/checkout@v3
+#        # TODO: to avoid setupping, ci should pass on prepared dockers on self-hosted runners
+#      - name: Setup build environment
+#        run: sudo apt-get install -y git wget flex bison gperf python3 python3-pip python3-venv cmake ninja-build ccache libffi-dev libssl-dev dfu-util libusb-1.0-0 && mkdir -p ~/esp && cd ~/esp && git clone -b v5.2 --recursive https://github.com/espressif/esp-idf.git && cd ~/esp/esp-idf && ./install.sh esp32
       - name: Download static library
         uses: actions/download-artifact@v4
         with:
