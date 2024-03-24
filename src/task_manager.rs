@@ -227,28 +227,40 @@ impl TaskManager {
         }
     }
 
-    /// Starts task manager work.
+    /// One step of task manager's work.
     // TODO: Support priorities.
     // TODO: Delete tasks from task vector if they are pending
-    pub fn start_task_manager() -> ! {
-        loop {
-            if unsafe { !TASK_MANAGER.tasks.is_empty() } {
-                let waker = task_waker();
+    fn task_manager_step() {
+        if unsafe { !TASK_MANAGER.tasks.is_empty() } {
+            let waker = task_waker();
 
-                let task = unsafe { &mut TASK_MANAGER.tasks[TASK_MANAGER.task_to_execute_index] };
-                let mut task_future_pin = Pin::new(task);
-                let _ = task_future_pin
-                    .as_mut()
-                    .poll(&mut Context::from_waker(&waker));
+            let task = unsafe { &mut TASK_MANAGER.tasks[TASK_MANAGER.task_to_execute_index] };
+            let mut task_future_pin = Pin::new(task);
+            let _ = task_future_pin
+                .as_mut()
+                .poll(&mut Context::from_waker(&waker));
 
-                unsafe {
-                    if TASK_MANAGER.task_to_execute_index + 1 < TASK_MANAGER.tasks.len() {
-                        TASK_MANAGER.task_to_execute_index += 1;
-                    } else {
-                        TASK_MANAGER.task_to_execute_index = 0;
-                    }
+            unsafe {
+                if TASK_MANAGER.task_to_execute_index + 1 < TASK_MANAGER.tasks.len() {
+                    TASK_MANAGER.task_to_execute_index += 1;
+                } else {
+                    TASK_MANAGER.task_to_execute_index = 0;
                 }
             }
+        }
+    }
+
+    /// Starts task manager work.
+    pub fn start_task_manager() -> ! {
+        loop {
+            TaskManager::task_manager_step();
+        }
+    }
+
+    /// Starts task manager work. Returns after 1000 steps only for testing task_manager_step.
+    pub fn test_start_task_manager() {
+        for _n in 1..=1000 {
+            TaskManager::task_manager_step();
         }
     }
 }
