@@ -72,132 +72,122 @@ mod unit_tests {
         );
         TaskManager::test_start_task_manager();
     }
-    //
-    // /// Counter for task for test_two_finite_tasks_task_manager.
-    // static TEST_TWO_FINITE_TASK_TASK_MANAGER_COUNTER1: AtomicU32 = AtomicU32::new(1);
-    // /// Setup function for task for test_two_finite_tasks_task_manager.
-    // fn test_two_finite_tasks_task_manager_setup_fn1() {}
-    // /// Loop function for task for test_two_finite_tasks_task_manager.
-    // fn test_two_finite_tasks_task_manager_loop_fn1() {
-    //     TEST_TWO_FINITE_TASK_TASK_MANAGER_COUNTER1.fetch_add(1, Ordering::Relaxed);
-    // }
-    // /// Stop function for task for test_two_finite_tasks_task_manager.
-    // fn test_two_finite_tasks_task_manager_stop_condition_fn1() -> bool {
-    //     let value = unsafe { TEST_TWO_FINITE_TASK_TASK_MANAGER_COUNTER1.as_ptr().read() };
-    //     if value % 50 == 0 {
-    //         return true;
-    //     }
-    //     return false;
-    // }
-    // /// Counter for task for test_two_finite_tasks_task_manager.
-    // static TEST_TWO_FINITE_TASK_TASK_MANAGER_COUNTER2: AtomicU32 = AtomicU32::new(1);
-    // /// Setup function for task for test_two_finite_tasks_task_manager.
-    // fn test_two_finite_tasks_task_manager_setup_fn2() {}
-    // /// Loop function for task for test_two_finite_tasks_task_manager.
-    // fn test_two_finite_tasks_task_manager_loop_fn2() {
-    //     TEST_TWO_FINITE_TASK_TASK_MANAGER_COUNTER2.fetch_add(1, Ordering::Relaxed);
-    // }
-    // /// Stop function for task for test_two_finite_tasks_task_manager.
-    // fn test_two_finite_tasks_task_manager_stop_condition_fn2() -> bool {
-    //     let value = unsafe { TEST_TWO_FINITE_TASK_TASK_MANAGER_COUNTER2.as_ptr().read() };
-    //     if value % 25 == 0 {
-    //         return true;
-    //     }
-    //     return false;
-    // }
-    // #[test]
-    // /// Tests if task manager with two finite tasks works correctly during 1 second without panic.
-    // fn test_two_finite_tasks_task_manager() {
-    //     TaskExecutor::drop_task_executor();
-    //
-    //     let fun_thread = spawn(|| {
-    //         TaskExecutor::add_task(
-    //             test_two_finite_tasks_task_manager_setup_fn1,
-    //             test_two_finite_tasks_task_manager_loop_fn1,
-    //             test_two_finite_tasks_task_manager_stop_condition_fn1,
-    //         );
-    //         TaskExecutor::add_task(
-    //             test_two_finite_tasks_task_manager_setup_fn2,
-    //             test_two_finite_tasks_task_manager_loop_fn2,
-    //             test_two_finite_tasks_task_manager_stop_condition_fn2,
-    //         );
-    //         TaskExecutor::start_task_manager()
-    //     });
-    //     sleep(Duration::from_secs(1));
-    //
-    //     assert_eq!(fun_thread.is_finished(), false);
-    //     assert_eq!(
-    //         unsafe { TEST_TWO_FINITE_TASK_TASK_MANAGER_COUNTER1.as_ptr().read() },
-    //         50
-    //     );
-    //     assert_eq!(
-    //         unsafe { TEST_TWO_FINITE_TASK_TASK_MANAGER_COUNTER2.as_ptr().read() },
-    //         25
-    //     );
-    // }
-    //
-    // /// Counter for task for test_two_different_tasks_task_manager.
-    // static TEST_TWO_DIFFERENT_TASK_TASK_MANAGER_COUNTER1: AtomicU32 = AtomicU32::new(1);
-    // /// Setup function for task for test_two_different_tasks_task_manager.
-    // fn test_two_different_tasks_task_manager_setup_fn1() {}
-    // /// Loop function for task for test_two_different_tasks_task_manager.
-    // fn test_two_different_tasks_task_manager_loop_fn1() {
-    //     TEST_TWO_DIFFERENT_TASK_TASK_MANAGER_COUNTER1.fetch_add(1, Ordering::Relaxed);
-    // }
-    // /// Stop function for task for test_two_different_tasks_task_manager.
-    // fn test_two_different_tasks_task_manager_stop_condition_fn1() -> bool {
-    //     let value = unsafe {
-    //         TEST_TWO_DIFFERENT_TASK_TASK_MANAGER_COUNTER1
-    //             .as_ptr()
-    //             .read()
-    //     };
-    //     if value % 50 == 0 {
-    //         return true;
-    //     }
-    //     return false;
-    // }
-    // /// Counter for task for test_two_different_tasks_task_manager.
-    // static TEST_TWO_DIFFERENT_TASK_TASK_MANAGER_COUNTER2: AtomicU32 = AtomicU32::new(1);
-    // /// Setup function for task for test_two_different_tasks_task_manager.
-    // fn test_two_different_tasks_task_manager_setup_fn2() {}
-    // /// Loop function for task for test_two_different_tasks_task_manager.
-    // fn test_two_different_tasks_task_manager_loop_fn2() {
-    //     TEST_TWO_DIFFERENT_TASK_TASK_MANAGER_COUNTER2.fetch_add(1, Ordering::Relaxed);
-    // }
-    // /// Stop function for task for test_two_different_tasks_task_manager.
-    // fn test_two_different_tasks_task_manager_stop_condition_fn2() -> bool {
-    //     return false;
-    // }
-    // #[test]
-    // /// Tests if task manager with two different (finite and infinite) tasks works correctly during 1 second without panic.
-    // fn test_two_different_tasks_task_manager() {
-    //     TaskExecutor::drop_task_executor();
-    //
-    //     let fun_thread = spawn(|| {
-    //         TaskExecutor::add_task(
-    //             test_two_different_tasks_task_manager_setup_fn1,
-    //             test_two_different_tasks_task_manager_loop_fn1,
-    //             test_two_different_tasks_task_manager_stop_condition_fn1,
-    //         );
-    //         TaskExecutor::add_task(
-    //             test_two_different_tasks_task_manager_setup_fn2,
-    //             test_two_different_tasks_task_manager_loop_fn2,
-    //             test_two_different_tasks_task_manager_stop_condition_fn2,
-    //         );
-    //         TaskExecutor::start_task_manager()
-    //     });
-    //     sleep(Duration::from_secs(1));
-    //
-    //     assert_eq!(fun_thread.is_finished(), false);
-    //     assert_eq!(
-    //         unsafe {
-    //             TEST_TWO_DIFFERENT_TASK_TASK_MANAGER_COUNTER1
-    //                 .as_ptr()
-    //                 .read()
-    //         },
-    //         50
-    //     );
-    // }
+
+    /// Counter for task for test_two_finite_tasks_task_manager.
+    static TEST_TWO_FINITE_TASK_TASK_MANAGER_COUNTER1: AtomicU32 = AtomicU32::new(1);
+    /// Setup function for task for test_two_finite_tasks_task_manager.
+    fn test_two_finite_tasks_task_manager_setup_fn1() {}
+    /// Loop function for task for test_two_finite_tasks_task_manager.
+    fn test_two_finite_tasks_task_manager_loop_fn1() {
+        TEST_TWO_FINITE_TASK_TASK_MANAGER_COUNTER1.fetch_add(1, Ordering::Relaxed);
+    }
+    /// Stop function for task for test_two_finite_tasks_task_manager.
+    fn test_two_finite_tasks_task_manager_stop_condition_fn1() -> bool {
+        let value = unsafe { TEST_TWO_FINITE_TASK_TASK_MANAGER_COUNTER1.as_ptr().read() };
+        if value % 50 == 0 {
+            return true;
+        }
+        return false;
+    }
+    /// Counter for task for test_two_finite_tasks_task_manager.
+    static TEST_TWO_FINITE_TASK_TASK_MANAGER_COUNTER2: AtomicU32 = AtomicU32::new(1);
+    /// Setup function for task for test_two_finite_tasks_task_manager.
+    fn test_two_finite_tasks_task_manager_setup_fn2() {}
+    /// Loop function for task for test_two_finite_tasks_task_manager.
+    fn test_two_finite_tasks_task_manager_loop_fn2() {
+        TEST_TWO_FINITE_TASK_TASK_MANAGER_COUNTER2.fetch_add(1, Ordering::Relaxed);
+    }
+    /// Stop function for task for test_two_finite_tasks_task_manager.
+    fn test_two_finite_tasks_task_manager_stop_condition_fn2() -> bool {
+        let value = unsafe { TEST_TWO_FINITE_TASK_TASK_MANAGER_COUNTER2.as_ptr().read() };
+        if value % 25 == 0 {
+            return true;
+        }
+        return false;
+    }
+    #[test]
+    #[sequential]
+    /// Tests if task manager with two finite tasks works correctly during some time without panic.
+    fn test_two_finite_tasks_task_manager() {
+        TaskManager::add_task(
+            test_two_finite_tasks_task_manager_setup_fn1,
+            test_two_finite_tasks_task_manager_loop_fn1,
+            test_two_finite_tasks_task_manager_stop_condition_fn1,
+        );
+        TaskManager::add_task(
+            test_two_finite_tasks_task_manager_setup_fn2,
+            test_two_finite_tasks_task_manager_loop_fn2,
+            test_two_finite_tasks_task_manager_stop_condition_fn2,
+        );
+        TaskManager::test_start_task_manager();
+
+        assert_eq!(
+            unsafe { TEST_TWO_FINITE_TASK_TASK_MANAGER_COUNTER1.as_ptr().read() },
+            50
+        );
+        assert_eq!(
+            unsafe { TEST_TWO_FINITE_TASK_TASK_MANAGER_COUNTER2.as_ptr().read() },
+            25
+        );
+    }
+
+    /// Counter for task for test_two_different_tasks_task_manager.
+    static TEST_TWO_DIFFERENT_TASK_TASK_MANAGER_COUNTER1: AtomicU32 = AtomicU32::new(1);
+    /// Setup function for task for test_two_different_tasks_task_manager.
+    fn test_two_different_tasks_task_manager_setup_fn1() {}
+    /// Loop function for task for test_two_different_tasks_task_manager.
+    fn test_two_different_tasks_task_manager_loop_fn1() {
+        TEST_TWO_DIFFERENT_TASK_TASK_MANAGER_COUNTER1.fetch_add(1, Ordering::Relaxed);
+    }
+    /// Stop function for task for test_two_different_tasks_task_manager.
+    fn test_two_different_tasks_task_manager_stop_condition_fn1() -> bool {
+        let value = unsafe {
+            TEST_TWO_DIFFERENT_TASK_TASK_MANAGER_COUNTER1
+                .as_ptr()
+                .read()
+        };
+        if value % 50 == 0 {
+            return true;
+        }
+        return false;
+    }
+    /// Counter for task for test_two_different_tasks_task_manager.
+    static TEST_TWO_DIFFERENT_TASK_TASK_MANAGER_COUNTER2: AtomicU32 = AtomicU32::new(1);
+    /// Setup function for task for test_two_different_tasks_task_manager.
+    fn test_two_different_tasks_task_manager_setup_fn2() {}
+    /// Loop function for task for test_two_different_tasks_task_manager.
+    fn test_two_different_tasks_task_manager_loop_fn2() {
+        TEST_TWO_DIFFERENT_TASK_TASK_MANAGER_COUNTER2.fetch_add(1, Ordering::Relaxed);
+    }
+    /// Stop function for task for test_two_different_tasks_task_manager.
+    fn test_two_different_tasks_task_manager_stop_condition_fn2() -> bool {
+        return false;
+    }
+    #[test]
+    #[sequential]
+    /// Tests if task manager with two different (finite and infinite) tasks works correctly during 1 second without panic.
+    fn test_two_different_tasks_task_manager() {
+        TaskManager::add_task(
+            test_two_different_tasks_task_manager_setup_fn1,
+            test_two_different_tasks_task_manager_loop_fn1,
+            test_two_different_tasks_task_manager_stop_condition_fn1,
+        );
+        TaskManager::add_task(
+            test_two_different_tasks_task_manager_setup_fn2,
+            test_two_different_tasks_task_manager_loop_fn2,
+            test_two_different_tasks_task_manager_stop_condition_fn2,
+        );
+        TaskManager::test_start_task_manager();
+
+        assert_eq!(
+            unsafe {
+                TEST_TWO_DIFFERENT_TASK_TASK_MANAGER_COUNTER1
+                    .as_ptr()
+                    .read()
+            },
+            50
+        );
+    }
     //
     // /// Counter for task for test_two_infinite_tasks_task_manager.
     // static TEST_TWO_INFINITE_TASK_TASK_MANAGER_COUNTER1: AtomicU32 = AtomicU32::new(1);
