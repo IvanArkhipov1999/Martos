@@ -262,5 +262,9 @@ impl TaskManager {
         for _n in 1..=1000 {
             TaskManager::task_manager_step();
         }
+        // This is bad idea
+        unsafe {
+            TASK_MANAGER.tasks_number = 0;
+        }
     }
 }
