@@ -5,7 +5,6 @@ mod unit_tests {
     use sequential_test::sequential;
     use std::sync::atomic::{AtomicU32, Ordering};
 
-    // TODO: fix tests for task manager. They can't be run in parallel because of static task manager
     // TODO: refactor unit tests. They should check less. Separate tests for setup, loop and stop functions.
     // TODO: refactor unit tests. Task manager and timer tests should be in different files in one directory.
 
