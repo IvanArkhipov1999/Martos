@@ -34,7 +34,7 @@ For detailed instructions on running projects for the Xtensa ESP32 architecture 
 we recommend consulting [the official website](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/index.html#build-your-first-project).
 Below, you will find an illustrative example showcasing the running on a Linux system (Ubuntu/Debian):
 ```
-idf.py -p PORT monitor
+idf.py -p PORT flash monitor
 ```
 
 "PORT" refers to the designated name of your serial port.
