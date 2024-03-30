@@ -10,7 +10,7 @@ In its current version, Martos features a basic task manager and timer counter.
 To develop software in Rust, you have the option to incorporate the Martos as a dependency:
 ```
 [dependencies]
-ma_rtos = { git = "https://github.com/IvanArkhipov1999/Martos" }
+martos = { git = "https://github.com/IvanArkhipov1999/Martos" }
 ```
 
 You can explore a variety of Rust examples showcasing different architectures in the ['examples/rust-examples'](https://github.com/IvanArkhipov1999/Martos/tree/main/examples/rust-examples) directory.

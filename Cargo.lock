@@ -3,7 +3,7 @@
 version = 3
 
 [[package]]
-name = "ma_rtos"
+name = "martos"
 version = "0.1.0"
 dependencies = [
  "sequential-test",

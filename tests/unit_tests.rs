@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod unit_tests {
-    use ma_rtos::task_manager::TaskManager;
-    use ma_rtos::timer::Timer;
+    use martos::task_manager::TaskManager;
+    use martos::timer::Timer;
     use sequential_test::sequential;
     use std::sync::atomic::{AtomicU32, Ordering};
 
