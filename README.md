@@ -1,4 +1,5 @@
 # Martos
+![Martos ci workflow](https://github.com/IvanArkhipov1999/Martos/actions/workflows/rust.yml/badge.svg)
 
 Martos is an elegant real-time operating system designed for creating complex multi-agent systems. 
 Developers have the flexibility to write software for Martos using either Rust (preferred) or C languages.
