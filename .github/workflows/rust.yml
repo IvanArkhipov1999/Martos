@@ -1,4 +1,4 @@
-name: Rust
+name: Martos ci workflow
 
 on:
   push:

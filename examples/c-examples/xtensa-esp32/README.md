@@ -1,1 +1,40 @@
+# C example for xtensa esp32 architecture
 
+Presented here is a straightforward C example utilizing Martos.
+
+Within the setup function, the phrase 'Setup hello world!' is printed once.
+Additionally, within the loop function, the phrase 'Loop hello world!' along with the counter value is printed fifty times.
+
+## How to install dependencies
+
+For comprehensive guidance on installing the necessary dependencies for developing applications targeting the Xtensa ESP32 architecture, 
+please refer to [the official website](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/index.html#manual-installation). 
+Below is an illustrative example demonstrating the installation of building toolchains on a Linux (Ubuntu/Debian):
+```
+sudo apt-get install -y git wget flex bison gperf python3 python3-pip python3-venv cmake ninja-build ccache libffi-dev libssl-dev dfu-util libusb-1.0-0
+mkdir -p ~/esp
+cd ~/esp
+git clone -b v5.2 --recursive https://github.com/espressif/esp-idf.git
+cd ~/esp/esp-idf
+./install.sh esp32
+```
+
+## How to build the example
+
+For a thorough guide on developing projects for the Xtensa ESP32 architecture across various operating systems, 
+we recommend consulting [the official website](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/index.html#build-your-first-project).
+Below, you will find an illustrative example showcasing the building process on a Linux system (Ubuntu/Debian):
+```
+. $HOME/esp/esp-idf/export.sh
+idf.py build
+```
+
+## How to run the example
+For detailed instructions on running projects for the Xtensa ESP32 architecture across various operating systems,
+we recommend consulting [the official website](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/index.html#build-your-first-project).
+Below, you will find an illustrative example showcasing the running on a Linux system (Ubuntu/Debian):
+```
+idf.py -p PORT monitor
+```
+
+"PORT" refers to the designated name of your serial port.

@@ -1,23 +1,28 @@
 # Martos
+![Martos ci workflow](https://github.com/IvanArkhipov1999/Martos/actions/workflows/rust.yml/badge.svg)
 
-Martos is a simple RTOS for developing multi-agent real-time systems. 
-Software for Martos can be written on both Rust (recommended) and C languages.
+Martos is an elegant real-time operating system designed for creating complex multi-agent systems. 
+Developers have the flexibility to write software for Martos using either Rust (preferred) or C languages.
 
-In current version it has only primitive task manager and timer counter.
+In its current version, Martos features a basic task manager and timer counter.
 
-## Programming on Rust
-For writing software on Rust you can use Martos as dependency:
+## Programming in Rust
+To develop software in Rust, you have the option to incorporate the Martos as a dependency:
 ```
 [dependencies]
-ma_rtos = ...
+ma_rtos = { git = "https://github.com/IvanArkhipov1999/Martos" }
 ```
 
-Rust examples for different architecures you can see in examples/rust-examples.
+You can explore a variety of Rust examples showcasing different architectures in the ['examples/rust-examples'](https://github.com/IvanArkhipov1999/Martos/tree/main/examples/rust-examples) directory.
 
-## Programming on C
-For writing software on C you can link your project with Martos static library. 
-You can get Martos static library from release artifacts. 
-If you want to build Martos static library yourself, see c-library directory.
-It contains static library targets for different architectures.
+## Programming in C
+To develop software in C, you have the option to incorporate the Martos static library into your project:
+```
+target_link_libraries(target-name path-to-static-lib.a -Wl,--allow-multiple-definition)
+```
 
-C examples for different architecures you can see in examples/c-examples.
+You can obtain the Martos static library for supported architectures from either the release artifacts or the continuous integration (CI) artifacts.
+If you wish to compile the Martos static library on your own, please refer to the ['c-library'](https://github.com/IvanArkhipov1999/Martos/tree/main/c-library) directory, 
+which includes static library targets tailored for various architectures.
+
+You can explore diverse C examples tailored for various architectures in the ['examples/c-examples'](https://github.com/IvanArkhipov1999/Martos/tree/main/examples/c-examples) directory.
