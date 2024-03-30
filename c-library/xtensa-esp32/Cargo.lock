@@ -417,9 +417,9 @@ dependencies = [
 ]
 
 [[package]]
-name = "ma_rtos"
+name = "martos"
 version = "0.1.0"
-source = "git+https://github.com/IvanArkhipov1999/Martos#647535ea5832d92aa7a72ea94843025c9140e0fa"
+source = "git+https://github.com/IvanArkhipov1999/Martos#2373ba77307e94c1207e31b94e03d8735090171c"
 
 [[package]]
 name = "memchr"
@@ -765,5 +765,5 @@ dependencies = [
  "esp-backtrace",
  "esp-println",
  "esp32-hal",
- "ma_rtos",
+ "martos",
 ]
