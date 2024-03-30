@@ -2,8 +2,8 @@
 
 #![no_std]
 
-use ma_rtos::task_manager::TaskManager;
-use ma_rtos::timer::{TickType, Timer};
+use martos::task_manager::TaskManager;
+use martos::timer::{TickType, Timer};
 
 #[panic_handler]
 fn panic(_info: &core::panic::PanicInfo) -> ! {
