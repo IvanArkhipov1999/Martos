@@ -11,7 +11,10 @@ crate-type = ["staticlib"]
 debug = true
 
 [dependencies]
-martos = { version = "0.1.0", features = ["c-library"] }
+# Specifying Martos version
+#martos = { version = "0.1.0", features = ["c-library"] }
+# Specifying current Martos version path for ci
+martos = { path = "../../", features = ["c-library"] }
 esp32-hal = "0.18.0"
 esp-backtrace = { version = "0.11.0", features = ["esp32", "panic-handler", "exception-handler", "println"] }
 esp-println = { version = "0.9.0", features = ["esp32"] }
