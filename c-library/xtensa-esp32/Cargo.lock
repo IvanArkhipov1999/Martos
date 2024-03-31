@@ -419,8 +419,6 @@ dependencies = [
 [[package]]
 name = "martos"
 version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "71243a0e59c88eaa0f48dc8019c870ed644c7c33ea7f530f74cd70a1567f055a"
 
 [[package]]
 name = "memchr"
