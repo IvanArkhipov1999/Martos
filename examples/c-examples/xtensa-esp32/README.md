@@ -19,6 +19,17 @@ cd ~/esp/esp-idf
 ./install.sh esp32
 ```
 
+## Before building the example
+
+Before proceeding with building the example, it is essential to obtain the Martos C static library 
+and [link it](https://github.com/IvanArkhipov1999/Martos/blob/main/examples/c-examples/xtensa-esp32/main/CMakeLists.txt#L7) with the example code.
+
+There are multiple avenues through which you can acquire the Martos C static library:
+1. [From release artifacts.](https://github.com/IvanArkhipov1999/Martos/releases)
+2. [From ci artifacts.](https://github.com/IvanArkhipov1999/Martos/actions)
+3. [To build the Martos C static library independently.](https://github.com/IvanArkhipov1999/Martos/tree/main/c-library/xtensa-esp32)
+
+
 ## How to build the example
 
 For a thorough guide on developing projects for the Xtensa ESP32 architecture across various operating systems, 
