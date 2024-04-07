@@ -11,3 +11,4 @@ ENV PATH="/root/.cargo/bin:${PATH}"
 # Install dependencies
 RUN cargo install espup
 RUN espup install
+RUN rustup target add xtensa-esp32-none-elf
