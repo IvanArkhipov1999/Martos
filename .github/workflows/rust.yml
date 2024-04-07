@@ -1,10 +1,11 @@
 name: Martos ci workflow
 
 on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+  - push
+#  push:
+#    branches: [ "main" ]
+#  pull_request:
+#    branches: [ "main" ]
 
 env:
   CARGO_TERM_COLOR: always
@@ -33,11 +34,12 @@ jobs:
 
   xtensa-esp32-rust-example:
     runs-on: ubuntu-latest
+    container: ${{ secrets.DOCKERHUB_USERNAME }}/xtensa-esp32-rust:latest
     steps:
       - uses: actions/checkout@v3
         # TODO: to avoid setupping, ci should pass on prepared dockers on self-hosted runners
-      - name: Setup build environment
-        run: cargo install espup && espup install
+#      - name: Setup build environment
+#        run: cargo install espup && espup install
       - name: Build
         run: cd ./examples/rust-examples/xtensa-esp32 && . $HOME/export-esp.sh && cargo build
       - name: Fmt
