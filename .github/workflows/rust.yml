@@ -35,7 +35,9 @@ jobs:
 
   xtensa-esp32-rust-example:
     runs-on: ubuntu-latest
-    container: espressif/idf-rust:esp32_1.77.0.0
+    services:
+      my-service:
+        image: espressif/idf-rust:esp32_1.77.0.0
     steps:
       - uses: actions/checkout@v3
         # TODO: to avoid setupping, ci should pass on prepared dockers on self-hosted runners
