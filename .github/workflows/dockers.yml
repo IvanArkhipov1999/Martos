@@ -1,7 +1,9 @@
 name: Docker Build and Push
 
 on:
-  - push
+  push:
+    paths:
+      - 'dockers/**'
 
 jobs:
   build:
