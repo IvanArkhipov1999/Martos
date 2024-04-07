@@ -1,4 +1,4 @@
 FROM ubuntu:latest
 
-RUN cargo install espup
+RUN /bin/bash -c cargo install espup
 RUN espup install
