@@ -38,7 +38,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       my-service:
-        image: ${{ secrets.DOCKERHUB_USERNAME }}/xtensa-esp32-rust:latest
+        image: ${{ env.DOCKERHUB_USERNAME }}/xtensa-esp32-rust:latest
     steps:
       - uses: actions/checkout@v3
         # TODO: to avoid setupping, ci should pass on prepared dockers on self-hosted runners
