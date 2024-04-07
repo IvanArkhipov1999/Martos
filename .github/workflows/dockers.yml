@@ -16,7 +16,7 @@ jobs:
         run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
 
       - name: Build Docker image with xtensa esp32 rust dependencies
-        run: docker build -f ./dockers/xtensa-esp32/rust-dependencies/xtensa-esp32-rust.dockerfile -t xtensa-esp32-rust .
+        run: docker build -f ./dockers/xtensa-esp32/rust-dependencies/xtensa-esp32-rust.dockerfile -t ${{ secrets.DOCKERHUB_USERNAME }}/xtensa-esp32-rust .
 
       - name: Push Docker image to Docker Hub
-        run: docker push xtensa-esp32-rust:latest
+        run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/xtensa-esp32-rust:latest
