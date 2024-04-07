@@ -9,7 +9,6 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
-  DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
 
 
 jobs:
@@ -18,7 +17,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Build
-        run: cargo build --lib --verbose
+        run: cargo build --lib --verbose && echo ${{ secrets.DOCKERHUB_USERNAME }}
 
   test:
     runs-on: ubuntu-latest
@@ -36,14 +35,14 @@ jobs:
 
   xtensa-esp32-rust-example:
     runs-on: ubuntu-latest
-    services:
-      my-service:
-        image: ${{ env.DOCKERHUB_USERNAME }}/xtensa-esp32-rust:latest
+#    services:
+#      my-service:
+#        image: ${{ secrets.DOCKERHUB_USERNAME }}/xtensa-esp32-rust:latest
     steps:
       - uses: actions/checkout@v3
         # TODO: to avoid setupping, ci should pass on prepared dockers on self-hosted runners
-#      - name: Setup build environment
-#        run: cargo install espup && espup install
+      - name: Setup build environment
+        run: cargo install espup && espup install
       - name: Build
         run: cd ./examples/rust-examples/xtensa-esp32 && . $HOME/export-esp.sh && cargo build
       - name: Fmt
