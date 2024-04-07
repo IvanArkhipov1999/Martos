@@ -1,11 +1,11 @@
 name: Martos ci workflow
 
 on:
-  push:
 #  push:
-#    branches: [ "main" ]
-#  pull_request:
-#    branches: [ "main" ]
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
 
 env:
   CARGO_TERM_COLOR: always
@@ -17,7 +17,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Build
-        run: cargo build --lib --verbose && echo ${{ secrets.DOCKERHUB_USERNAME }}
+        run: cargo build --lib --verbose
 
   test:
     runs-on: ubuntu-latest
