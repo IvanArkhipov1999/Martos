@@ -15,3 +15,6 @@ jobs:
 
       - name: Build Docker image with xtensa esp32 rust dependencies
         run: docker build -f ./dockers/xtensa-esp32/rust-dependencies/xtensa-esp32-rust.dockerfile .
+
+      - name: Push Docker image to Docker Hub
+        run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/xtensa-esp32-rust:latest
