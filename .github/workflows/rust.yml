@@ -1,7 +1,12 @@
 name: Martos ci workflow
 
 on:
-  - push
+  push:
+  workflow_call:
+    secrets:
+      DOCKERHUB_USERNAME:
+        required: true
+        description: ''
 #  push:
 #    branches: [ "main" ]
 #  pull_request:
