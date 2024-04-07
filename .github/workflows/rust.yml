@@ -44,7 +44,7 @@ jobs:
 #      - name: Setup build environment
 #        run: cargo install espup && espup install
       - name: Build
-        run: cd ./examples/rust-examples/xtensa-esp32 && . /root/export-esp.sh && cargo build
+        run: cd ./examples/rust-examples/xtensa-esp32 && . $HOME/export-esp.sh && cargo build
       - name: Fmt
         run: cd ./examples/rust-examples/xtensa-esp32 && cargo fmt --all -- --check
 
