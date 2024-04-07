@@ -37,6 +37,9 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: espressif/idf-rust:esp32_latest
+      credentials:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v3
         # TODO: to avoid setupping, ci should pass on prepared dockers on self-hosted runners
