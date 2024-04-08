@@ -9,5 +9,5 @@ RUN apt-get install -y git wget flex bison gperf python3 python3-pip python3-ven
 RUN mkdir -p ~/esp
 RUN cd ~/esp
 RUN git clone -b v5.2 --recursive https://github.com/espressif/esp-idf.git
-RUN cd ~/esp/esp-idf
+RUN ls ~/esp && cd ~/esp/esp-idf
 RUN ./install.sh esp32
