@@ -43,24 +43,25 @@ jobs:
         # TODO: to avoid setupping, ci should pass on prepared dockers on self-hosted runners
 #      - name: Setup build environment
 #        run: cargo install espup && espup install
-      - name: Some
-        run: export CARGO_HOME=/root/.cargo && export RUSTUP_HOME=/root/.rustup && rustup toolchain list
       - name: Build
-        run: export CARGO_HOME=/root/.cargo && export RUSTUP_HOME=/root/.rustup && cd ./examples/rust-examples/xtensa-esp32 && . /root/export-esp.sh cargo build
+        run: export CARGO_HOME=/root/.cargo && export RUSTUP_HOME=/root/.rustup && cd ./examples/rust-examples/xtensa-esp32 && . /root/export-esp.sh && cargo build
       - name: Fmt
         run: export CARGO_HOME=/root/.cargo && export RUSTUP_HOME=/root/.rustup && cd ./examples/rust-examples/xtensa-esp32 && cargo fmt --all -- --check
 
   xtensa-esp32-static-library:
     runs-on: ubuntu-latest
+    container:
+      image: arkhipovivan1/xtensa-esp32-rust:latest
+      options: --user root
     steps:
       - uses: actions/checkout@v3
         # TODO: to avoid setupping, ci should pass on prepared dockers on self-hosted runners
-      - name: Setup build environment
-        run: cargo install espup && espup install
+#      - name: Setup build environment
+#        run: cargo install espup && espup install
       - name: Build
-        run: cd ./c-library/xtensa-esp32 && . $HOME/export-esp.sh && cargo build
+        run: export CARGO_HOME=/root/.cargo && export RUSTUP_HOME=/root/.rustup && cd ./c-library/xtensa-esp32 && . /root/export-esp.sh && cargo build
       - name: Fmt
-        run: cd ./c-library/xtensa-esp32 && cargo fmt --all -- --check
+        run: export CARGO_HOME=/root/.cargo && export RUSTUP_HOME=/root/.rustup && cd ./c-library/xtensa-esp32 && cargo fmt --all -- --check
       - name: Archive production artifacts
         uses: actions/upload-artifact@v4
         with:
