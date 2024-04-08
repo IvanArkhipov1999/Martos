@@ -30,15 +30,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Some
-        run: rustup toolchain list
       - name: Fmt
         run: cargo fmt --all -- --check
 
   xtensa-esp32-rust-example:
     runs-on: ubuntu-latest
     container:
-      image: arkhipovivan1/xtensa-esp32-rust:latest
+      image: docker.io/arkhipovivan1/xtensa-esp32-rust:latest
       options: --user root
     steps:
       - uses: actions/checkout@v3
