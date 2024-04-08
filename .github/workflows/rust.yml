@@ -81,4 +81,4 @@ jobs:
           name: xtensa-esp32-static-library
           path: c-library/xtensa-esp32/target/xtensa-esp32-none-elf/debug
       - name: Build
-        run: cd ./examples/c-examples/xtensa-esp32 && . /root/esp/esp-idf/export.sh && idf.py build
+        run: export IDF_PATH=/root/esp && cd ./examples/c-examples/xtensa-esp32 && . /root/esp/esp-idf/export.sh && idf.py build
