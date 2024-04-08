@@ -13,6 +13,7 @@ env:
 
 jobs:
   build:
+    # TODO: all should be on self-hosted runners
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -40,9 +41,6 @@ jobs:
       options: --user root
     steps:
       - uses: actions/checkout@v3
-        # TODO: to avoid setupping, ci should pass on prepared dockers on self-hosted runners
-#      - name: Setup build environment
-#        run: cargo install espup && espup install
       - name: Build
         run: export CARGO_HOME=/root/.cargo && export RUSTUP_HOME=/root/.rustup && cd ./examples/rust-examples/xtensa-esp32 && . /root/export-esp.sh && cargo build
       - name: Fmt
@@ -55,9 +53,6 @@ jobs:
       options: --user root
     steps:
       - uses: actions/checkout@v3
-        # TODO: to avoid setupping, ci should pass on prepared dockers on self-hosted runners
-#      - name: Setup build environment
-#        run: cargo install espup && espup install
       - name: Build
         run: export CARGO_HOME=/root/.cargo && export RUSTUP_HOME=/root/.rustup && cd ./c-library/xtensa-esp32 && . /root/export-esp.sh && cargo build
       - name: Fmt
