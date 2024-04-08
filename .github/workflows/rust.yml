@@ -36,7 +36,7 @@ jobs:
   xtensa-esp32-rust-example:
     runs-on: ubuntu-latest
     container:
-      image: docker.io/arkhipovivan1/xtensa-esp32-rust:latest
+      image: ghcr.io/arkhipovivan1/xtensa-esp32-rust:latest
       options: --user root
     steps:
       - uses: actions/checkout@v3
