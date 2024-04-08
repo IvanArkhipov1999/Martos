@@ -44,7 +44,7 @@ jobs:
 #      - name: Setup build environment
 #        run: cargo install espup && espup install
       - name: Some
-        run: ls && rustup toolchain list
+        run: cd / && ls && rustup toolchain list
       - name: Build
         run: cd ./examples/rust-examples/xtensa-esp32 && cargo build
       - name: Fmt
