@@ -48,7 +48,7 @@ jobs:
       - name: Build
         run: export CARGO_HOME=/root/.cargo && export RUSTUP_HOME=/root/.rustup && cd ./examples/rust-examples/xtensa-esp32 && . /root/export-esp.sh && cargo build
       - name: Fmt
-        run: cd ./examples/rust-examples/xtensa-esp32 && cargo fmt --all -- --check
+        run: export CARGO_HOME=/root/.cargo && export RUSTUP_HOME=/root/.rustup && cd ./examples/rust-examples/xtensa-esp32 && cargo fmt --all -- --check
 
   xtensa-esp32-static-library:
     runs-on: ubuntu-latest
