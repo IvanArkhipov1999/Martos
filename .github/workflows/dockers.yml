@@ -6,7 +6,7 @@ on:
       - 'dockers/**'
 
 jobs:
-  build:
+  build-xtensa-esp32-rust-dependencies-docker:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -20,3 +20,18 @@ jobs:
 
       - name: Push Docker image to Docker Hub
         run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/xtensa-esp32-rust:latest
+
+  build-xtensa-esp32-c-dependencies-docker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Login to Docker Hub
+        run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
+
+      - name: Build Docker image with xtensa esp32 C dependencies
+        run: docker build -f ./dockers/xtensa-esp32/c-dependencies/xtensa-esp32-c.dockerfile -t ${{ secrets.DOCKERHUB_USERNAME }}/xtensa-esp32-c .
+
+      - name: Push Docker image to Docker Hub
+        run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/xtensa-esp32-c:latest
