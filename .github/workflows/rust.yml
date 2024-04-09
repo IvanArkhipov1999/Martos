@@ -9,13 +9,15 @@ on:
 env:
   CARGO_TERM_COLOR: always
 
+
 jobs:
   build:
+    # TODO: all should be on self-hosted runners
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Build --lib
-        run: cargo build --verbose
+      - name: Build
+        run: cargo build --lib --verbose
 
   test:
     runs-on: ubuntu-latest
@@ -33,25 +35,31 @@ jobs:
 
   xtensa-esp32-rust-example:
     runs-on: ubuntu-latest
+    env:
+      CARGO_HOME: /root/.cargo
+      RUSTUP_HOME: /root/.rustup
+    container:
+      image: arkhipovivan1/xtensa-esp32-rust:latest
+      options: --user root
     steps:
       - uses: actions/checkout@v3
-        # TODO: to avoid setupping, ci should pass on prepared dockers on self-hosted runners
-      - name: Setup build environment
-        run: cargo install espup && espup install
       - name: Build
-        run: cd ./examples/rust-examples/xtensa-esp32 && . $HOME/export-esp.sh && cargo build
+        run: cd ./examples/rust-examples/xtensa-esp32 && . /root/export-esp.sh && cargo build
       - name: Fmt
         run: cd ./examples/rust-examples/xtensa-esp32 && cargo fmt --all -- --check
 
   xtensa-esp32-static-library:
     runs-on: ubuntu-latest
+    env:
+      CARGO_HOME: /root/.cargo
+      RUSTUP_HOME: /root/.rustup
+    container:
+      image: arkhipovivan1/xtensa-esp32-rust:latest
+      options: --user root
     steps:
       - uses: actions/checkout@v3
-        # TODO: to avoid setupping, ci should pass on prepared dockers on self-hosted runners
-      - name: Setup build environment
-        run: cargo install espup && espup install
       - name: Build
-        run: cd ./c-library/xtensa-esp32 && . $HOME/export-esp.sh && cargo build
+        run: cd ./c-library/xtensa-esp32 && . /root/export-esp.sh && cargo build
       - name: Fmt
         run: cd ./c-library/xtensa-esp32 && cargo fmt --all -- --check
       - name: Archive production artifacts
@@ -64,15 +72,18 @@ jobs:
   xtensa-esp32-c-example:
     needs: xtensa-esp32-static-library
     runs-on: ubuntu-latest
+    env:
+      IDF_PATH: /root/esp/esp-idf
+      IDF_TOOLS_PATH: /root/.espressif
+    container:
+      image: arkhipovivan1/xtensa-esp32-c:latest
+      options: --user root
     steps:
       - uses: actions/checkout@v3
-        # TODO: to avoid setupping, ci should pass on prepared dockers on self-hosted runners
-      - name: Setup build environment
-        run: sudo apt-get install -y git wget flex bison gperf python3 python3-pip python3-venv cmake ninja-build ccache libffi-dev libssl-dev dfu-util libusb-1.0-0 && mkdir -p ~/esp && cd ~/esp && git clone -b v5.2 --recursive https://github.com/espressif/esp-idf.git && cd ~/esp/esp-idf && ./install.sh esp32
       - name: Download static library
         uses: actions/download-artifact@v4
         with:
           name: xtensa-esp32-static-library
           path: c-library/xtensa-esp32/target/xtensa-esp32-none-elf/debug
       - name: Build
-        run: cd ./examples/c-examples/xtensa-esp32 && . $HOME/esp/esp-idf/export.sh && idf.py build
+        run: cd ./examples/c-examples/xtensa-esp32 && . /root/esp/esp-idf/export.sh && idf.py build
