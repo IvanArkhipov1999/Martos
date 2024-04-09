@@ -2,10 +2,9 @@ name: Martos ci workflow
 
 on:
   push:
-#  push:
-#    branches: [ "main" ]
-#  pull_request:
-#    branches: [ "main" ]
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
 
 env:
   CARGO_TERM_COLOR: always
