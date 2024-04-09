@@ -9,6 +9,8 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  CARGO_HOME: /root/.cargo
+  RUSTUP_HOME: /root/.rustup
 
 
 jobs:
@@ -43,9 +45,6 @@ jobs:
       - uses: actions/checkout@v3
       - name: Build
         run: cd ./examples/rust-examples/xtensa-esp32 && . /root/export-esp.sh && cargo build
-        env:
-          CARGO_HOME: /root/.cargo
-          RUSTUP_HOME: /root/.rustup
       - name: Fmt
         run: export CARGO_HOME=/root/.cargo && export RUSTUP_HOME=/root/.rustup && cd ./examples/rust-examples/xtensa-esp32 && cargo fmt --all -- --check
 
