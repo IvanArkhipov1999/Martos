@@ -9,8 +9,6 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
-  CARGO_HOME: /root/.cargo
-  RUSTUP_HOME: /root/.rustup
 
 
 jobs:
@@ -38,6 +36,9 @@ jobs:
 
   xtensa-esp32-rust-example:
     runs-on: ubuntu-latest
+    env:
+      CARGO_HOME: /root/.cargo
+      RUSTUP_HOME: /root/.rustup
     container:
       image: arkhipovivan1/xtensa-esp32-rust:latest
       options: --user root
@@ -46,7 +47,7 @@ jobs:
       - name: Build
         run: cd ./examples/rust-examples/xtensa-esp32 && . /root/export-esp.sh && cargo build
       - name: Fmt
-        run: export CARGO_HOME=/root/.cargo && export RUSTUP_HOME=/root/.rustup && cd ./examples/rust-examples/xtensa-esp32 && cargo fmt --all -- --check
+        run: cd ./examples/rust-examples/xtensa-esp32 && cargo fmt --all -- --check
 
   xtensa-esp32-static-library:
     runs-on: ubuntu-latest
