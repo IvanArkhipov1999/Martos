@@ -1,12 +1,12 @@
 # Martos
 ![Martos ci workflow](https://github.com/IvanArkhipov1999/Martos/actions/workflows/rust.yml/badge.svg)
+[![Version](https://img.shields.io/crates/v/martos.svg)](https://crates.io/crates/martos)
+[![Release](https://img.shields.io/github/v/release/IvanArkhipov1999/Martos)](https://github.com/IvanArkhipov1999/Martos/releases)
 
 Martos is an elegant real-time operating system designed for creating complex multi-agent systems. 
 Developers have the flexibility to write software for Martos using either Rust (preferred) or C languages.
 
 In its current version, Martos features a basic task manager and timer counter.
-
-See Martos releases on [crates.io](https://crates.io/crates/martos).
 
 ## Programming in Rust
 To develop software in Rust, you have the option to incorporate the Martos as a dependency:
