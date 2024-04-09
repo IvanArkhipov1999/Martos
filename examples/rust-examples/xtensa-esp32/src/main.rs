@@ -1,6 +1,12 @@
 #![no_std]
 #![no_main]
 
+// TODO: move this to ports of Martos with conditions
+#[global_allocator]
+static ALLOCATOR: esp_alloc::EspHeap = esp_alloc::EspHeap::empty();
+extern crate alloc;
+
+use alloc::vec::Vec;
 use core::sync::atomic::{AtomicU32, Ordering};
 use esp32_hal::entry;
 use esp_backtrace as _;
@@ -33,6 +39,10 @@ fn stop_condition_fn() -> bool {
 
 #[entry]
 fn main() -> ! {
+    let mut vec = Vec::new();
+    vec.push(1);
+    vec.push(2);
+
     // Add task to execute.
     TaskManager::add_task(setup_fn, loop_fn, stop_condition_fn);
     // Start task manager.

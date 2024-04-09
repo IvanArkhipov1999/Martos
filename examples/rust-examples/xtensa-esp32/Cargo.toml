@@ -14,6 +14,7 @@ martos = { path = "../../../" }
 esp32-hal = "0.18.0"
 esp-backtrace = { version = "0.11.0", features = ["esp32", "panic-handler", "exception-handler", "println"] }
 esp-println = { version = "0.9.0", features = ["esp32"] }
+esp-alloc = "0.3.0"
 
 [features]
 default = ["esp32-hal/xtal-40mhz"]

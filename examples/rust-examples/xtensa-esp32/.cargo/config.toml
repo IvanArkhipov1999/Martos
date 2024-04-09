@@ -12,7 +12,7 @@ rustflags = [
 target = "xtensa-esp32-none-elf"
 
 [unstable]
-build-std = ["core"]
+build-std = ["core", "alloc"]
 
 [target.'cfg(any(target_arch = "riscv32", target_arch = "xtensa"))']
 runner = "espflash flash --monitor"
