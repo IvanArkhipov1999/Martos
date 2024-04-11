@@ -1,9 +1,6 @@
 #![no_std]
 #![no_main]
 
-// TODO: move this to ports of Martos with conditions
-#[global_allocator]
-static ALLOCATOR: esp_alloc::EspHeap = esp_alloc::EspHeap::empty();
 extern crate alloc;
 
 use alloc::vec::Vec;
