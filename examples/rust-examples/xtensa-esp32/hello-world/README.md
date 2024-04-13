@@ -1,6 +1,6 @@
 # Rust example for xtensa esp32 architecture
 
-Presented here is a straightforward Rust example utilizing Martos.
+Presented here is a straightforward 'Hello world' Rust example utilizing Martos.
 
 Within the setup function, the phrase 'Setup hello world!' is printed once.
 Additionally, within the loop function, the phrase 'Loop hello world!' along with the counter value is printed fifty times.
