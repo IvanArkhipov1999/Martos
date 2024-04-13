@@ -6,6 +6,7 @@ use esp32_hal::entry;
 use esp_backtrace as _;
 use esp_println::println;
 use martos::task_manager::TaskManager;
+use martos::init_system;
 
 /// Counter to work with in loop.
 static COUNTER: AtomicU32 = AtomicU32::new(1);
@@ -33,6 +34,8 @@ fn stop_condition_fn() -> bool {
 
 #[entry]
 fn main() -> ! {
+    // Initialize Martos.
+    init_system();
     // Add task to execute.
     TaskManager::add_task(setup_fn, loop_fn, stop_condition_fn);
     // Start task manager.

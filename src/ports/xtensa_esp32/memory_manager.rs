@@ -3,6 +3,8 @@ use core::mem::MaybeUninit;
 #[global_allocator]
 static ALLOCATOR: esp_alloc::EspHeap = esp_alloc::EspHeap::empty();
 
+/// Heap initialization.
+/// For more information see https://github.com/esp-rs/esp-alloc/.
 pub fn init_heap() {
     const HEAP_SIZE: usize = 32 * 1024;
     static mut HEAP: MaybeUninit<[u8; HEAP_SIZE]> = MaybeUninit::uninit();
