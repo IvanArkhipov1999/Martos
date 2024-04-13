@@ -1,14 +1,20 @@
 #![no_std]
 #![no_main]
 
+extern crate alloc;
+
+use alloc::vec::Vec;
 use core::sync::atomic::{AtomicU32, Ordering};
 use esp32_hal::entry;
 use esp_backtrace as _;
 use esp_println::println;
 use martos::task_manager::TaskManager;
+use martos::ports::xtensa_esp32::memory_manager::{init_heap};
 
 /// Counter to work with in loop.
 static COUNTER: AtomicU32 = AtomicU32::new(1);
+/// Vector to work with in loop.
+static mut VEC: Vec<u32> = Vec::new();
 
 /// Setup function for task to execute.
 fn setup_fn() {
@@ -18,8 +24,9 @@ fn setup_fn() {
 /// Loop function for task to execute.
 fn loop_fn() {
     COUNTER.fetch_add(1, Ordering::Relaxed);
+    unsafe { VEC.push(COUNTER.as_ptr().read()); }
     println!("Loop hello world!");
-    println!("Counter = {}", unsafe { COUNTER.as_ptr().read() });
+    println!("Vector last value = {}", unsafe { VEC.last().unwrap() });
 }
 
 /// Stop condition function for task to execute.
@@ -33,6 +40,7 @@ fn stop_condition_fn() -> bool {
 
 #[entry]
 fn main() -> ! {
+    init_heap();
     // Add task to execute.
     TaskManager::add_task(setup_fn, loop_fn, stop_condition_fn);
     // Start task manager.
