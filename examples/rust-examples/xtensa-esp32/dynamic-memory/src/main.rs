@@ -8,8 +8,8 @@ use core::sync::atomic::{AtomicU32, Ordering};
 use esp32_hal::entry;
 use esp_backtrace as _;
 use esp_println::println;
-use martos::task_manager::TaskManager;
 use martos::init_system;
+use martos::task_manager::TaskManager;
 
 /// Counter to work with in loop.
 static COUNTER: AtomicU32 = AtomicU32::new(1);
@@ -24,7 +24,9 @@ fn setup_fn() {
 /// Loop function for task to execute.
 fn loop_fn() {
     COUNTER.fetch_add(1, Ordering::Relaxed);
-    unsafe { VEC.push(COUNTER.as_ptr().read()); }
+    unsafe {
+        VEC.push(COUNTER.as_ptr().read());
+    }
     println!("Loop hello world!");
     println!("Vector last value = {}", unsafe { VEC.last().unwrap() });
 }
