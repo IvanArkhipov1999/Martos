@@ -4,6 +4,7 @@
 extern long get_tick_counter();
 
 extern void add_task(void (*setup_fn)(), void (*loop_fn)(), bool (*stop_condition_fn)());
+extern void init_system();
 extern void start_task_manager();
 
 int counter = 0;
@@ -28,6 +29,7 @@ bool stop_condition_fn() {
 
 void app_main(void)
 {
+    init_system();
     add_task(setup_fn, loop_fn, stop_condition_fn);
     start_task_manager();
 }
