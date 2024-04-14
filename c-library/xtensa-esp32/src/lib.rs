@@ -2,9 +2,9 @@
 
 #![no_std]
 
+use esp32_hal as _;
 use martos::task_manager::TaskManager;
 use martos::timer::{TickType, Timer};
-use esp32_hal as _;
 
 #[panic_handler]
 fn panic(_info: &core::panic::PanicInfo) -> ! {
