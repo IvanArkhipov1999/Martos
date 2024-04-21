@@ -23,6 +23,8 @@ CFLAGS += -fno-strict-aliasing
 CFLAGS += -fdata-sections -ffunction-sections
 #CFLAGS += -Os
 CFLAGS += -Os -g
+# Link with martos
+CFLAGS += -L../../../../c-library/xtensa-esp32/target/xtensa-esp32-none-elf/debug/ -llibxtensa_esp32_static_lib.a
 LDFLAGS += -nostdlib -T$(LDSCRIPT) -Wl,-Map=$@.map -Wl,--cref -Wl,--gc-sections
 LDFLAGS += $(LDFLAGS_PLATFORM)
 LDFLAGS += -lm -lc -lgcc
