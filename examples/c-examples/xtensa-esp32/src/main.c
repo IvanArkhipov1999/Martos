@@ -1,5 +1,4 @@
 #include <string.h>
-//#include <stdio.h>
 #include <stdbool.h>
 
 extern unsigned int _sbss, _ebss, _sidata, _sdata, _edata;
@@ -10,13 +9,10 @@ extern void start_task_manager();
 int counter = 0;
 
 void setup_fn() {
-//    printf("Setup hello world!\n");
 }
 
 void loop_fn() {
     counter++;
-//    printf("Loop hello world!\n");
-//    printf("counter = %i\n", counter);
 }
 
 bool stop_condition_fn() {
