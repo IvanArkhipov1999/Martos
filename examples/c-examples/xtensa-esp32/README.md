@@ -54,4 +54,9 @@ To flash a binary image to Flash address 0x1000 (where the ESP32 expects a ‘bo
 esptool.py --chip esp32 --port /dev/ttyUSB0 --baud 115200 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq 40m --flash_size detect 0x1000 main.bin
 ```
 
+To run the program:
+```
+esptool.py --chip esp32 --port /dev/ttyUSB0 --baud 115200 --before default_reset --after hard_reset run
+```
+
 Note that you might need to specify a different port, depending on which system resource your ESP32 is connected to.
