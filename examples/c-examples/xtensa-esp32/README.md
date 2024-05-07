@@ -2,8 +2,8 @@
 
 Presented here is a straightforward C example utilizing Martos.
 
-Within the setup function, the phrase 'Setup hello world!' is printed once.
-Additionally, within the loop function, the phrase 'Loop hello world!' along with the counter value is printed fifty times.
+It has empty setup function.
+Additionally, within the loop function, the counter value is incremented fifty times.
 
 ## How to install dependencies
 
@@ -37,7 +37,7 @@ we recommend consulting [the official website](https://docs.espressif.com/projec
 Below, you will find an illustrative example showcasing the building process on a Linux system (Ubuntu/Debian):
 ```
 . $HOME/esp/esp-idf/export.sh
-idf.py build
+make
 ```
 
 ## How to run the example
@@ -45,7 +45,8 @@ For detailed instructions on running projects for the Xtensa ESP32 architecture 
 we recommend consulting [the official website](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/index.html#build-your-first-project).
 Below, you will find an illustrative example showcasing the running on a Linux system (Ubuntu/Debian):
 ```
-idf.py -p PORT flash monitor
+esptool.py --chip esp32 elf2image --flash_mode="dio" --flash_freq "40m" --flash_size "4MB" -o main.bin main.elf
+esptool.py --chip esp32 --port /dev/ttyUSB0 --baud 115200 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq 40m --flash_size detect 0x1000 main.bin
 ```
 
 "PORT" refers to the designated name of your serial port.
