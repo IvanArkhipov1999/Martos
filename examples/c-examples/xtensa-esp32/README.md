@@ -11,7 +11,7 @@ For comprehensive guidance on installing the necessary dependencies for developi
 please refer to [the official website](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/index.html#manual-installation). 
 Below is an illustrative example demonstrating the installation of building toolchains on a Linux (Ubuntu/Debian):
 ```
-sudo apt-get install -y git wget flex bison gperf python3 python3-pip python3-venv cmake ninja-build ccache libffi-dev libssl-dev dfu-util libusb-1.0-0
+sudo apt-get install -y git wget flex bison gperf python3 python3-pip python3-venv cmake ninja-build ccache libffi-dev libssl-dev dfu-util libusb-1.0-0 make
 mkdir -p ~/esp
 cd ~/esp
 git clone -b v5.2 --recursive https://github.com/espressif/esp-idf.git
@@ -40,13 +40,18 @@ Below, you will find an illustrative example showcasing the building process on 
 make
 ```
 
-## How to run the example
-For detailed instructions on running projects for the Xtensa ESP32 architecture across various operating systems,
-we recommend consulting [the official website](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/index.html#build-your-first-project).
-Below, you will find an illustrative example showcasing the running on a Linux system (Ubuntu/Debian):
+## How to flash the example
+
+To upload the program, you need to format it for the ESP32 and then store it in the SPI Flash chip connected to the actual ESP32 within the module. 
+You can do that with Espressif’s esptool utility. 
+To format the ELF file into a binary image:
 ```
 esptool.py --chip esp32 elf2image --flash_mode="dio" --flash_freq "40m" --flash_size "4MB" -o main.bin main.elf
+```
+
+To flash a binary image to Flash address 0x1000 (where the ESP32 expects a ‘bootloader’ to be located):
+```
 esptool.py --chip esp32 --port /dev/ttyUSB0 --baud 115200 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq 40m --flash_size detect 0x1000 main.bin
 ```
 
-"PORT" refers to the designated name of your serial port.
+Note that you might need to specify a different port, depending on which system resource your ESP32 is connected to.
