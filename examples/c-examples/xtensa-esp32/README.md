@@ -40,7 +40,7 @@ Below, you will find an illustrative example showcasing the building process on 
 make
 ```
 
-## How to flash the example
+## How to run the example
 
 To upload the program, you need to format it for the ESP32 and then store it in the SPI Flash chip connected to the actual ESP32 within the module. 
 You can do that with Espressif’s esptool utility. 
