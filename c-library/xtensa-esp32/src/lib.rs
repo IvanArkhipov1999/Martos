@@ -11,6 +11,11 @@ fn panic(_info: &core::panic::PanicInfo) -> ! {
 }
 
 #[no_mangle]
+pub extern "C" fn init_system() {
+    martos::init_system()
+}
+
+#[no_mangle]
 pub extern "C" fn setup_timer() {
     Timer::setup_timer()
 }

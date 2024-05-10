@@ -5,6 +5,7 @@ use core::sync::atomic::{AtomicU32, Ordering};
 use esp32_hal::entry;
 use esp_backtrace as _;
 use esp_println::println;
+use martos::init_system;
 use martos::task_manager::TaskManager;
 
 /// Counter to work with in loop.
@@ -33,6 +34,8 @@ fn stop_condition_fn() -> bool {
 
 #[entry]
 fn main() -> ! {
+    // Initialize Martos.
+    init_system();
     // Add task to execute.
     TaskManager::add_task(setup_fn, loop_fn, stop_condition_fn);
     // Start task manager.

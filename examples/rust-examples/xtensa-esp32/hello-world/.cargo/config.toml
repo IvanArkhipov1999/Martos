@@ -5,7 +5,7 @@ runner = "espflash flash --monitor"
 [build]
 rustflags = [
   "-C", "link-arg=-Tlinkall.x",
-  "-C", "llvm-args=-mtext-section-literals",
+
   "-C", "link-arg=-nostartfiles",
 ]
 
