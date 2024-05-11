@@ -1,6 +1,6 @@
 [package]
 name = "xtensa_esp32_static_lib"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 
 [lib]
@@ -12,7 +12,7 @@ debug = true
 
 [dependencies]
 # Specifying Martos version
-#martos = { version = "0.1.0", features = ["c-library"] }
+#martos = { version = "0.2.0", features = ["c-library"] }
 # Specifying current Martos version path for ci
 martos = { path = "../../", features = ["c-library"] }
 esp32-hal = "0.18.0"

@@ -26,7 +26,7 @@ checksum = "9afa463f5405ee81cdb9cc2baf37e08ec7e4c8209442b5d72c04cfb2cd6e6286"
 
 [[package]]
 name = "martos"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "esp-alloc",
  "sequential-test",

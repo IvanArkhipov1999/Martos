@@ -1,6 +1,6 @@
 [package]
 name = "martos"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 description = "Martos is an elegant real-time operating system designed for creating complex multi-agent systems. Developers have the flexibility to write software for Martos using either Rust (preferred) or C languages."
 documentation = "https://github.com/IvanArkhipov1999/Martos"
