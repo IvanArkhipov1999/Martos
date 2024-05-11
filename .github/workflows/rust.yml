@@ -99,6 +99,6 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: xtensa-esp32-static-library
-          path: c-library/xtensa-esp32/target/xtensa-esp32-none-elf/debug
+          path: c-library/xtensa-esp32/target/xtensa-esp32-none-elf/release
       - name: Build
         run: cd ./examples/c-examples/xtensa-esp32 && . /root/esp/esp-idf/export.sh && make && esptool.py --chip esp32 elf2image --flash_mode="dio" --flash_freq "40m" --flash_size "4MB" -o main.bin main.elf
