@@ -102,23 +102,6 @@ static mut TASK_MANAGER: TaskManager = TaskManager::new();
 impl TaskManager {
     /// Creates new task manager.
     const fn new() -> TaskManager {
-        #[cfg(not(feature = "c-library"))]
-        fn setup_fn() {}
-        #[cfg(not(feature = "c-library"))]
-        fn loop_fn() {}
-        #[cfg(not(feature = "c-library"))]
-        fn stop_condition_fn() -> bool {
-            return true;
-        }
-        #[cfg(feature = "c-library")]
-        extern "C" fn setup_fn() {}
-        #[cfg(feature = "c-library")]
-        extern "C" fn loop_fn() {}
-        #[cfg(feature = "c-library")]
-        extern "C" fn stop_condition_fn() -> bool {
-            return true;
-        }
-
         TaskManager {
             tasks: Vec::new(),
             task_to_execute_index: 0,
