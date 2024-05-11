@@ -74,14 +74,14 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Build
-        run: cd ./c-library/xtensa-esp32 && . /root/export-esp.sh && cargo build
+        run: cd ./c-library/xtensa-esp32 && . /root/export-esp.sh && cargo build --release
       - name: Fmt
         run: cd ./c-library/xtensa-esp32 && cargo fmt --all -- --check
       - name: Archive production artifacts
         uses: actions/upload-artifact@v4
         with:
           name: xtensa-esp32-static-library
-          path: c-library/xtensa-esp32/target/xtensa-esp32-none-elf/debug/libxtensa_esp32_static_lib.a
+          path: c-library/xtensa-esp32/target/xtensa-esp32-none-elf/release/libxtensa_esp32_static_lib.a
           retention-days: 7
 
   xtensa-esp32-c-example:
@@ -99,6 +99,6 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: xtensa-esp32-static-library
-          path: c-library/xtensa-esp32/target/xtensa-esp32-none-elf/debug
+          path: c-library/xtensa-esp32/target/xtensa-esp32-none-elf/release
       - name: Build
-        run: cd ./examples/c-examples/xtensa-esp32 && . /root/esp/esp-idf/export.sh && make
+        run: cd ./examples/c-examples/xtensa-esp32 && . /root/esp/esp-idf/export.sh && make && esptool.py --chip esp32 elf2image --flash_mode="dio" --flash_freq "40m" --flash_size "4MB" -o main.bin main.elf

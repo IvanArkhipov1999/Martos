@@ -1,3 +1,6 @@
+extern crate alloc;
+
+use alloc::vec::Vec;
 use core::future::Future;
 use core::pin::Pin;
 use core::task::{Context, Poll, RawWaker, RawWakerVTable, Waker};
@@ -24,10 +27,6 @@ type TaskStopConditionFunctionType = fn() -> bool;
 #[cfg(feature = "c-library")]
 /// Type of condition function for stopping loop function execution.
 type TaskStopConditionFunctionType = extern "C" fn() -> bool;
-
-/// Max number of tasks.
-// TODO: Should be dynamic array of tasks.
-const MAX_NUMBER_OF_TASKS: TaskNumberType = 6;
 
 #[repr(C)]
 /// Task representation for task manager.
@@ -91,12 +90,10 @@ fn task_waker() -> Waker {
 #[repr(C)]
 /// Task manager representation. Based on round-robin scheduling without priorities.
 pub struct TaskManager {
-    /// Static array of tasks to execute.
-    tasks: [FutureTask; MAX_NUMBER_OF_TASKS],
+    /// Vector of tasks to execute.
+    tasks: Vec<FutureTask>,
     /// Index of task, that should be executed.
     task_to_execute_index: TaskNumberType,
-    /// Number of tasks to execute.
-    tasks_number: TaskNumberType,
 }
 
 /// Operating system task manager.
@@ -105,104 +102,9 @@ static mut TASK_MANAGER: TaskManager = TaskManager::new();
 impl TaskManager {
     /// Creates new task manager.
     const fn new() -> TaskManager {
-        #[cfg(not(feature = "c-library"))]
-        fn setup_fn() {}
-        #[cfg(not(feature = "c-library"))]
-        fn loop_fn() {}
-        #[cfg(not(feature = "c-library"))]
-        fn stop_condition_fn() -> bool {
-            return true;
-        }
-        #[cfg(feature = "c-library")]
-        extern "C" fn setup_fn() {}
-        #[cfg(feature = "c-library")]
-        extern "C" fn loop_fn() {}
-        #[cfg(feature = "c-library")]
-        extern "C" fn stop_condition_fn() -> bool {
-            return true;
-        }
-
-        // TODO: THIS IS AWFUL SOLUTION!!! PLEASE, FIX IT!!! AT LEAST IMPLEMENT core::marker::Copy FOR FutureTask!!! OR MAKE MEMORY MANAGEMENT!!!
-
-        let task1 = Task {
-            setup_fn,
-            loop_fn,
-            stop_condition_fn,
-        };
-
-        let task2 = Task {
-            setup_fn,
-            loop_fn,
-            stop_condition_fn,
-        };
-
-        let task3 = Task {
-            setup_fn,
-            loop_fn,
-            stop_condition_fn,
-        };
-
-        let task4 = Task {
-            setup_fn,
-            loop_fn,
-            stop_condition_fn,
-        };
-
-        let task5 = Task {
-            setup_fn,
-            loop_fn,
-            stop_condition_fn,
-        };
-
-        let task6 = Task {
-            setup_fn,
-            loop_fn,
-            stop_condition_fn,
-        };
-
-        let future_task1 = FutureTask {
-            task: task1,
-            is_setup_completed: true,
-        };
-
-        let future_task2 = FutureTask {
-            task: task2,
-            is_setup_completed: true,
-        };
-
-        let future_task3 = FutureTask {
-            task: task3,
-            is_setup_completed: true,
-        };
-
-        let future_task4 = FutureTask {
-            task: task4,
-            is_setup_completed: true,
-        };
-
-        let future_task5 = FutureTask {
-            task: task5,
-            is_setup_completed: true,
-        };
-
-        let future_task6 = FutureTask {
-            task: task6,
-            is_setup_completed: true,
-        };
-
-        let tasks: [FutureTask; MAX_NUMBER_OF_TASKS] = [
-            future_task1,
-            future_task2,
-            future_task3,
-            future_task4,
-            future_task5,
-            future_task6,
-        ];
-
         TaskManager {
-            tasks,
+            tasks: Vec::new(),
             task_to_execute_index: 0,
-            tasks_number: 0,
         }
     }
 
@@ -222,14 +124,13 @@ impl TaskManager {
             is_setup_completed: false,
         };
         unsafe {
-            TASK_MANAGER.tasks[TASK_MANAGER.tasks_number] = future_task;
-            TASK_MANAGER.tasks_number += 1
+            TASK_MANAGER.tasks.push(future_task);
         }
     }
 
     /// One step of task manager's work.
     // TODO: Support priorities.
-    // TODO: Delete tasks from task vector if they are pending
+    // TODO: Delete tasks from task vector if they are pending?
     fn task_manager_step() {
         if unsafe { !TASK_MANAGER.tasks.is_empty() } {
             let waker = task_waker();
@@ -261,10 +162,6 @@ impl TaskManager {
     pub fn test_start_task_manager() {
         for _n in 1..=1000 {
             TaskManager::task_manager_step();
-        }
-        // This is bad idea
-        unsafe {
-            TASK_MANAGER.tasks_number = 0;
         }
     }
 }
