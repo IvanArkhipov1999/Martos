@@ -1,3 +1,6 @@
+extern crate alloc;
+
+use alloc::vec::Vec;
 use core::future::Future;
 use core::pin::Pin;
 use core::task::{Context, Poll, RawWaker, RawWakerVTable, Waker};
@@ -92,7 +95,7 @@ fn task_waker() -> Waker {
 /// Task manager representation. Based on round-robin scheduling without priorities.
 pub struct TaskManager {
     /// Static array of tasks to execute.
-    tasks: [FutureTask; MAX_NUMBER_OF_TASKS],
+    tasks: Vec<FutureTask>,
     /// Index of task, that should be executed.
     task_to_execute_index: TaskNumberType,
     /// Number of tasks to execute.
@@ -122,85 +125,85 @@ impl TaskManager {
             return true;
         }
 
-        // TODO: THIS IS AWFUL SOLUTION!!! PLEASE, FIX IT!!! AT LEAST IMPLEMENT core::marker::Copy FOR FutureTask!!! OR MAKE MEMORY MANAGEMENT!!!
-
-        let task1 = Task {
-            setup_fn,
-            loop_fn,
-            stop_condition_fn,
-        };
-
-        let task2 = Task {
-            setup_fn,
-            loop_fn,
-            stop_condition_fn,
-        };
-
-        let task3 = Task {
-            setup_fn,
-            loop_fn,
-            stop_condition_fn,
-        };
-
-        let task4 = Task {
-            setup_fn,
-            loop_fn,
-            stop_condition_fn,
-        };
-
-        let task5 = Task {
-            setup_fn,
-            loop_fn,
-            stop_condition_fn,
-        };
-
-        let task6 = Task {
-            setup_fn,
-            loop_fn,
-            stop_condition_fn,
-        };
-
-        let future_task1 = FutureTask {
-            task: task1,
-            is_setup_completed: true,
-        };
-
-        let future_task2 = FutureTask {
-            task: task2,
-            is_setup_completed: true,
-        };
-
-        let future_task3 = FutureTask {
-            task: task3,
-            is_setup_completed: true,
-        };
-
-        let future_task4 = FutureTask {
-            task: task4,
-            is_setup_completed: true,
-        };
-
-        let future_task5 = FutureTask {
-            task: task5,
-            is_setup_completed: true,
-        };
-
-        let future_task6 = FutureTask {
-            task: task6,
-            is_setup_completed: true,
-        };
-
-        let tasks: [FutureTask; MAX_NUMBER_OF_TASKS] = [
-            future_task1,
-            future_task2,
-            future_task3,
-            future_task4,
-            future_task5,
-            future_task6,
-        ];
+        // // TODO: THIS IS AWFUL SOLUTION!!! PLEASE, FIX IT!!! AT LEAST IMPLEMENT core::marker::Copy FOR FutureTask!!! OR MAKE MEMORY MANAGEMENT!!!
+        //
+        // let task1 = Task {
+        //     setup_fn,
+        //     loop_fn,
+        //     stop_condition_fn,
+        // };
+        //
+        // let task2 = Task {
+        //     setup_fn,
+        //     loop_fn,
+        //     stop_condition_fn,
+        // };
+        //
+        // let task3 = Task {
+        //     setup_fn,
+        //     loop_fn,
+        //     stop_condition_fn,
+        // };
+        //
+        // let task4 = Task {
+        //     setup_fn,
+        //     loop_fn,
+        //     stop_condition_fn,
+        // };
+        //
+        // let task5 = Task {
+        //     setup_fn,
+        //     loop_fn,
+        //     stop_condition_fn,
+        // };
+        //
+        // let task6 = Task {
+        //     setup_fn,
+        //     loop_fn,
+        //     stop_condition_fn,
+        // };
+        //
+        // let future_task1 = FutureTask {
+        //     task: task1,
+        //     is_setup_completed: true,
+        // };
+        //
+        // let future_task2 = FutureTask {
+        //     task: task2,
+        //     is_setup_completed: true,
+        // };
+        //
+        // let future_task3 = FutureTask {
+        //     task: task3,
+        //     is_setup_completed: true,
+        // };
+        //
+        // let future_task4 = FutureTask {
+        //     task: task4,
+        //     is_setup_completed: true,
+        // };
+        //
+        // let future_task5 = FutureTask {
+        //     task: task5,
+        //     is_setup_completed: true,
+        // };
+        //
+        // let future_task6 = FutureTask {
+        //     task: task6,
+        //     is_setup_completed: true,
+        // };
+        //
+        // let tasks: [FutureTask; MAX_NUMBER_OF_TASKS] = [
+        //     future_task1,
+        //     future_task2,
+        //     future_task3,
+        //     future_task4,
+        //     future_task5,
+        //     future_task6,
+        // ];
 
         TaskManager {
-            tasks,
+            tasks: Vec::new(),
             task_to_execute_index: 0,
             tasks_number: 0,
         }
@@ -222,7 +225,7 @@ impl TaskManager {
             is_setup_completed: false,
         };
         unsafe {
-            TASK_MANAGER.tasks[TASK_MANAGER.tasks_number] = future_task;
+            TASK_MANAGER.tasks.push(future_task);
             TASK_MANAGER.tasks_number += 1
         }
     }
