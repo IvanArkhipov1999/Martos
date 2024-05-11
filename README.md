@@ -6,7 +6,9 @@
 Martos is an elegant real-time operating system designed for creating complex multi-agent systems. 
 Developers have the flexibility to write software for Martos using either Rust (preferred) or C languages.
 
-In its current version, Martos features a basic task manager and timer counter.
+Martos supports following features:
+- non-preemptive task manager based on Round Robin algorithm;
+- memory allocation.
 
 ## Programming in Rust
 To develop software in Rust, you have the option to incorporate the Martos as a dependency:
@@ -18,9 +20,9 @@ martos = "0.1.0"
 You can explore a variety of Rust examples showcasing different architectures in the ['examples/rust-examples'](https://github.com/IvanArkhipov1999/Martos/tree/main/examples/rust-examples) directory.
 
 ## Programming in C
-To develop software in C, you have the option to incorporate the Martos static library into your project:
+To develop software in C, you have to link the Martos static library with your project:
 ```
-target_link_libraries(target-name path-to-static-lib.a -Wl,--allow-multiple-definition)
+-Lpath-to-static-lib -lxtensa_esp32_static_lib
 ```
 
 You can obtain the Martos static library for supported architectures from either the release artifacts or the continuous integration (CI) artifacts.
