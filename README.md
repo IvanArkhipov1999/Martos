@@ -29,4 +29,4 @@ You can obtain the Martos static library for supported architectures from either
 If you wish to compile the Martos static library on your own, please refer to the ['c-library'](https://github.com/IvanArkhipov1999/Martos/tree/main/c-library) directory, 
 which includes static library targets tailored for various architectures.
 
-You can explore diverse C examples tailored for various architectures in the ['examples/c-examples'](https://github.com/IvanArkhipov1999/Martos/tree/main/examples/-examples) directory.
+You can explore diverse C examples tailored for various architectures in the ['examples/c-examples'](https://github.com/IvanArkhipov1999/Martos/tree/main/examples/c-examples) directory.
