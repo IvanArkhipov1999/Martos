@@ -31,11 +31,11 @@ impl Timer {
 
     /// Stops timer ticking. By default, it does not stop.
     pub fn stop_condition_timer() -> bool {
-        return false;
+        false
     }
 
     /// Returns tick counter.
     pub fn get_tick_counter() -> TickType {
-        return unsafe { TIMER.tick_counter };
+        unsafe { TIMER.tick_counter }
     }
 }
