@@ -71,7 +71,7 @@ impl Future for FutureTask {
 /// Creates simple task waker. May be more difficult in perspective.
 fn task_waker() -> Waker {
     fn raw_clone(_: *const ()) -> RawWaker {
-        RawWaker::new(0 as *const (), &NOOP_WAKER_VTABLE)
+        RawWaker::new(core::ptr::null::<()>(), &NOOP_WAKER_VTABLE)
     }
 
     fn raw_wake(_: *const ()) {}
@@ -83,7 +83,7 @@ fn task_waker() -> Waker {
     static NOOP_WAKER_VTABLE: RawWakerVTable =
         RawWakerVTable::new(raw_clone, raw_wake, raw_wake_by_ref, raw_drop);
 
-    let raw_waker = RawWaker::new(0 as *const (), &NOOP_WAKER_VTABLE);
+    let raw_waker = RawWaker::new(core::ptr::null::<()>(), &NOOP_WAKER_VTABLE);
     unsafe { Waker::from_raw(raw_waker) }
 }
 

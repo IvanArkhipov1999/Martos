@@ -29,7 +29,7 @@ mod unit_tests {
         if value % 50 == 0 {
             return true;
         }
-        return false;
+        false
     }
     #[test]
     #[sequential]
@@ -58,7 +58,7 @@ mod unit_tests {
     }
     /// Stop function for task for test_one_infinite_task_task_manager.
     fn test_one_infinite_task_task_manager_stop_condition_fn() -> bool {
-        return false;
+        false
     }
     #[test]
     #[sequential]
@@ -86,7 +86,7 @@ mod unit_tests {
         if value % 50 == 0 {
             return true;
         }
-        return false;
+        false
     }
     /// Counter for task for test_two_finite_tasks_task_manager.
     static TEST_TWO_FINITE_TASK_TASK_MANAGER_COUNTER2: AtomicU32 = AtomicU32::new(1);
@@ -102,7 +102,7 @@ mod unit_tests {
         if value % 25 == 0 {
             return true;
         }
-        return false;
+        false
     }
     #[test]
     #[sequential]
@@ -148,7 +148,7 @@ mod unit_tests {
         if value % 50 == 0 {
             return true;
         }
-        return false;
+        false
     }
     /// Counter for task for test_two_different_tasks_task_manager.
     static TEST_TWO_DIFFERENT_TASK_TASK_MANAGER_COUNTER2: AtomicU32 = AtomicU32::new(1);
@@ -160,7 +160,7 @@ mod unit_tests {
     }
     /// Stop function for task for test_two_different_tasks_task_manager.
     fn test_two_different_tasks_task_manager_stop_condition_fn2() -> bool {
-        return false;
+        false
     }
     #[test]
     #[sequential]
@@ -198,7 +198,7 @@ mod unit_tests {
     }
     /// Stop function for task for test_two_infinite_tasks_task_manager.
     fn test_two_infinite_tasks_task_manager_stop_condition_fn1() -> bool {
-        return false;
+        false
     }
     /// Counter for task for test_two_infinite_tasks_task_manager.
     static TEST_TWO_INFINITE_TASK_TASK_MANAGER_COUNTER2: AtomicU32 = AtomicU32::new(1);
@@ -210,7 +210,7 @@ mod unit_tests {
     }
     /// Stop function for task for test_two_infinite_tasks_task_manager.
     fn test_two_infinite_tasks_task_manager_stop_condition_fn2() -> bool {
-        return false;
+        false
     }
     #[test]
     #[sequential]
@@ -239,7 +239,7 @@ mod unit_tests {
     fn test_setup_task_manager_loop_fn() {}
     /// Stop function for task for test_setup_task_manager.
     fn test_setup_task_manager_stop_condition_fn() -> bool {
-        return false;
+        false
     }
     #[test]
     #[sequential]
@@ -276,6 +276,6 @@ mod unit_tests {
     #[test]
     /// Tests stop condition timer function.
     fn test_stop_condition_timer() {
-        assert_eq!(Timer::stop_condition_timer(), false);
+        assert!(!Timer::stop_condition_timer());
     }
 }

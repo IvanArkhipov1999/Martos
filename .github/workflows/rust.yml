@@ -33,6 +33,13 @@ jobs:
       - name: Fmt
         run: cargo fmt --all -- --check
 
+  clippy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Clippy
+        run: cargo clippy -- -D clippy::all
+
   xtensa-esp32-rust-example-hello-world:
     runs-on: ubuntu-latest
     env:
