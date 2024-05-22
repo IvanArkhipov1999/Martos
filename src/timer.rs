@@ -1,3 +1,5 @@
+use crate::ports::mok::hardware_timer;
+
 /// Type for tick counting. It is signed for synchronization. It should be u128.
 pub type TickType = i64;
 
@@ -16,9 +18,7 @@ static mut TIMER: Timer = Timer { tick_counter: 0 };
 impl Timer {
     /// Setup function. May be used for setting configuration parameters.
     pub fn setup_timer() {
-        unsafe {
-            TIMER.tick_counter = 0;
-        }
+        hardware_timer::setup_hardware_timer()
     }
 
     /// Starts timer ticking.
@@ -36,6 +36,6 @@ impl Timer {
 
     /// Returns tick counter.
     pub fn get_tick_counter() -> TickType {
-        unsafe { TIMER.tick_counter }
+        hardware_timer::get_tick_counter()
     }
 }

@@ -270,7 +270,7 @@ mod unit_tests {
     fn test_loop_timer() {
         Timer::setup_timer();
         Timer::loop_timer();
-        assert_eq!(Timer::get_tick_counter(), 1);
+        assert_eq!(Timer::get_tick_counter(), 0);
     }
 
     #[test]
