@@ -1,4 +1,7 @@
-use crate::ports::mok::hardware_timer;
+#[cfg(not(any(target_arch = "riscv32", target_arch = "xtensa")))]
+use crate::ports::mok::hardware_timer::{get_tick_counter, setup_hardware_timer};
+#[cfg(any(target_arch = "riscv32", target_arch = "xtensa"))]
+use crate::ports::xtensa_esp32::hardware_timer::{get_tick_counter, setup_hardware_timer};
 
 /// Type for tick counting. It is signed for synchronization. It should be u128.
 pub type TickType = i64;
@@ -18,7 +21,7 @@ static mut TIMER: Timer = Timer { tick_counter: 0 };
 impl Timer {
     /// Setup function. May be used for setting configuration parameters.
     pub fn setup_timer() {
-        hardware_timer::setup_hardware_timer()
+        setup_hardware_timer()
     }
 
     /// Starts timer ticking.
@@ -36,6 +39,6 @@ impl Timer {
 
     /// Returns tick counter.
     pub fn get_tick_counter() -> TickType {
-        hardware_timer::get_tick_counter()
+        get_tick_counter()
     }
 }

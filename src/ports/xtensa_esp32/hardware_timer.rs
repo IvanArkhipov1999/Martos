@@ -1,9 +1,9 @@
 use crate::timer::TickType;
 
-/// Mok hardware timer setup.
+/// Esp32 hardware timer setup.
 pub fn setup_hardware_timer() {}
 
-/// Mok getting hardware tick counter.
+/// Esp32 getting hardware tick counter.
 pub fn get_tick_counter() -> TickType {
     0
 }
