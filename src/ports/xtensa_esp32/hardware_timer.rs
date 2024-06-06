@@ -13,20 +13,21 @@ pub fn setup_hardware_timer() {
     let clocks = ClockControl::boot_defaults(system.clock_control).freeze();
 
     let timer_group0 = TimerGroup::new(peripherals.TIMG0, &clocks);
+
+    let mut timer00 = timer_group0.timer0;
+    timer00.start(500u64.millis());
+    timer00.listen();
     unsafe {
-        TIMER00 = Some(timer_group0.timer0);
-        TIMER00
-            .take()
-            .expect("Error while hardware timer setup")
-            .start(500u64.millis());
-        TIMER00
-            .take()
-            .expect("Error while hardware timer setup")
-            .listen();
+        TIMER00 = Some(timer00);
     }
 }
 
 /// Esp32 getting hardware tick counter.
 pub fn get_tick_counter() -> TickType {
-    unsafe { TIMER00.take().expect("Timer error").now() }
+    unsafe {
+        let timer00 = TIMER00.take().expect("Timer error");
+        let tick_counter = timer00.now();
+        TIMER00 = Some(timer00);
+        tick_counter
+    }
 }
