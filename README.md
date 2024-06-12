@@ -8,13 +8,14 @@ Developers have the flexibility to write software for Martos using either Rust (
 
 Martos supports following features:
 - non-preemptive task manager based on Round Robin algorithm;
-- memory allocation.
+- memory allocation;
+- interaction with hardware timers.
 
 ## Programming in Rust
 To develop software in Rust, you have the option to incorporate the Martos as a dependency:
 ```
 [dependencies]
-martos = "0.2.0"
+martos = "0.3.0"
 ```
 
 You can explore a variety of Rust examples showcasing different architectures in the ['examples/rust-examples'](https://github.com/IvanArkhipov1999/Martos/tree/main/examples/rust-examples) directory.
