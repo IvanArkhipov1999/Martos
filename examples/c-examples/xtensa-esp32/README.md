@@ -22,7 +22,7 @@ cd ~/esp/esp-idf
 ## Before building the example
 
 Before proceeding with building the example, it is essential to obtain the Martos C static library 
-and [link it](https://github.com/IvanArkhipov1999/Martos/blob/main/examples/c-examples/xtensa-esp32/main/CMakeLists.txt#L7) with the example code.
+and [link it](https://github.com/IvanArkhipov1999/Martos/blob/main/examples/c-examples/xtensa-esp32/Makefile#L26) with the example code.
 
 There are multiple avenues through which you can acquire the Martos C static library:
 1. [From release artifacts.](https://github.com/IvanArkhipov1999/Martos/releases)
