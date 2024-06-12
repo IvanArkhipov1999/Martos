@@ -1,9 +1,9 @@
 # Rust example for xtensa esp32 architecture
 
-Presented here is a straightforward Rust example utilizing Martos with dynamic memory usage.
+Presented here is a straightforward Rust example utilizing Martos with timer usage.
 
 Within the setup function, the phrase 'Setup hello world!' is printed once.
-Additionally, within the loop function, the phrase 'Loop hello world!' along with the counter value (last value of dynamic vector) is printed fifty times.
+Additionally, within the loop function, the phrase 'Loop hello world!' along with the timer value (last value of dynamic vector) is printed fifty times.
 
 ## How to install dependencies
 
