@@ -2,8 +2,8 @@
 #![no_main]
 
 use core::sync::atomic::{AtomicU32, Ordering};
-use esp32_hal::entry;
 use esp_backtrace as _;
+use esp_hal::entry;
 use esp_println::println;
 use martos::init_system;
 use martos::task_manager::TaskManager;

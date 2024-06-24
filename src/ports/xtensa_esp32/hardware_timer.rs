@@ -1,21 +1,21 @@
 use crate::timer::TickType;
-use esp32_hal::timer::{Timer0, TimerGroup};
-use esp32_hal::Timer;
-use esp32_hal::{clock::ClockControl, peripherals::*, prelude::*};
+use esp_hal::timer::timg::{Timer, Timer0, TimerGroup};
+use esp_hal::{clock::ClockControl, peripherals::*, prelude::*, system::SystemControl};
 
-static mut TIMER00: Option<Timer<Timer0<TIMG0>>> = None;
+static mut TIMER00: Option<Timer<Timer0<TIMG0>, esp_hal::Blocking>> = None;
 
 /// Esp32 hardware timer setup.
 pub fn setup_hardware_timer() {
     let peripherals = Peripherals::take();
-    let system = peripherals.SYSTEM.split();
+    let system = SystemControl::new(peripherals.SYSTEM);
 
     let clocks = ClockControl::boot_defaults(system.clock_control).freeze();
 
-    let timer_group0 = TimerGroup::new(peripherals.TIMG0, &clocks);
+    let timer_group0 = TimerGroup::new(peripherals.TIMG0, &clocks, None);
 
-    let mut timer00 = timer_group0.timer0;
-    timer00.start(500u64.millis());
+    let timer00 = timer_group0.timer0;
+    let _ = timer00.load_value(500u64.millis());
+    timer00.start();
     timer00.listen();
     unsafe {
         TIMER00 = Some(timer00);
@@ -28,6 +28,6 @@ pub fn get_tick_counter() -> TickType {
         let timer00 = TIMER00.take().expect("Timer error");
         let tick_counter = timer00.now();
         TIMER00 = Some(timer00);
-        tick_counter
+        tick_counter.ticks()
     }
 }
