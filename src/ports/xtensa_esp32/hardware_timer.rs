@@ -1,6 +1,6 @@
 use crate::timer::TickType;
 use esp_hal::timer::timg::{Timer, Timer0, TimerGroup};
-use esp_hal::{clock::ClockControl, system::SystemControl, peripherals::*, prelude::*};
+use esp_hal::{clock::ClockControl, peripherals::*, prelude::*, system::SystemControl};
 
 static mut TIMER00: Option<Timer<Timer0<TIMG0>, esp_hal::Blocking>> = None;
 
