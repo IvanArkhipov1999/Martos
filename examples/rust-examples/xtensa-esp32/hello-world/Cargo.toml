@@ -13,7 +13,7 @@ debug = true
 martos = { path = "../../../../" }
 esp-hal = "0.18.0"
 esp-backtrace = { version = "0.12.1", features = ["esp32", "panic-handler", "exception-handler", "println"] }
-esp-println = { version = "0.9.0", features = ["esp32"] }
+esp-println = { version = "0.9.0", features = ["esp32", "auto"] }
 
 [features]
 default = ["esp-hal/esp32", "esp-backtrace/esp32", "esp-println/esp32"]
