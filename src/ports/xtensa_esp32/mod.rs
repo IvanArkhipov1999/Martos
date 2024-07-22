@@ -1,14 +1,15 @@
 pub mod hardware_timer;
 pub mod memory_manager;
-use crate::ports::Port;
+use crate::ports::PortTrait;
 
+/// PortTrait implementation for XtensaEsp32 platform
 pub struct XtensaEsp32;
-impl Port for XtensaEsp32{
+impl PortTrait for XtensaEsp32 {
     fn init_heap() {
         memory_manager::init_heap();
     }
 
-    fn setup_hardware_timer(){
+    fn setup_hardware_timer() {
         hardware_timer::setup_hardware_timer();
     }
 

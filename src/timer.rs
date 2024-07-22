@@ -1,4 +1,4 @@
-use crate::ports::{Port, PORT};
+use crate::ports::{Port, PortTrait};
 
 /// Type for tick counting. It is signed for synchronization. It should be u128.
 pub type TickType = u64;
@@ -18,7 +18,7 @@ static mut TIMER: Timer = Timer { tick_counter: 0 };
 impl Timer {
     /// Setup function. May be used for setting configuration parameters.
     pub fn setup_timer() {
-        PORT::setup_hardware_timer()
+        Port::setup_hardware_timer()
     }
 
     /// Starts timer ticking.
@@ -36,6 +36,6 @@ impl Timer {
 
     /// Returns tick counter.
     pub fn get_tick_counter() -> TickType {
-        PORT::get_tick_counter()
+        Port::get_tick_counter()
     }
 }

@@ -1,14 +1,15 @@
 pub mod hardware_timer;
 pub mod memory_manager;
-use crate::ports::Port;
+use crate::ports::PortTrait;
 
+/// PortTrait implementation for Mok platform
 pub struct Mok;
-impl Port for Mok{
+impl PortTrait for Mok {
     fn init_heap() {
         memory_manager::init_heap();
     }
 
-    fn setup_hardware_timer(){
+    fn setup_hardware_timer() {
         hardware_timer::setup_hardware_timer();
     }
 
