@@ -2,9 +2,12 @@ use crate::timer::TickType;
 
 /// PortTrait contains all the platform specific functions.
 pub trait PortTrait {
+    /// Function is called when timer is created. Can be used to set configuration.
     fn setup_hardware_timer();
+    /// Function used to get amount of ticks from the start of a timer
     fn get_tick_counter() -> TickType;
 
+    /// Function is called when heap is created. Can be used to set configuration.
     fn init_heap();
 }
 
