@@ -161,6 +161,6 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Build
-        run: cd ./examples/rust-examples/mips64/hello-world && cargo build
+        run: cd ./examples/rust-examples/mips64/hello-world && cargo build --release
       - name: Fmt
         run: cd ./examples/rust-examples/mips64/hello-world && cargo fmt --all -- --check
