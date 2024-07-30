@@ -1,3 +1,5 @@
+extern crate alloc;
+
 use alloc::alloc::{GlobalAlloc, Layout};
 use core::ptr::null_mut;
 
@@ -12,7 +14,6 @@ unsafe impl GlobalAlloc for Dummy {
         panic!("dealloc should be never called")
     }
 }
-
 
 #[global_allocator]
 static ALLOCATOR: Dummy = Dummy;

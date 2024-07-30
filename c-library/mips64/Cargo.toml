@@ -8,6 +8,7 @@ name = "libmips64_static_lib"
 crate-type = ["staticlib"]
 
 [profile.release]
+panic = "abort"
 debug = true
 
 [dependencies]
