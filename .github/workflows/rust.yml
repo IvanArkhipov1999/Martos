@@ -139,7 +139,7 @@ jobs:
       - name: Dependencies
         run: rustup component add --toolchain nightly-x86_64-unknown-linux-gnu rustfmt
       - name: Build
-        run: cd ./c-library/mips64 && . /root/export-esp.sh && cargo build --release
+        run: cd ./c-library/mips64 && cargo build --release
       - name: Fmt
         run: cd ./c-library/mips64 && cargo fmt --all -- --check
       - name: Archive production artifacts
@@ -148,3 +148,19 @@ jobs:
           name: mips64-static-library
           path: c-library/mips64/target/mips64el-unknown-linux-gnuabi64/release/libmips64_static_lib.a
           retention-days: 7
+
+
+  mips64-rust-example-hello-world:
+    runs-on: ubuntu-latest
+    env:
+      CARGO_HOME: /root/.cargo
+      RUSTUP_HOME: /root/.rustup
+    container:
+      image: arkhipovivan1/xtensa-esp32-rust:latest
+      options: --user root
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build
+        run: cd ./examples/rust-examples/mips64/hello-world && cargo build
+      - name: Fmt
+        run: cd ./examples/rust-examples/mips64/hello-world && cargo fmt --all -- --check
