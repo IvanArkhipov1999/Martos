@@ -1,6 +1,6 @@
 # 'Bare metal' misp64 application Makefile
 # Use the mips-img-linux-gnu- toolchain.
-TOOLCHAIN = mips-img-linux-gnu
+TOOLCHAIN = mips-img-linux-gnu-
 
 CFLAGS_PLATFORM  = -fstrict-volatile-bitfields
 ASFLAGS_PLATFORM = $(CFLAGS_PLATFORM)
@@ -10,8 +10,6 @@ LDFLAGS_PLATFORM = $(CFLAGS_PLATFORM)
 # General project build
 ###
 CC = gcc
-OC = $(TOOLCHAIN)objcopy
-OS = $(TOOLCHAIN)size
 
 # Set C/LD/AS flags.
 CFLAGS += $(INC) -Wall -Werror -std=gnu11 -nostdlib $(CFLAGS_PLATFORM) $(COPT)
@@ -21,7 +19,7 @@ CFLAGS += -fdata-sections -ffunction-sections
 CFLAGS += -Os -g
 # Link with martos
 LDFLAGS += -L../../../c-library/mips64/target/mips64el-unknown-linux-gnuabi64/release/ -lmips64_static_lib
-LDFLAGS += -nostdlib -T$(LDSCRIPT) -Wl,-Map=$@.map -Wl,--cref -Wl,--gc-sections
+LDFLAGS += -nostdlib 
 LDFLAGS += $(LDFLAGS_PLATFORM)
 LDFLAGS += -lm -lc -lgcc -Wl,--allow-multiple-definition
 ASFLAGS += -c -O0 -Wall -fmessage-length=0
