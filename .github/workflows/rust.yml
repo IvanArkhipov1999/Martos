@@ -160,6 +160,8 @@ jobs:
       options: --user root
     steps:
       - uses: actions/checkout@v3
+      - name: Dependencies
+        run: apt update && apt install curl build-essential lld -y
       - name: Build
         run: cd ./examples/rust-examples/mips64/hello-world && cargo build --release
       - name: Fmt
