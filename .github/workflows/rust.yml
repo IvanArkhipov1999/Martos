@@ -199,3 +199,23 @@ jobs:
           name: mips64-static-library
           path: c-library/mips64/target/mips64el-unknown-linux-gnuabi64/release/libmips64_static_lib.a
           retention-days: 7
+
+
+  mips64-c-example:
+    needs: mips64-static-library
+    runs-on: ubuntu-latest
+    env:
+      IDF_PATH: /root/esp/esp-idf
+      IDF_TOOLS_PATH: /root/.espressif
+    container:
+      image: arkhipovivan1/xtensa-esp32-c:latest
+      options: --user root
+    steps:
+      - uses: actions/checkout@v3
+      - name: Download static library
+        uses: actions/download-artifact@v4
+        with:
+          name: xtensa-esp32-static-library
+          path: c-library/xtensa-esp32/target/xtensa-esp32-none-elf/release
+      - name: Build
+        run: cd ./examples/c-examples/mips64 && make 
