@@ -22,8 +22,7 @@ fn panic(_info: &core::panic::PanicInfo) -> ! {
 }
 
 /// Setup function for task to execute.
-fn setup_fn() {
-}
+fn setup_fn() {}
 
 /// Loop function for task to execute.
 fn loop_fn() {
@@ -41,7 +40,6 @@ fn stop_condition_fn() -> bool {
     }
     return false;
 }
-
 
 #[entry]
 fn main() -> ! {
