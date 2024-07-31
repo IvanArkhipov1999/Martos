@@ -212,6 +212,8 @@ jobs:
       options: --user root
     steps:
       - uses: actions/checkout@v3
+      - name: Dependencies
+        run: apt update && apt install curl build-essential lld -y
       - name: Download static library
         uses: actions/download-artifact@v4
         with:
