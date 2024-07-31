@@ -143,8 +143,24 @@ jobs:
       - name: Fmt
         run: cd ./examples/rust-examples/mips64/hello-world && cargo fmt --all -- --check
 
+  mips64-rust-example-dynamic-memory:
+    runs-on: ubuntu-latest
+    env:
+      CARGO_HOME: /root/.cargo
+      RUSTUP_HOME: /root/.rustup
+    container:
+      image: arkhipovivan1/xtensa-esp32-rust:latest
+      options: --user root
+    steps:
+      - uses: actions/checkout@v3
+      - name: Dependencies
+        run: apt update && apt install curl build-essential lld -y && rustup component add --toolchain nightly-x86_64-unknown-linux-gnu rustfmt
+      - name: Build
+        run: cd ./examples/rust-examples/mips64/dynamic-memory && cargo build --release
+      - name: Fmt
+        run: cd ./examples/rust-examples/mips64/dynamic-memory && cargo fmt --all -- --check
 
-  mips64-rust-example-hello-world:
+  mips64-rust-example-timer:
     runs-on: ubuntu-latest
     env:
       CARGO_HOME: /root/.cargo
@@ -160,7 +176,6 @@ jobs:
         run: cd ./examples/rust-examples/mips64/timer && cargo build --release
       - name: Fmt
         run: cd ./examples/rust-examples/mips64/timer && cargo fmt --all -- --check
-
 
   mips64-static-library:
     runs-on: ubuntu-latest
