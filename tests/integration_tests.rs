@@ -1,6 +1,3 @@
-// <copyright file="integration_tests.rs" company="NematMusaev">
-// Copyright (c) PlaceholderCompany. All rights reserved.
-// </copyright>
 #[cfg(test)]
 mod unit_tests {
     use martos::task_manager::TaskManager;
