@@ -1,6 +1,3 @@
-// <copyright file="task_manager_tests.rs" company="NematMusaev">
-// Copyright (c) PlaceholderCompany. All rights reserved.
-// </copyright>
 struct TaskDispatcher {
     tasks: Vec<String>,
     is_running: bool
