@@ -213,7 +213,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Dependencies
-        run: apt-get update && apt-get install curl build-essential binutils-mips-linux-gnu
+        run: apt update && apt -y install curl build-essential binutils-mips-linux-gnu
       - name: Download static library
         uses: actions/download-artifact@v4
         with:
