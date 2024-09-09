@@ -18,7 +18,7 @@ CFLAGS += -fno-strict-aliasing
 CFLAGS += -fdata-sections -ffunction-sections
 CFLAGS += -Os -g
 # Link with martos
-LDFLAGS += -L../../../c-library/mips64/target/mips64el-unknown-linux-gnuabi64/release/ -lmips64_static_lib
+LDFLAGS += -L../../../c-library/mips64/target/mips64el-unknown-linux-gnuabi64/release -lmips64_static_lib
 LDFLAGS += -nostdlib 
 LDFLAGS += $(LDFLAGS_PLATFORM)
 LDFLAGS += -lm -lc -lgcc -Wl,--allow-multiple-definition
