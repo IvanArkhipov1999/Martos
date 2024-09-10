@@ -1,29 +1,28 @@
-# 'Bare metal' misp64 application Makefile
-# Use the mips-img-linux-gnu- toolchain.
-TOOLCHAIN = mips-img-linux-gnu-
+TOOLCHAIN = mips64-elf-
 
-CFLAGS_PLATFORM  = -fstrict-volatile-bitfields
+CFLAGS_PLATFORM  = -mips64
 ASFLAGS_PLATFORM = $(CFLAGS_PLATFORM)
 LDFLAGS_PLATFORM = $(CFLAGS_PLATFORM)
 
-###
-# General project build
-###
-CC = gcc
+CC = $(TOOLCHAIN)gcc
 
-# Set C/LD/AS flags.
 CFLAGS += $(INC) -Wall -Werror -std=gnu11 -nostdlib $(CFLAGS_PLATFORM) $(COPT)
 # (Allow access to the same memory location w/ different data widths.)
 CFLAGS += -fno-strict-aliasing
 CFLAGS += -fdata-sections -ffunction-sections
 CFLAGS += -Os -g
-# Link with martos
-LDFLAGS += -L../../../c-library/mips64/target/mips64el-unknown-linux-gnuabi64/release -lmips64_static_lib
-LDFLAGS += -nostdlib 
+
+LDFLAGS += -L ../../../c-library/mips64/target/mips64el-unknown-linux-gnuabi64/release -lmips64_static_lib
+LDFLAGS += -nostdlib -Wl,-Map=$@.map -Wl,--cref -Wl,--gc-sections
 LDFLAGS += $(LDFLAGS_PLATFORM)
 LDFLAGS += -lm -lc -lgcc -Wl,--allow-multiple-definition
-ASFLAGS += -c -O0 -Wall -fmessage-length=0
-ASFLAGS += $(ASFLAGS_PLATFORM)
+
+SOURCES = src/main.c
+OBJECTS = $(SOURCES:.c=.o)
+EXECUTABLE = c-example
+
+
+
 
 # Set C source files.
 C_SRC += \
@@ -36,8 +35,6 @@ OBJS += $(C_SRC:.c=.o)
 all: main.elf
 
 # Rules to build files.
-%.o: %.S
-	$(CC) -x assembler-with-cpp $(ASFLAGS) $< -o $@
 
 %.o: %.c
 	$(CC) -c $(CFLAGS) $< -o $@
