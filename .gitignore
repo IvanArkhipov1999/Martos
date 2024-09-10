@@ -17,3 +17,5 @@ examples/**/Cargo.lock
 # Espessif generated files and directories
 sdkconfig
 build/
+
+*.nix

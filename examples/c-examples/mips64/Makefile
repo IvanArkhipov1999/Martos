@@ -21,9 +21,6 @@ SOURCES = src/main.c
 OBJECTS = $(SOURCES:.c=.o)
 EXECUTABLE = c-example
 
-
-
-
 # Set C source files.
 C_SRC += \
 	./src/main.c \
