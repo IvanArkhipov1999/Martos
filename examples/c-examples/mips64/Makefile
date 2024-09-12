@@ -1,6 +1,6 @@
 TOOLCHAIN = mips64-elf-
 
-CFLAGS_PLATFORM  = -mips64
+CFLAGS_PLATFORM  = -march=mips4 -mabi=o64 
 ASFLAGS_PLATFORM = $(CFLAGS_PLATFORM)
 LDFLAGS_PLATFORM = $(CFLAGS_PLATFORM)
 
@@ -12,7 +12,7 @@ CFLAGS += -fno-strict-aliasing
 CFLAGS += -fdata-sections -ffunction-sections
 CFLAGS += -Os -g
 
-LDFLAGS += -L ../../../c-library/mips64/target/mips64el-unknown-linux-gnuabi64/release -lmips64_static_lib
+LDFLAGS += -L ../../../c-library/mips64/target/mips64-unknown-linux-gnuabi64/release -lmips64_static_lib
 LDFLAGS += -nostdlib -Wl,-Map=$@.map -Wl,--cref -Wl,--gc-sections
 LDFLAGS += $(LDFLAGS_PLATFORM)
 LDFLAGS += -lm -lc -lgcc -Wl,--allow-multiple-definition
