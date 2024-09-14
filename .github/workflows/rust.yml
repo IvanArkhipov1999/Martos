@@ -132,7 +132,7 @@ jobs:
       CARGO_HOME: /root/.cargo
       RUSTUP_HOME: /root/.rustup
     container:
-      image: arkhipovivan1/xtensa-esp32-rust:latest
+      image: ubuntu:latest
       options: --user root
     steps:
       - uses: actions/checkout@v3
@@ -149,7 +149,7 @@ jobs:
       CARGO_HOME: /root/.cargo
       RUSTUP_HOME: /root/.rustup
     container:
-      image: arkhipovivan1/xtensa-esp32-rust:latest
+      image: ubuntu:latest
       options: --user root
     steps:
       - uses: actions/checkout@v3
@@ -166,7 +166,7 @@ jobs:
       CARGO_HOME: /root/.cargo
       RUSTUP_HOME: /root/.rustup
     container:
-      image: arkhipovivan1/xtensa-esp32-rust:latest
+      image: ubuntu:latest
       options: --user root
     steps:
       - uses: actions/checkout@v3
@@ -183,7 +183,7 @@ jobs:
       CARGO_HOME: /root/.cargo
       RUSTUP_HOME: /root/.rustup
     container:
-      image: arkhipovivan1/xtensa-esp32-rust:latest
+      image: ubuntu:latest
       options: --user root
     steps:
       - uses: actions/checkout@v3

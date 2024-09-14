@@ -1,8 +1,6 @@
 #![no_std]
 #![no_main]
 
-#[macro_use]
-extern crate cortex_m_rt;
 use core::sync::atomic::{AtomicU32, Ordering};
 use martos::init_system;
 use martos::task_manager::TaskManager;
@@ -31,8 +29,8 @@ fn stop_condition_fn() -> bool {
     return false;
 }
 
-#[entry]
-fn main() -> ! {
+#[no_mangle]
+pub unsafe extern fn __start() -> ! {
     // Initialize Martos.
     init_system();
     // Add task to execute.
