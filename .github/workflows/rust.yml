@@ -137,7 +137,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Dependencies
-        run: apt update -y && apt install curl build-essential lld -y && curl https://sh.rustup.rs -sSf | sh -s -- -y && export PATH="/root/.cargo/bin:${PATH}" && rustup component add --toolchain nightly-x86_64-unknown-linux-gnu rustfmt
+        run: apt update -y && apt install curl build-essential lld -y && curl https://sh.rustup.rs -sSf | sh -s -- -y && export PATH="/root/.cargo/bin:${PATH}" && source "/root/.cargo/env" && rustup component add --toolchain nightly-x86_64-unknown-linux-gnu rustfmt
       - name: Build
         run: cd ./examples/rust-examples/mips64/hello-world && cargo build --release
       - name: Fmt
@@ -154,7 +154,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Dependencies
-        run: apt update -y && apt install curl build-essential lld -y && curl https://sh.rustup.rs -sSf | sh -s -- -y && export PATH="/root/.cargo/bin:${PATH}" && rustup component add --toolchain nightly-x86_64-unknown-linux-gnu rustfmt
+        run: apt update -y && apt install curl build-essential lld -y && curl https://sh.rustup.rs -sSf | sh -s -- -y && export PATH="/root/.cargo/bin:${PATH}" && source "/root/.cargo/env" && rustup component add --toolchain nightly-x86_64-unknown-linux-gnu rustfmt
       - name: Build
         run: cd ./examples/rust-examples/mips64/dynamic-memory && cargo build --release
       - name: Fmt
@@ -171,7 +171,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Dependencies
-        run: apt update -y && apt install curl build-essential lld -y && curl https://sh.rustup.rs -sSf | sh -s -- -y && export PATH="/root/.cargo/bin:${PATH}" && rustup component add --toolchain nightly-x86_64-unknown-linux-gnu rustfmt
+        run: apt update -y && apt install curl build-essential lld -y && curl https://sh.rustup.rs -sSf | sh -s -- -y && export PATH="/root/.cargo/bin:${PATH}" && source "/root/.cargo/env" && rustup component add --toolchain nightly-x86_64-unknown-linux-gnu rustfmt
       - name: Build
         run: cd ./examples/rust-examples/mips64/timer && cargo build --release
       - name: Fmt
@@ -188,7 +188,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Dependencies
-        run: apt update -y && apt install curl build-essential lld -y && curl https://sh.rustup.rs -sSf | sh -s -- -y && export PATH="/root/.cargo/bin:${PATH}" && source ~/.bashrc && rustup component add --toolchain nightly-x86_64-unknown-linux-gnu rustfmt
+        run: apt update -y && apt install curl build-essential lld -y && curl https://sh.rustup.rs -sSf | sh -s -- -y && export PATH="/root/.cargo/bin:${PATH}" && source "/root/.cargo/env" && rustup component add --toolchain nightly-x86_64-unknown-linux-gnu rustfmt
       - name: Build
         run: cd ./c-library/mips64 && cargo build --release
       - name: Fmt
