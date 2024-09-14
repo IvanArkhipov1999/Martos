@@ -2,8 +2,7 @@ name: Docker Build and Push
 
 on:
   push:
-    paths:
-      - 'dockers/**'
+    branches: [ "main" ]
 
 jobs:
   build-xtensa-esp32-rust-dependencies-docker:
