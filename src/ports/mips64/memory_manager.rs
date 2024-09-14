@@ -19,5 +19,4 @@ unsafe impl GlobalAlloc for Dummy {
 static ALLOCATOR: Dummy = Dummy;
 
 /// Heap initialization.
-/// For more information see https://github.com/esp-rs/esp-alloc/.
 pub fn init_heap() {}
