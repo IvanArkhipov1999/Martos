@@ -139,9 +139,9 @@ jobs:
       - name: Dependencies
         run: apt update && apt install curl build-essential lld -y && curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && echo 'PATH="${PATH}:/root/.cargo/bin"' >> $GITHUB_PATH && . "/root/.cargo/env" && rustup toolchain install nightly && rustup default 1.71 && rustup target add mips64el-unknown-linux-gnuabi64 && rustup component add rust-src --toolchain nightly-x86_64-unknown-linux-gnu
       - name: Build
-        run: cd ./examples/rust-examples/mips64/hello-world && cargo build --release
+        run: cd ./examples/rust-examples/mips64/hello-world && cargo +nighty build --release
       - name: Fmt
-        run: cd ./examples/rust-examples/mips64/hello-world && cargo fmt --all -- --check
+        run: cd ./examples/rust-examples/mips64/hello-world && cargo +nighty fmt --all -- --check
 
   mips64-rust-example-dynamic-memory:
     runs-on: ubuntu-latest
@@ -154,11 +154,11 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Dependencies
-        run: apt update && apt install curl build-essential lld -y && curl --proto '=https' --tlsv1.2 -ssf https://sh.rustup.rs | sh -s -- -y && echo 'path="${path}:/root/.cargo/bin"' >> $github_path && . "/root/.cargo/env" && rustup toolchain install nightly && rustup default 1.71 && rustup target add mips64el-unknown-linux-gnuabi64 && rustup component add rust-src --toolchain nightly-x86_64-unknown-linux-gnu
+        run: apt update && apt install curl build-essential lld -y && curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && echo 'PATH="${PATH}:/root/.cargo/bin"' >> $GITHUB_PATH && . "/root/.cargo/env" && rustup toolchain install nightly && rustup default 1.71 && rustup target add mips64el-unknown-linux-gnuabi64 && rustup component add rust-src --toolchain nightly-x86_64-unknown-linux-gnu
       - name: Build
-        run: cd ./examples/rust-examples/mips64/dynamic-memory && cargo build --release
+        run: cd ./examples/rust-examples/mips64/dynamic-memory && cargo +nighty build --release
       - name: Fmt
-        run: cd ./examples/rust-examples/mips64/dynamic-memory && cargo fmt --all -- --check
+        run: cd ./examples/rust-examples/mips64/dynamic-memory && cargo +nighty fmt --all -- --check
 
   mips64-rust-example-timer:
     runs-on: ubuntu-latest
@@ -173,9 +173,9 @@ jobs:
       - name: Dependencies
         run: apt update && apt install curl build-essential lld -y && curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && echo 'PATH="${PATH}:/root/.cargo/bin"' >> $GITHUB_PATH && . "/root/.cargo/env" && rustup toolchain install nightly && rustup default 1.71 && rustup target add mips64el-unknown-linux-gnuabi64 && rustup component add rust-src --toolchain nightly-x86_64-unknown-linux-gnu
       - name: Build
-        run: cd ./examples/rust-examples/mips64/timer && cargo build --release
+        run: cd ./examples/rust-examples/mips64/timer && cargo +nightly build --release
       - name: Fmt
-        run: cd ./examples/rust-examples/mips64/timer && cargo fmt --all -- --check
+        run: cd ./examples/rust-examples/mips64/timer && cargo +nighty fmt --all -- --check
 
   mips64-static-library:
     runs-on: ubuntu-latest
@@ -190,9 +190,9 @@ jobs:
       - name: Dependencies
         run: apt update && apt install curl build-essential lld -y && curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && echo 'PATH="${PATH}:/root/.cargo/bin"' >> $GITHUB_PATH && . "/root/.cargo/env" && rustup toolchain install nightly && rustup default 1.71 && rustup target add mips64el-unknown-linux-gnuabi64 && rustup component add rust-src --toolchain nightly-x86_64-unknown-linux-gnu
       - name: Build
-        run: cd ./c-library/mips64 && cargo build --release
+        run: cd ./c-library/mips64 && cargo +nighty build --release
       - name: Fmt
-        run: cd ./c-library/mips64 && cargo fmt --all -- --check
+        run: cd ./c-library/mips64 && cargo +nighty fmt --all -- --check
       - name: Archive production artifacts
         uses: actions/upload-artifact@v4
         with:

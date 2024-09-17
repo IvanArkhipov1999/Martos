@@ -40,7 +40,7 @@ fn stop_condition_fn() -> bool {
 
 
 #[no_mangle]
-pub unsafe extern fn __start() -> ! {
+pub unsafe extern "C" fn __start() -> ! {
     // Initialize Martos.
     init_system();
     // Add task to execute.
