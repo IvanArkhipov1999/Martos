@@ -32,12 +32,8 @@ fn loop_fn() {
 /// Stop condition function for task to execute.
 fn stop_condition_fn() -> bool {
     let value = unsafe { COUNTER.as_ptr().read() };
-    if value % 50 == 0 {
-        return true;
-    }
-    return false;
+    return value % 50 == 0;
 }
-
 
 #[no_mangle]
 pub unsafe extern "C" fn __start() -> ! {
