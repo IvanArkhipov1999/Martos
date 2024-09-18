@@ -8,9 +8,8 @@ Below is an illustrative example demonstrating the installation of building tool
 ```
 apt update && apt install curl build-essential lld
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y 
-echo 'PATH="${PATH}:/root/.cargo/bin"' >> $GITHUB_PATH 
-. "/root/.cargo/env" 
 rustup toolchain install nightly 
+rustup default 1.71
 rustup target add mips64el-unknown-linux-gnuabi64 
 rustup component add rust-src --toolchain nightly-x86_64-unknown-linux-gnu
 ```
