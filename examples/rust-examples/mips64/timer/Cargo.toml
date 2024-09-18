@@ -1,0 +1,14 @@
+[package]
+name = "example_mips64"
+version = "0.3.0"
+edition = "2021"
+
+[profile.release]
+panic = "abort"
+debug = true
+
+[dependencies]
+# Specifying Martos version
+#martos = "0.3.0"
+# Specifying current Martos version path for ci
+martos = { path = "../../../../" }

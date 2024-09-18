@@ -124,3 +124,78 @@ jobs:
           path: c-library/xtensa-esp32/target/xtensa-esp32-none-elf/release
       - name: Build
         run: cd ./examples/c-examples/xtensa-esp32 && . /root/esp/esp-idf/export.sh && make && esptool.py --chip esp32 elf2image --flash_mode="dio" --flash_freq "40m" --flash_size "4MB" -o main.bin main.elf
+
+
+  mips64-rust-example-hello-world:
+    runs-on: ubuntu-latest
+    env:
+      CARGO_HOME: /root/.cargo
+      RUSTUP_HOME: /root/.rustup
+    container:
+      image: ubuntu:latest
+      options: --user root
+    steps:
+      - uses: actions/checkout@v3
+      - name: Dependencies
+        run: apt update && apt install curl build-essential lld -y && curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && echo 'PATH="${PATH}:/root/.cargo/bin"' >> $GITHUB_PATH && . "/root/.cargo/env" && rustup toolchain install nightly && rustup default 1.71 && rustup target add mips64el-unknown-linux-gnuabi64 && rustup component add rust-src --toolchain nightly-x86_64-unknown-linux-gnu
+      - name: Build
+        run: cd ./examples/rust-examples/mips64/hello-world && cargo +nightly build --release
+      - name: Fmt
+        run: cd ./examples/rust-examples/mips64/hello-world && cargo +nightly fmt --all -- --check
+
+  mips64-rust-example-dynamic-memory:
+    runs-on: ubuntu-latest
+    env:
+      CARGO_HOME: /root/.cargo
+      RUSTUP_HOME: /root/.rustup
+    container:
+      image: ubuntu:latest
+      options: --user root
+    steps:
+      - uses: actions/checkout@v3
+      - name: Dependencies
+        run: apt update && apt install curl build-essential lld -y && curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && echo 'PATH="${PATH}:/root/.cargo/bin"' >> $GITHUB_PATH && . "/root/.cargo/env" && rustup toolchain install nightly && rustup default 1.71 && rustup target add mips64el-unknown-linux-gnuabi64 && rustup component add rust-src --toolchain nightly-x86_64-unknown-linux-gnu
+      - name: Build
+        run: cd ./examples/rust-examples/mips64/dynamic-memory && cargo +nightly build --release
+      - name: Fmt
+        run: cd ./examples/rust-examples/mips64/dynamic-memory && cargo +nightly fmt --all -- --check
+
+  mips64-rust-example-timer:
+    runs-on: ubuntu-latest
+    env:
+      CARGO_HOME: /root/.cargo
+      RUSTUP_HOME: /root/.rustup
+    container:
+      image: ubuntu:latest
+      options: --user root
+    steps:
+      - uses: actions/checkout@v3
+      - name: Dependencies
+        run: apt update && apt install curl build-essential lld -y && curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && echo 'PATH="${PATH}:/root/.cargo/bin"' >> $GITHUB_PATH && . "/root/.cargo/env" && rustup toolchain install nightly && rustup default 1.71 && rustup target add mips64el-unknown-linux-gnuabi64 && rustup component add rust-src --toolchain nightly-x86_64-unknown-linux-gnu
+      - name: Build
+        run: cd ./examples/rust-examples/mips64/timer && cargo +nightly build --release
+      - name: Fmt
+        run: cd ./examples/rust-examples/mips64/timer && cargo +nightly fmt --all -- --check
+
+  mips64-static-library:
+    runs-on: ubuntu-latest
+    env:
+      CARGO_HOME: /root/.cargo
+      RUSTUP_HOME: /root/.rustup
+    container:
+      image: ubuntu:latest
+      options: --user root
+    steps:
+      - uses: actions/checkout@v3
+      - name: Dependencies
+        run: apt update && apt install curl build-essential lld -y && curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && echo 'PATH="${PATH}:/root/.cargo/bin"' >> $GITHUB_PATH && . "/root/.cargo/env" && rustup toolchain install nightly && rustup default 1.71 && rustup target add mips64el-unknown-linux-gnuabi64 && rustup component add rust-src --toolchain nightly-x86_64-unknown-linux-gnu
+      - name: Build
+        run: cd ./c-library/mips64 && cargo +nightly build --release
+      - name: Fmt
+        run: cd ./c-library/mips64 && cargo +nightly fmt --all -- --check
+      - name: Archive production artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: mips64-static-library
+          path: c-library/mips64/target/mips64el-unknown-linux-gnuabi64/release/libmips64_static_lib.a
+          retention-days: 7
