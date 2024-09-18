@@ -1,4 +1,3 @@
-
 # Rust example for mips64 architecture
 
 Presented here is a straightforward Rust example utilizing Martos with timer usage.

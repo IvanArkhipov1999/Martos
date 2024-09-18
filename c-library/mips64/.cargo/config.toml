@@ -2,7 +2,7 @@
 rustflags = [
     "-C", "link-arg=-Ttext=0x80010000",
     "-C", "link-arg=-emain",
-  "-C", "link-arg=-Tlinkall.x",
+    "-C", "link-arg=-Tlinkall.x",
 ]
 
 target = "mips64el-unknown-linux-gnuabi64"
