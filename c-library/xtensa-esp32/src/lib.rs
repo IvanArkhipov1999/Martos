@@ -5,7 +5,7 @@
 use esp_hal as _;
 use martos::task_manager::TaskManager;
 use martos::timer::{TickType, Timer};
-mod src::c-api;
+use martos::c-api::*;
 
 #[panic_handler]
 fn panic(_info: &core::panic::PanicInfo) -> ! {
