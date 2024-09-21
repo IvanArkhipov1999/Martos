@@ -3,15 +3,8 @@
 #![no_std]
 
 use esp_hal as _;
-use martos::task_manager::TaskManager;
-use martos::timer::{TickType, Timer};
-use martos::src::c_api::init_system;
-use martos::src::c_api::setup_timer;
-use martos::src::c_api::loop_timer;
-use martos::src::c_api::stop_condition_timer;
-use martos::src::c_api::get_tick_counter;
-use martos::src::c_api::add_task;
-use martos::src::c_api::start_task_manager;
+use martos::c_api::*;
+
 #[panic_handler]
 fn panic(_info: &core::panic::PanicInfo) -> ! {
     loop {}

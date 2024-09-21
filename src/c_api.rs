@@ -1,6 +1,11 @@
+use crate::{task_manager, timer};
+use task_manager::TaskManager;
+use timer::{TickType, Timer};
+
 #[no_mangle]
 pub extern "C" fn init_system() {
-    martos::init_system()
+    super::init_system();
+
 }
 
 #[no_mangle]
