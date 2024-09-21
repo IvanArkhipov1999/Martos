@@ -27,7 +27,14 @@ pub extern "C" fn get_tick_counter() -> TickType {
     Timer::get_tick_counter()
 }
 
-
+#[no_mangle]
+pub extern "C" fn add_task(
+    setup_fn: extern "C" fn() -> (),
+    loop_fn: extern "C" fn() -> (),
+    stop_condition_fn: extern "C" fn() -> bool,
+) {
+    TaskManager::add_task(setup_fn, loop_fn, stop_condition_fn)
+}
 
 #[no_mangle]
 pub extern "C" fn start_task_manager() {
