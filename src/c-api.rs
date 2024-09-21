@@ -1,16 +1,3 @@
-// TODO: maybe all this should be in martos, not in c-library folder
-
-#![no_std]
-
-use esp_hal as _;
-use martos::task_manager::TaskManager;
-use martos::timer::{TickType, Timer};
-
-#[panic_handler]
-fn panic(_info: &core::panic::PanicInfo) -> ! {
-    loop {}
-}
-
 #[no_mangle]
 pub extern "C" fn init_system() {
     martos::init_system()
