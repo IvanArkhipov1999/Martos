@@ -2,10 +2,10 @@
 
 mod ports;
 use ports::PortTrait;
-pub mod task_manager;
-pub mod timer;
 #[cfg(feature = "c-library")]
 pub mod c_api;
+pub mod task_manager;
+pub mod timer;
 
 /// Martos initialization. Should be called before using Martos functions.
 pub fn init_system() {
