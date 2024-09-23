@@ -171,6 +171,27 @@ jobs:
       - name: Fmt
         run: cd ./examples/rust-examples/risc-v-esp32-c6/timer && cargo fmt --all -- --check
 
+  risc-v-esp32c6-static-library:
+    runs-on: ubuntu-latest
+    env:
+      CARGO_HOME: /root/.cargo
+      RUSTUP_HOME: /root/.rustup
+    container:
+      image: arkhipovivan1/xtensa-esp32-rust:latest
+      options: --user root
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build
+        run: cd ./c-library/risc-v-esp32-c6 && . /root/export-esp.sh && cargo build --release
+      - name: Fmt
+        run: cd ./c-library/risc-v-esp32-c6 && cargo fmt --all -- --check
+      - name: Archive production artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: risc-v-esp32c6-static-library
+          path: c-library/risc-v-esp32-c6/target/riscv32imac-unknown-none-elf/release/librisc_v_esp32c6_static_lib.a
+          retention-days: 7
+
 
   mips64-rust-example-hello-world:
     runs-on: ubuntu-latest

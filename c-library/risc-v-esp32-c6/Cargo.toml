@@ -1,0 +1,23 @@
+[package]
+name = "risc_v_esp32c6_static_lib"
+version = "0.3.0"
+edition = "2021"
+
+[lib]
+name = "risc_v_esp32c6_static_lib"
+crate-type = ["staticlib"]
+
+[profile.release]
+debug = true
+
+[dependencies]
+# Specifying Martos version
+#martos = { version = "0.3.0", features = ["c-library"] }
+# Specifying current Martos version path for ci
+martos = { path = "../../", features = ["c-library"] }
+esp-hal = "0.20.0"
+esp-backtrace = { version = "0.14.1", features = ["esp32c6", "panic-handler", "exception-handler", "println"] }
+esp-println = { version = "0.11.0", features = ["esp32c6"] }
+
+[features]
+default = ["esp-hal/esp32c6", "esp-backtrace/esp32c6", "esp-println/esp32c6"]
