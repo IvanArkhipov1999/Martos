@@ -3,7 +3,6 @@
 #![no_std]
 
 use esp_hal as _;
-#[cfg(feature = "c-library")]
 use martos::c_api::*;
 
 #[panic_handler]
