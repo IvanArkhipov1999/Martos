@@ -18,7 +18,18 @@ pub mod xtensa_esp32;
 #[cfg(any(target_arch = "riscv32", target_arch = "xtensa"))]
 pub type Port = xtensa_esp32::XtensaEsp32;
 
-#[cfg(not(any(target_arch = "riscv32", target_arch = "xtensa")))]
+#[cfg(all(
+    not(any(target_arch = "riscv32", target_arch = "xtensa")),
+    not(target_arch = "mips64")
+))]
 pub mod mok;
-#[cfg(not(any(target_arch = "riscv32", target_arch = "xtensa")))]
+#[cfg(all(
+    not(any(target_arch = "riscv32", target_arch = "xtensa")),
+    not(target_arch = "mips64")
+))]
 pub type Port = mok::Mok;
+
+#[cfg(target_arch = "mips64")]
+pub mod mips64;
+#[cfg(target_arch = "mips64")]
+pub type Port = mips64::Mips64;

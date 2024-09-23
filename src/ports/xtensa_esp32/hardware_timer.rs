@@ -11,7 +11,7 @@ pub fn setup_hardware_timer() {
 
     let clocks = ClockControl::boot_defaults(system.clock_control).freeze();
 
-    let timer_group0 = TimerGroup::new(peripherals.TIMG0, &clocks, None);
+    let timer_group0 = TimerGroup::new(peripherals.TIMG0, &clocks);
 
     let timer00 = timer_group0.timer0;
     let _ = timer00.load_value(500u64.millis());
