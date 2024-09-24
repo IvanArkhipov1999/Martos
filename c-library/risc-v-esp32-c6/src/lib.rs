@@ -1,5 +1,3 @@
-// TODO: maybe all this should be in martos, not in c-library folder
-
 #![no_std]
 
 use esp_hal as _;
