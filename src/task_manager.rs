@@ -145,7 +145,7 @@ impl TaskManager {
                 if TASK_MANAGER.task_to_execute_index + 1 < TASK_MANAGER.tasks.len() {
                     TASK_MANAGER.task_to_execute_index += 1;
                 } else {
-                    TASK_MANAGER.task_to_execute_index -= TASK_MANAGER.task_to_execute_index;
+                    TASK_MANAGER.task_to_execute_index = 0;
                 }
             }
         }
