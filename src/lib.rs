@@ -2,6 +2,8 @@
 
 mod ports;
 use ports::PortTrait;
+#[cfg(feature = "c-library")]
+pub mod c_api;
 pub mod task_manager;
 pub mod timer;
 
