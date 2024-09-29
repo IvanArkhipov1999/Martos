@@ -13,4 +13,6 @@ pub fn init_system() {
     ports::Port::init_heap();
     // Hardware timer setup.
     ports::Port::setup_hardware_timer();
+    // Network setup.
+    ports::Port::init_network();
 }
