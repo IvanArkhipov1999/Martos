@@ -1,12 +1,16 @@
 use crate::timer::TickType;
 use esp_hal::timer::timg::{Timer, Timer0, TimerGroup};
-use esp_hal::{clock::ClockControl, peripherals::*, prelude::*, system::SystemControl};
+use esp_hal::{clock::ClockControl, clock::Clocks, peripherals::*, prelude::*, system::SystemControl};
 
-static mut TIMER00: Option<Timer<Timer0<TIMG0>, esp_hal::Blocking>> = None;
+pub static mut TIMER00: Option<Timer<Timer0<TIMG0>, esp_hal::Blocking>> = None;
+pub static mut CLOCKS: Option<Clocks> = None;
+pub static mut PERIFERALS_RNG: Option<RNG> = None;
+pub static mut PERIFERALS_RADIO_CLK: Option<RADIO_CLK> = None;
+pub static mut PERIFERALS_WIFI: Option<WIFI> = None;
 
 /// Esp32 hardware timer setup.
 pub fn setup_hardware_timer() {
-    let peripherals = Peripherals::take();
+        let peripherals = Peripherals::take();
     let system = SystemControl::new(peripherals.SYSTEM);
 
     let clocks = ClockControl::boot_defaults(system.clock_control).freeze();
@@ -19,6 +23,10 @@ pub fn setup_hardware_timer() {
     timer00.listen();
     unsafe {
         TIMER00 = Some(timer00);
+        PERIFERALS_RNG = Some(peripherals.RNG);
+        PERIFERALS_RADIO_CLK = Some(peripherals.RADIO_CLK);
+        CLOCKS = Some(clocks);
+        PERIFERALS_WIFI = Some(peripherals.WIFI);
     }
 }
 
