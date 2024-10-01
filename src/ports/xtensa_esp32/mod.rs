@@ -2,6 +2,7 @@ pub mod hardware_timer;
 pub mod memory_manager;
 pub mod network;
 use crate::ports::PortTrait;
+use esp_wifi::esp_now::EspNow;
 
 /// PortTrait implementation for XtensaEsp32 platform
 pub struct XtensaEsp32;
@@ -20,5 +21,9 @@ impl PortTrait for XtensaEsp32 {
 
     fn init_network() {
         network::init_network();
+    }
+
+    fn get_esp_now() -> EspNow<'static> {
+        return network::get_esp_now();
     }
 }

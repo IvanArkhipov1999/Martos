@@ -1,4 +1,6 @@
 use crate::timer::TickType;
+#[cfg(any(target_arch = "riscv32", target_arch = "xtensa"))]
+use esp_wifi::esp_now::EspNow;
 
 /// PortTrait contains all the platform specific functions.
 pub trait PortTrait {
@@ -10,6 +12,8 @@ pub trait PortTrait {
     fn init_heap();
     /// Function for initializing network settings.
     fn init_network();
+    #[cfg(any(target_arch = "riscv32", target_arch = "xtensa"))]
+    fn get_esp_now() -> EspNow<'static>;
 }
 
 /// Port is an alias of PortTrait implementation for a current platform

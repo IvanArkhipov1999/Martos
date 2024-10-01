@@ -29,3 +29,10 @@ pub fn init_network() {
         ESP_NOW = Some(esp_wifi::esp_now::EspNow::new(&init, periferals_wifi).unwrap());
     }
 }
+
+pub fn get_esp_now() -> EspNow<'static> {
+    unsafe {
+    let esp_now = ESP_NOW.take().expect("Esp-now error");
+    return esp_now;
+    }
+}
