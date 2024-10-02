@@ -21,6 +21,7 @@ static mut NEXT_SEND_TIME: Option<u64> = None;
 fn setup_fn() {
     println!("Setup hello world!");
     unsafe {
+        ESP_NOW = Some(get_esp_now());
         NEXT_SEND_TIME = Some(current_millis() + 5 * 1000);
     }
 }
@@ -28,13 +29,12 @@ fn setup_fn() {
 /// Loop function for task to execute.
 fn loop_fn() {
     COUNTER.fetch_add(1, Ordering::Relaxed);
-    println!("Loop hello world!");
-    println!("Counter = {}", unsafe { COUNTER.as_ptr().read() });
+    // println!("Loop hello world!");
+    // println!("Counter = {}", unsafe { COUNTER.as_ptr().read() });
 
     unsafe {
-        ESP_NOW = Some(get_esp_now());
         let mut esp_now = ESP_NOW.take().expect("Esp-now error in main");
-        println!("esp-now version {}", esp_now.get_version().unwrap());
+        // println!("esp-now version {}", esp_now.get_version().unwrap());
 
         let r = esp_now.receive();
         if let Some(r) = r {
@@ -77,10 +77,10 @@ fn loop_fn() {
 
 /// Stop condition function for task to execute.
 fn stop_condition_fn() -> bool {
-    let value = unsafe { COUNTER.as_ptr().read() };
-    if value % 50 == 0 {
-        return true;
-    }
+    // let value = unsafe { COUNTER.as_ptr().read() };
+    // if value % 50 == 0 {
+    //     return true;
+    // }
     return false;
 }
 
