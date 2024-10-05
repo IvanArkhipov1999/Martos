@@ -15,6 +15,7 @@ pub trait PortTrait {
     fn init_network();
     #[cfg(any(target_arch = "riscv32", target_arch = "xtensa"))]
     #[cfg(feature = "network")]
+    /// Function for getting esp-now object for network.
     fn get_esp_now() -> EspNow<'static>;
 }
 

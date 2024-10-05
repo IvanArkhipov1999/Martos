@@ -1,6 +1,8 @@
 use crate::timer::TickType;
 use esp_hal::timer::timg::{Timer, Timer0, TimerGroup};
-use esp_hal::{clock::ClockControl, clock::Clocks, peripherals::*, prelude::*, system::SystemControl};
+use esp_hal::{
+    clock::ClockControl, clock::Clocks, peripherals::*, prelude::*, system::SystemControl,
+};
 
 // TODO: initialize peripherals in separate mod
 pub static mut TIMER00: Option<Timer<Timer0<TIMG0>, esp_hal::Blocking>> = None;

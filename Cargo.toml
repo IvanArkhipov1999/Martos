@@ -19,6 +19,7 @@ network = []
 [target.'cfg(any(target_arch = "riscv32", target_arch = "xtensa"))'.dependencies]
 esp-alloc = "0.4.0"
 esp-hal = "0.20.0"
+# TODO: add dep only if feature = network
 esp-wifi = { version = "0.9.1", features = ["wifi"] }
 
 [dev-dependencies]
