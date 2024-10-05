@@ -442,6 +442,7 @@ dependencies = [
 name = "martos"
 version = "0.3.0"
 dependencies = [
+ "cfg-if",
  "esp-alloc",
  "esp-hal",
  "sequential-test",

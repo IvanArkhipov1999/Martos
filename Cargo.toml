@@ -12,8 +12,11 @@ license = "MIT OR Apache-2.0"
 [features]
 default = []
 c-library = []
+cooperative = []
+preemptive = []
 
 [dependencies]
+cfg-if = "1.0.0"
 
 [target.'cfg(any(target_arch = "riscv32", target_arch = "xtensa"))'.dependencies]
 esp-alloc = "0.4.0"
