@@ -1,9 +1,8 @@
 # Rust example for xtensa esp32 architecture
 
-Presented here is a straightforward 'Hello world' Rust example utilizing Martos.
+Presented here is a straightforward Rust example utilizing Martos with wifi usage.
 
-Within the setup function, the phrase 'Setup hello world!' is printed once.
-Additionally, within the loop function, the phrase 'Loop hello world!' along with the counter value is printed fifty times.
+A broadcast signal is periodically sent, and is also informed about the receipt of a broadcast signal from other microcontrollers.
 
 ## How to install dependencies
 
@@ -22,7 +21,7 @@ we recommend consulting [the official website](https://docs.esp-rs.org/book/inst
 Below, you will find an illustrative example showcasing the building process on a Linux system (Ubuntu/Debian):
 ```
 . $HOME/export-esp.sh
-cargo build
+cargo build --release
 ```
 
 ## How to run the example
