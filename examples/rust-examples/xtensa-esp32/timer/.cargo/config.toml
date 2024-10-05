@@ -1,7 +1,3 @@
-[target.xtensa-esp32-none-elf]
-runner = "espflash flash --monitor"
-
-
 [build]
 rustflags = [
   "-C", "link-arg=-Tlinkall.x",
@@ -16,4 +12,3 @@ build-std = ["core", "alloc"]
 
 [target.'cfg(any(target_arch = "riscv32", target_arch = "xtensa"))']
 runner = "espflash flash --monitor"
-
