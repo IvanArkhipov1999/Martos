@@ -3,6 +3,7 @@ pub mod memory_manager;
 #[cfg(feature = "network")]
 pub mod network;
 use crate::ports::PortTrait;
+#[cfg(feature = "network")]
 use esp_wifi::esp_now::EspNow;
 
 // TODO: make it port just for esp32, not only for XtensaEsp32

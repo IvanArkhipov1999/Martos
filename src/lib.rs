@@ -7,6 +7,7 @@ pub mod c_api;
 pub mod task_manager;
 pub mod timer;
 #[cfg(any(target_arch = "riscv32", target_arch = "xtensa"))]
+#[cfg(feature = "network")]
 use esp_wifi::esp_now::EspNow;
 
 /// Martos initialization. Should be called before using Martos functions.

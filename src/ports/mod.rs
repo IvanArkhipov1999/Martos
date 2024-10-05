@@ -1,5 +1,6 @@
 use crate::timer::TickType;
 #[cfg(any(target_arch = "riscv32", target_arch = "xtensa"))]
+#[cfg(feature = "network")]
 use esp_wifi::esp_now::EspNow;
 
 /// PortTrait contains all the platform specific functions.
