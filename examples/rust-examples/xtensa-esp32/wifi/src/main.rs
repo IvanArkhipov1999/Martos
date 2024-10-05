@@ -1,7 +1,6 @@
 #![no_std]
 #![no_main]
 
-use core::sync::atomic::{AtomicU32, Ordering};
 use esp_backtrace as _;
 use esp_hal::entry;
 use esp_println::println;
@@ -10,11 +9,9 @@ use martos::get_esp_now;
 use martos::task_manager::TaskManager;
 use esp_wifi::{current_millis, esp_now::{PeerInfo, EspNow, BROADCAST_ADDRESS}};
 
-/// Counter to work with in loop.
-static COUNTER: AtomicU32 = AtomicU32::new(1);
-
+/// Esp-now object for network
 static mut ESP_NOW: Option<EspNow> = None;
-
+/// Variable for saving time to send broadcast message
 static mut NEXT_SEND_TIME: Option<u64> = None;
 
 /// Setup function for task to execute.
@@ -28,13 +25,8 @@ fn setup_fn() {
 
 /// Loop function for task to execute.
 fn loop_fn() {
-    COUNTER.fetch_add(1, Ordering::Relaxed);
-    // println!("Loop hello world!");
-    // println!("Counter = {}", unsafe { COUNTER.as_ptr().read() });
-
     unsafe {
         let mut esp_now = ESP_NOW.take().expect("Esp-now error in main");
-        // println!("esp-now version {}", esp_now.get_version().unwrap());
 
         let r = esp_now.receive();
         if let Some(r) = r {
@@ -77,10 +69,6 @@ fn loop_fn() {
 
 /// Stop condition function for task to execute.
 fn stop_condition_fn() -> bool {
-    // let value = unsafe { COUNTER.as_ptr().read() };
-    // if value % 50 == 0 {
-    //     return true;
-    // }
     return false;
 }
 

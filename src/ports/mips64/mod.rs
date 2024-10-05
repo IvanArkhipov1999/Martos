@@ -1,5 +1,6 @@
 pub mod hardware_timer;
 pub mod memory_manager;
+#[cfg(feature = "network")]
 pub mod network;
 use crate::ports::PortTrait;
 
@@ -18,6 +19,7 @@ impl PortTrait for Mips64 {
         hardware_timer::get_tick_counter()
     }
 
+    #[cfg(feature = "network")]
     fn init_network() {
         network::init_network();
     }

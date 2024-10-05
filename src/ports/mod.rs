@@ -10,9 +10,11 @@ pub trait PortTrait {
     fn get_tick_counter() -> TickType;
     /// Function is called when heap is created. Can be used to set configuration.
     fn init_heap();
+    #[cfg(feature = "network")]
     /// Function for initializing network settings.
     fn init_network();
     #[cfg(any(target_arch = "riscv32", target_arch = "xtensa"))]
+    #[cfg(feature = "network")]
     fn get_esp_now() -> EspNow<'static>;
 }
 
