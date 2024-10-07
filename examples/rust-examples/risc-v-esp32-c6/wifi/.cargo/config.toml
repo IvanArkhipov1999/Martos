@@ -2,6 +2,7 @@
 rustflags = [
   "-C", "link-arg=-Tlinkall.x",
   "-C", "force-frame-pointers",
+  "-C", "link-arg=-Trom_functions.x",
 ]
 
 target = "riscv32imac-unknown-none-elf"
