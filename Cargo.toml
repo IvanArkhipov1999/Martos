@@ -12,12 +12,14 @@ license = "MIT OR Apache-2.0"
 [features]
 default = []
 c-library = []
+network = ["esp-wifi"]
 
 [dependencies]
 
 [target.'cfg(any(target_arch = "riscv32", target_arch = "xtensa"))'.dependencies]
 esp-alloc = "0.4.0"
 esp-hal = "0.20.0"
+esp-wifi = { version = "0.9.1", features = ["wifi"], optional = true }
 
 [dev-dependencies]
 sequential-test = "0.2.4"

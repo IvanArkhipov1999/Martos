@@ -1,11 +1,11 @@
 [build]
 rustflags = [
   "-C", "link-arg=-Tlinkall.x",
-
-  "-C", "link-arg=-nostartfiles",
+  "-C", "force-frame-pointers",
+  "-C", "link-arg=-Trom_functions.x",
 ]
 
-target = "xtensa-esp32-none-elf"
+target = "riscv32imac-unknown-none-elf"
 
 [unstable]
 build-std = ["core", "alloc"]
