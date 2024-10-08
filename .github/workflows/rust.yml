@@ -201,7 +201,6 @@ jobs:
       - name: Fmt
         run: cd ./examples/rust-examples/risc-v-esp32-c6/wifi && cargo fmt --all -- --check
 
-
   risc-v-esp32c6-static-library:
     runs-on: ubuntu-latest
     env:
