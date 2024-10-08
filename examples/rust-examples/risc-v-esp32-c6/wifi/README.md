@@ -10,6 +10,9 @@ For comprehensive guidance on installing the necessary dependencies for developi
 please refer to [the official website](https://docs.esp-rs.org/book/installation/riscv-and-xtensa.html).
 Below is an illustrative example demonstrating the installation of building toolchains on a Linux (Ubuntu/Debian):
 ```
+apt-get -qq update
+apt-get install -y -q build-essential curl
+curl https://sh.rustup.rs -sSf | sh -s -- -y
 cargo install espup
 espup install
 ```
