@@ -1,4 +1,7 @@
 use crate::timer::TickType;
+#[cfg(any(target_arch = "riscv32", target_arch = "xtensa"))]
+#[cfg(feature = "network")]
+use esp_wifi::esp_now::EspNow;
 
 /// PortTrait contains all the platform specific functions.
 pub trait PortTrait {
@@ -6,9 +9,15 @@ pub trait PortTrait {
     fn setup_hardware_timer();
     /// Function used to get amount of ticks from the start of a timer
     fn get_tick_counter() -> TickType;
-
     /// Function is called when heap is created. Can be used to set configuration.
     fn init_heap();
+    #[cfg(feature = "network")]
+    /// Function for initializing network settings.
+    fn init_network();
+    #[cfg(any(target_arch = "riscv32", target_arch = "xtensa"))]
+    #[cfg(feature = "network")]
+    /// Function for getting esp-now object for network.
+    fn get_esp_now() -> EspNow<'static>;
 }
 
 /// Port is an alias of PortTrait implementation for a current platform

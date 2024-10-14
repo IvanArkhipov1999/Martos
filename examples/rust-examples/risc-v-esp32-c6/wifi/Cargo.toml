@@ -10,10 +10,11 @@ debug = true
 # Specifying Martos version
 #martos = "0.4.0"
 # Specifying current Martos version path for ci
-martos = { path = "../../../../" }
+martos = { path = "../../../../", features = ["network"] }
 esp-hal = "0.20.0"
 esp-backtrace = { version = "0.14.1", features = ["esp32c6", "panic-handler", "exception-handler", "println"] }
 esp-println = { version = "0.11.0", features = ["esp32c6"] }
+esp-wifi = { version = "0.9.1", features = ["wifi", "esp-now"] }
 
 [features]
-default = ["esp-hal/esp32c6", "esp-backtrace/esp32c6", "esp-println/esp32c6"]
+default = ["esp-hal/esp32c6", "esp-backtrace/esp32c6", "esp-println/esp32c6", "esp-wifi/esp32c6"]

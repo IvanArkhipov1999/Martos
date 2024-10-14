@@ -1,6 +1,6 @@
 [package]
 name = "mips64_static_lib"
-version = "0.3.0"
+version = "0.4.0"
 edition = "2021"
 
 [lib]
@@ -13,6 +13,6 @@ debug = true
 
 [dependencies]
 # Specifying Martos version
-#martos = { version = "0.3.0", features = ["c-library"] }
+#martos = { version = "0.4.0", features = ["c-library"] }
 # Specifying current Martos version path for ci
 martos = { path = "../../", features = ["c-library"] }
