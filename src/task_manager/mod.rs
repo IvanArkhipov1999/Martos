@@ -22,7 +22,7 @@ cfg_if::cfg_if! {
 /// By default, [cooperative::CooperativeTaskManager] is used
 static mut TASK_MANAGER: TaskManager = TaskManager::new();
 
-trait TaskManagerTrait {
+pub trait TaskManagerTrait {
     /// Add task to task manager. You should pass setup, loop and condition functions.
     fn add_task(
         setup_fn: TaskSetupFunctionType,

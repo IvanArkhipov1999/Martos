@@ -9,6 +9,7 @@ pub trait PortTrait {
     fn setup_hardware_timer();
     /// Function used to get amount of ticks from the start of a timer
     fn get_tick_counter() -> TickType;
+
     /// Function is called when heap is created. Can be used to set configuration.
     fn init_heap();
     #[cfg(feature = "network")]
