@@ -37,7 +37,9 @@ impl PreemptiveTaskManager {
     /// One step of task manager's work.
     // TODO: Support priorities.
     // TODO: Delete tasks from task vector if they are pending?
-    fn task_manager_step() { todo!() }
+    fn task_manager_step() {
+        todo!()
+    }
 
     /// Starts task manager work. Returns after 1000 steps only for testing task_manager_step.
     #[cfg(test)]

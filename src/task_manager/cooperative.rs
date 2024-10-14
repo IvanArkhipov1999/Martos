@@ -44,7 +44,9 @@ impl CooperativeTaskManager {
 
             let task = unsafe { &mut TASK_MANAGER.tasks[TASK_MANAGER.task_to_execute_index] };
             let mut task_future_pin = Pin::new(task);
-            let _ = task_future_pin.as_mut().poll(&mut Context::from_waker(&waker));
+            let _ = task_future_pin
+                .as_mut()
+                .poll(&mut Context::from_waker(&waker));
 
             unsafe {
                 if TASK_MANAGER.task_to_execute_index + 1 < TASK_MANAGER.tasks.len() {
