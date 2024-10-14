@@ -1,17 +1,13 @@
 use crate::timer::TickType;
 use esp_hal::timer::timg::{Timer, Timer0, TimerGroup};
-use esp_hal::{clock::ClockControl, peripherals::*, prelude::*, system::SystemControl};
+use esp_hal::{peripherals::*, prelude::*};
 
 static mut TIMER00: Option<Timer<Timer0<TIMG0>, esp_hal::Blocking>> = None;
 
 /// Esp32 hardware timer setup.
 pub fn setup_hardware_timer() {
-    let peripherals = Peripherals::take();
-    let system = SystemControl::new(peripherals.SYSTEM);
-
-    let clocks = ClockControl::boot_defaults(system.clock_control).freeze();
-
-    let timer_group0 = TimerGroup::new(peripherals.TIMG0, &clocks);
+    let peripherals = esp_hal::init(esp_hal::Config::default());
+    let timer_group0 = TimerGroup::new(peripherals.TIMG0);
 
     let timer00 = timer_group0.timer0;
     let _ = timer00.load_value(500u64.millis());
