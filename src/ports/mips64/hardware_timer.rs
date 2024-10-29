@@ -10,7 +10,7 @@ const TIMER_3: u64 = 0x01B4000B0;
 const TIMER_4: u64 = 0x01B4000C0;
 const CONFIGURATION_REGISTERS: u64 = 0x01B4000D0;
 
-const REGISTER_OFFSET: u64 = 0x08;
+const STATUS_AND_CONTROL_REGISTER_OFFSET: u64 = 0x08;
 
 struct Timer {
     address: u64,
@@ -18,16 +18,16 @@ struct Timer {
     is_running: bool,
 }
 
-pub struct TimerBlock {
-    pub timer0: Timer,
-    pub timer1: Timer,
-    pub timer2: Timer,
-    pub timer3: Timer,
-    pub timer4: Timer,
+struct TimerBlock {
+    timer0: Timer,
+    timer1: Timer,
+    timer2: Timer,
+    timer3: Timer,
+    timer4: Timer,
 }
 
 impl TimerBlock {
-    pub fn new() -> Self {
+    fn new() -> Self {
         let timer0 = Timer::new(TIMER_0, 0x0);
         let timer1 = Timer::new(TIMER_1, 0x1);
         let timer2 = Timer::new(TIMER_2, 0x2);
@@ -46,9 +46,9 @@ impl TimerBlock {
 
 impl Timer {
     fn new(address: u64, enable_mask: u8) -> Self {
-        let mut configuration_value: u8 = read_byte(CONFIGURATION_REGISTERS);
+        let mut configuration_value: u8 = Self::read_byte(CONFIGURATION_REGISTERS);
         configuration_value |= enable_mask;
-        write_byte(CONFIGURATION_REGISTERS, configuration_value);
+        Self::write_byte(CONFIGURATION_REGISTERS, configuration_value);
 
         Timer {
             address,
@@ -56,45 +56,46 @@ impl Timer {
             is_running: false,
         }
     }
-}
 
-impl super::Timer for Timer {
-    fn load_and_start(&self, value: TickType) {
-        while read_byte(self.address + REGISTER_OFFSET) & 0x40 != 0 {
+    fn load_and_start(&mut self, value: TickType) {
+        while Self::read_byte(self.address + STATUS_AND_CONTROL_REGISTER_OFFSET) & 0x40 != 0 {
             // Wait for the previous load to finish
         }
 
         for i in 0..8 {
-            write_byte(self.address + i, (value >> (i * 8)) & 0xFF)
+            Self::write_byte(self.address + i, ((value >> (i * 8)) & 0xFF) as u8)
         }
         self.is_running = true;
         self.duration = value;
     }
 
     fn now(&self) -> TickType {
-        let mut control_value: u8 = read_byte(self.address + REGISTER_OFFSET);
+        let mut control_value: u8 =
+            Self::read_byte(self.address + STATUS_AND_CONTROL_REGISTER_OFFSET);
         control_value |= 0x01;
-        write_byte(self.address + REGISTER_OFFSET, control_value);
+        Self::write_byte(
+            self.address + STATUS_AND_CONTROL_REGISTER_OFFSET,
+            control_value,
+        );
 
-        while read_byte(self.address + REGISTER_OFFSET) & 0x20 != 0 {
+        while Self::read_byte(self.address + STATUS_AND_CONTROL_REGISTER_OFFSET) & 0x20 != 0 {
             // Wait for the update to complete
         }
 
-        let mut timer_value: TickType = 0x0;
-
+        let mut counter_value: TickType = 0x0;
         for i in 0..8 {
-            timer_value |= (read_byte(self.address + i) as TickType) << (i * 8);
+            counter_value |= (Self::read_byte(self.address + i) as TickType) << (i * 8);
         }
 
-        timer_value
+        counter_value
     }
 
-    unsafe fn read_byte(address: *const u8) -> u8 {
-        *address
+    fn read_byte(address: u64) -> u8 {
+        unsafe { *(address as *const u8) }
     }
 
-    unsafe fn write_byte(address: *mut u8, value: u8) {
-        *address = value
+    fn write_byte(address: u64, value: u8) {
+        unsafe { *(address as *mut u8) = value };
     }
 }
 
@@ -102,7 +103,7 @@ impl super::Timer for Timer {
 pub fn setup_hardware_timer() {
     let timer_block = TimerBlock::new();
 
-    let timer0 = timer_block.timer0;
+    let mut timer0 = timer_block.timer0;
     timer0.load_and_start(500 as TickType);
 
     unsafe {
@@ -116,6 +117,6 @@ pub fn get_tick_counter() -> TickType {
         let timer0 = TIMER0.take().expect("Timer error");
         let tick_counter = timer0.now();
         TIMER0 = Some(timer0);
-        tick_counter.ticks()
+        tick_counter
     }
 }
