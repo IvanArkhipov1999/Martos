@@ -1,4 +1,5 @@
 use crate::{task_manager, timer};
+use core::time::Duration;
 use task_manager::TaskManager;
 use timer::{TickType, Timer};
 
@@ -10,6 +11,16 @@ pub extern "C" fn init_system() {
 #[no_mangle]
 pub extern "C" fn setup_timer() {
     Timer::setup_timer()
+}
+
+#[no_mangle]
+pub extern "C" fn start_timer() {
+    Timer::start_timer()
+}
+
+#[no_mangle]
+pub extern "C" fn change_period_timer(period: Duration) {
+    Timer::change_period_timer(period)
 }
 
 #[no_mangle]

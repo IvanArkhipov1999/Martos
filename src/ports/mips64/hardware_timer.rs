@@ -1,4 +1,5 @@
 use crate::timer::TickType;
+use core::time::Duration;
 
 /// Static variable for storing an instance of the timer block.
 static mut TIMER_BLOCK: Option<TimerBlock> = None;
@@ -18,6 +19,10 @@ const CONFIGURATION_REGISTERS: u64 = 0x01B4000D0;
 
 /// Offset for the status and control register.
 const STATUS_AND_CONTROL_REGISTER_OFFSET: u64 = 0x08;
+/// Standard frequency of timer operation - 4 MHz.
+const TIMER_FREQUENCY: u64 = 4;
+/// Number of nanoseconds per second.
+const NANOS_PER_SEC: u128 = 1_000_000_000;
 
 /// Structure representing a block of timers.
 struct TimerBlock {
@@ -56,7 +61,7 @@ impl TimerBlock {
 struct Timer {
     /// Base address of timer.
     address: u64,
-    /// The passed value for the counter.
+    /// The passed value in ticks for counter.
     duration: TickType,
     /// An indicator showing whether the timer is running.
     is_running: bool,
@@ -77,19 +82,26 @@ impl Timer {
     }
 
     /// Loads a value into the timer, thereby starting it.
-    fn load_and_start(&mut self, value: TickType) {
+    fn load_and_start(&mut self) {
         while read_byte(self.address + STATUS_AND_CONTROL_REGISTER_OFFSET) & 0x40 != 0 {
             // Wait for the previous load to finish
         }
 
+        if self.duration == 0 {
+            return;
+        }
         for i in 0..8 {
-            write_byte(self.address + i, ((value >> (i * 8)) & 0xFF) as u8)
+            write_byte(self.address + i, ((self.duration >> (i * 8)) & 0xFF) as u8)
         }
         self.is_running = true;
-        self.duration = value;
     }
 
-    /// Gets the current value of the timer counter.
+    /// Change the duration of the timer in the structure.
+    fn change_duration(&mut self, ticks: TickType) {
+        self.duration = ticks;
+    }
+
+    /// Gets the current ticks of the timer counter.
     fn now(&self) -> TickType {
         let mut control_value: u8 = read_byte(self.address + STATUS_AND_CONTROL_REGISTER_OFFSET);
         control_value |= 0x01;
@@ -102,13 +114,33 @@ impl Timer {
             // Wait for the update to complete
         }
 
-        let mut counter_value: TickType = 0x0;
+        let mut counter_ticks: TickType = 0x0;
         for i in 0..8 {
-            counter_value |= (read_byte(self.address + i) as TickType) << (i * 8);
+            counter_ticks |= (read_byte(self.address + i) as TickType) << (i * 8);
         }
 
-        counter_value
+        counter_ticks
     }
+}
+
+/// Function to convert Duration to TickType. Return value will be saturated if exceed 64 bits.
+fn duration_to_ticks(value: Duration) -> TickType {
+    let total_nanos: u128 =
+        (value.as_secs() as u128 * NANOS_PER_SEC) + value.subsec_nanos() as u128;
+    let ticks: u128 = (total_nanos * TIMER_FREQUENCY as u128) / 1_000;
+
+    if ticks > u64::MAX as u128 {
+        u64::MAX as TickType
+    } else {
+        ticks as TickType
+    }
+}
+
+/// Function to convert TickType to Duration.
+fn ticks_to_duration(ticks: TickType) -> Duration {
+    let total_nanos = (ticks * 1_000) / TIMER_FREQUENCY;
+
+    Duration::from_nanos(total_nanos)
 }
 
 /// Reads a byte from the given address.
@@ -125,9 +157,31 @@ fn write_byte(address: u64, value: u8) {
 pub fn setup_hardware_timer() {
     let mut timer_block = TimerBlock::new();
 
-    timer_block.timer0.load_and_start(500 as TickType);
-
     unsafe {
+        TIMER_BLOCK = Some(timer_block);
+    }
+}
+
+/// Mips64 start harware timer.
+pub fn start_hardware_timer() {
+    unsafe {
+        let mut timer_block = TIMER_BLOCK.take().expect("Timer block error");
+        timer_block.timer0.load_and_start();
+        TIMER_BLOCK = Some(timer_block);
+    }
+}
+
+/// Mips64 change the period of a timer.
+/// If timer was in active state, function will restart timer with a new period.
+pub fn change_period_timer(period: Duration) {
+    unsafe {
+        let mut timer_block = TIMER_BLOCK.take().expect("Timer block error");
+        timer_block
+            .timer0
+            .change_duration(duration_to_ticks(period));
+        if timer_block.timer0.is_running {
+            timer_block.timer0.load_and_start();
+        }
         TIMER_BLOCK = Some(timer_block);
     }
 }
@@ -138,6 +192,8 @@ pub fn get_tick_counter() -> TickType {
         let timer_block = TIMER_BLOCK.take().expect("Timer block error");
         let tick_counter = timer_block.timer0.now();
         TIMER_BLOCK = Some(timer_block);
+
+        // ticks_to_duration(tick_counter)
         tick_counter
     }
 }
