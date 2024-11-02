@@ -13,6 +13,14 @@ impl PortTrait for Mips64 {
         hardware_timer::setup_hardware_timer();
     }
 
+    fn start_hardware_timer() {
+        hardware_timer::start_hardware_timer();
+    }
+
+    fn change_period_timer(period: core::time::Duration) {
+        hardware_timer::change_period_timer(period);
+    }
+
     fn get_tick_counter() -> crate::timer::TickType {
         hardware_timer::get_tick_counter()
     }

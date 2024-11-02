@@ -1,3 +1,5 @@
+use core::time::Duration;
+
 use crate::ports::{Port, PortTrait};
 
 /// Type for tick counting. It is signed for synchronization. It should be u128.
@@ -19,6 +21,16 @@ impl Timer {
     /// Setup function. May be used for setting configuration parameters.
     pub fn setup_timer() {
         Port::setup_hardware_timer()
+    }
+
+    /// Starts the hardware timer.
+    pub fn start_timer() {
+        Port::start_hardware_timer()
+    }
+
+    /// Changes the timer period.
+    pub fn change_period_timer(period: Duration) {
+        Port::change_period_timer(period);
     }
 
     /// Starts timer ticking.
