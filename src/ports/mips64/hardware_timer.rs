@@ -96,7 +96,7 @@ impl Timer {
         }
         self.is_running = true;
     }
-
+  
     /// Changes the duration of the timer in the structure.
     fn change_duration(&mut self, ticks: TickType) {
         self.duration = ticks;
@@ -119,7 +119,7 @@ impl Timer {
         for i in 0..8 {
             counter_ticks |= (read_byte(self.address + i) as TickType) << (i * 8);
         }
-
+      
         self.duration - counter_ticks
     }
 
