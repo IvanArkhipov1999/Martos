@@ -21,7 +21,7 @@ impl PortTrait for Mok {
         hardware_timer::change_period_timer(period);
     }
 
-    fn get_tick_counter() -> crate::timer::TickType {
-        hardware_timer::get_tick_counter()
+    fn get_time() -> core::time::Duration {
+        hardware_timer::get_time()
     }
 }

@@ -25,8 +25,9 @@ fn setup_fn() {
 /// Loop function for task to execute.
 fn loop_fn() {
     COUNTER.fetch_add(1, Ordering::Relaxed);
+    let time = Timer::get_time();
     unsafe {
-        VEC.push(Timer::get_tick_counter());
+        VEC.push(time.as_secs() * 1_000_000 + time.subsec_micros() as u64);
     }
     println!("Loop timer hello world!");
     println!("Vector last value = {}", unsafe { VEC.last().unwrap() });

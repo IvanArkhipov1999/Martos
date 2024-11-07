@@ -46,8 +46,8 @@ impl Timer {
         false
     }
 
-    /// Returns tick counter.
-    pub fn get_tick_counter() -> TickType {
-        Port::get_tick_counter()
+    /// Returns current counter value.
+    pub fn get_time() -> Duration {
+        Port::get_time()
     }
 }

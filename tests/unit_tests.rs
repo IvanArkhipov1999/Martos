@@ -259,18 +259,18 @@ mod unit_tests {
     }
 
     #[test]
-    /// Tests setup timer function and getting tick counter (bad unit test).
+    /// Tests setup timer function and getting counter value (bad unit test).
     fn test_setup_timer() {
         Timer::setup_timer();
-        assert_eq!(Timer::get_tick_counter(), 0);
+        assert_eq!(Timer::get_time().as_micros(), 0);
     }
 
     #[test]
-    /// Tests loop timer function.
-    fn test_loop_timer() {
+    /// Tests start timer function.
+    fn test_start_timer() {
         Timer::setup_timer();
-        Timer::loop_timer();
-        assert_eq!(Timer::get_tick_counter(), 0);
+        Timer::start_timer();
+        assert_eq!(Timer::get_time().as_micros(), 0);
     }
 
     #[test]
