@@ -19,6 +19,24 @@ pub trait PortTrait {
     #[cfg(feature = "network")]
     /// Function for getting esp-now object for network.
     fn get_esp_now() -> EspNow<'static>;
+
+    #[cfg(feature = "preemptive")]
+    fn setup_interrupt() {
+        todo!("setup and enable periodic interrupt for context switching");
+        todo!("triggers one?");
+    }
+    #[cfg(feature = "preemptive")]
+    fn setup_stack(thread: &mut crate::task_manager::tm::Thread) {
+        todo!("setup SP, PC(fn pointer needed), whatever else")
+    }
+    #[cfg(feature = "preemptive")]
+    fn save_ctx(thread_ctx: &mut TrapFrame, isr_ctx: &TrapFrame) {
+        todo!()
+    }
+    #[cfg(feature = "preemptive")]
+    fn load_ctx(thread_ctx: &TrapFrame, isr_ctx: &mut TrapFrame) {
+        todo!()
+    }
 }
 
 /// Port is an alias of PortTrait implementation for a current platform
@@ -27,6 +45,11 @@ pub trait PortTrait {
 pub mod xtensa_esp32;
 #[cfg(any(target_arch = "riscv32", target_arch = "xtensa"))]
 pub type Port = xtensa_esp32::XtensaEsp32;
+#[cfg(all(
+    any(target_arch = "riscv32", target_arch = "xtensa"),
+    feature = "preemptive"
+))]
+pub type TrapFrame = xtensa_esp32::TrapFrame;
 
 #[cfg(all(
     not(any(target_arch = "riscv32", target_arch = "xtensa")),
@@ -38,6 +61,12 @@ pub mod mok;
     not(target_arch = "mips64")
 ))]
 pub type Port = mok::Mok;
+#[cfg(all(
+    not(any(target_arch = "riscv32", target_arch = "xtensa")),
+    not(target_arch = "mips64"),
+    feature = "preemptive"
+))]
+pub type TrapFrame = mok::TrapFrame;
 
 #[cfg(target_arch = "mips64")]
 pub mod mips64;

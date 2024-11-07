@@ -10,8 +10,10 @@ pub mod task;
 
 cfg_if::cfg_if! {
     if #[cfg(feature = "preemptive")] {
-        mod preemptive;
-        pub type TaskManager = preemptive::PreemptiveTaskManager;
+        // mod preemptive;
+        // pub type TaskManager = preemptive::PreemptiveTaskManager;
+        pub(crate) mod tm;
+        pub type TaskManager = tm::TM;
     } else {
         mod cooperative;
         pub type TaskManager = cooperative::CooperativeTaskManager;
@@ -28,20 +30,25 @@ pub trait TaskManagerTrait {
         setup_fn: TaskSetupFunctionType,
         loop_fn: TaskLoopFunctionType,
         stop_condition_fn: TaskStopConditionFunctionType,
-    ) {
-        let task = Task {
-            setup_fn,
-            loop_fn,
-            stop_condition_fn,
-        };
-        let future_task = FutureTask {
-            task,
-            is_setup_completed: false,
-        };
-        unsafe {
-            TASK_MANAGER.tasks.push(future_task);
-        }
-    }
+    );
+    // fn add_task(
+    //     setup_fn: TaskSetupFunctionType,
+    //     loop_fn: TaskLoopFunctionType,
+    //     stop_condition_fn: TaskStopConditionFunctionType,
+    // ) {
+    //     let task = Task {
+    //         setup_fn,
+    //         loop_fn,
+    //         stop_condition_fn,
+    //     };
+    //     let future_task = FutureTask {
+    //         task,
+    //         is_setup_completed: false,
+    //     };
+    //     unsafe {
+    //         TASK_MANAGER.tasks.push(future_task);
+    //     }
+    // }
 
     /// Starts task manager work.
     fn start_task_manager() -> !;
