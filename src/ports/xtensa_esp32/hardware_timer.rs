@@ -1,4 +1,3 @@
-use crate::timer::TickType;
 use core::time::Duration;
 use esp_hal::timer::timg::{Timer, Timer0, TimerGroup};
 use esp_hal::{clock::ClockControl, peripherals::*, prelude::*, system::SystemControl};
@@ -29,12 +28,12 @@ pub fn start_hardware_timer() {}
 /// Esp32 change the period of a timer.
 pub fn change_period_timer(period: Duration) {}
 
-/// Esp32 getting hardware tick counter.
-pub fn get_tick_counter() -> TickType {
+/// Esp32 getting counter value.
+pub fn get_time() -> Duration {
     unsafe {
         let timer00 = TIMER00.take().expect("Timer error");
         let tick_counter = timer00.now();
         TIMER00 = Some(timer00);
-        tick_counter.ticks()
+        Duration::from_micros(tick_counter.ticks())
     }
 }

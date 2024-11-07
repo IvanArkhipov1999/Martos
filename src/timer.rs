@@ -41,13 +41,13 @@ impl Timer {
         }
     }
 
-    /// Stops timer ticking. By default, it does not stop.
+    /// Stops timer ticking. Returns false if the device doesn't support stopping the counter.
     pub fn stop_condition_timer() -> bool {
-        false
+        Port::stop_hardware_timer()
     }
 
-    /// Returns tick counter.
-    pub fn get_tick_counter() -> TickType {
-        Port::get_tick_counter()
+    /// Returns current counter value.
+    pub fn get_time() -> Duration {
+        Port::get_time()
     }
 }

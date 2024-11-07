@@ -1,7 +1,7 @@
 use crate::{task_manager, timer};
 use core::time::Duration;
 use task_manager::TaskManager;
-use timer::{TickType, Timer};
+use timer::Timer;
 
 #[no_mangle]
 pub extern "C" fn init_system() {
@@ -34,8 +34,8 @@ pub extern "C" fn stop_condition_timer() -> bool {
 }
 
 #[no_mangle]
-pub extern "C" fn get_tick_counter() -> TickType {
-    Timer::get_tick_counter()
+pub extern "C" fn get_time() -> Duration {
+    Timer::get_time()
 }
 
 #[no_mangle]

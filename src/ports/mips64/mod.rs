@@ -20,8 +20,12 @@ impl PortTrait for Mips64 {
     fn change_period_timer(period: core::time::Duration) {
         hardware_timer::change_period_timer(period);
     }
+  
+    fn get_time() -> core::time::Duration {
+        hardware_timer::get_time()
+    }
 
-    fn get_tick_counter() -> crate::timer::TickType {
-        hardware_timer::get_tick_counter()
+    fn stop_hardware_timer() -> bool {
+        hardware_timer::stop_hardware_timer()
     }
 }

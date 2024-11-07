@@ -21,8 +21,6 @@ const CONFIGURATION_REGISTERS: u64 = 0x01B4000D0;
 const STATUS_AND_CONTROL_REGISTER_OFFSET: u64 = 0x08;
 /// Standard frequency of timer operation - 4 MHz.
 const TIMER_FREQUENCY: u64 = 4;
-/// Number of nanoseconds per second.
-const NANOS_PER_SEC: u128 = 1_000_000_000;
 
 /// Structure representing a block of timers.
 struct TimerBlock {
@@ -57,12 +55,14 @@ impl TimerBlock {
     }
 }
 
-/// Structure representing a timer.
+/// Structure representing the timer.
 struct Timer {
-    /// Base address of timer.
+    /// Base address of the timer.
     address: u64,
-    /// The passed value in ticks for counter.
+    /// The passed value in ticks for the counter.
     duration: TickType,
+    /// The count resolution mask for the timer.
+    resolution_mask: u8,
     /// An indicator showing whether the timer is running.
     is_running: bool,
 }
@@ -77,6 +77,7 @@ impl Timer {
         Timer {
             address,
             duration: 0,
+            resolution_mask: enable_mask,
             is_running: false,
         }
     }
@@ -95,8 +96,8 @@ impl Timer {
         }
         self.is_running = true;
     }
-
-    /// Change the duration of the timer in the structure.
+  
+    /// Changes the duration of the timer in the structure.
     fn change_duration(&mut self, ticks: TickType) {
         self.duration = ticks;
     }
@@ -118,16 +119,23 @@ impl Timer {
         for i in 0..8 {
             counter_ticks |= (read_byte(self.address + i) as TickType) << (i * 8);
         }
+      
+        self.duration - counter_ticks
+    }
 
-        counter_ticks
+    /// Disables the timer count.
+    fn stop(&mut self) {
+        let mut configuration_value: u8 = read_byte(CONFIGURATION_REGISTERS);
+        configuration_value &= !self.resolution_mask;
+        write_byte(CONFIGURATION_REGISTERS, configuration_value);
+        self.is_running = false;
     }
 }
 
 /// Function to convert Duration to TickType. Return value will be saturated if exceed 64 bits.
 fn duration_to_ticks(value: Duration) -> TickType {
-    let total_nanos: u128 =
-        (value.as_secs() as u128 * NANOS_PER_SEC) + value.subsec_nanos() as u128;
-    let ticks: u128 = (total_nanos * TIMER_FREQUENCY as u128) / 1_000;
+    let micros = value.as_micros();
+    let ticks = micros * TIMER_FREQUENCY as u128;
 
     if ticks > u64::MAX as u128 {
         u64::MAX as TickType
@@ -138,9 +146,9 @@ fn duration_to_ticks(value: Duration) -> TickType {
 
 /// Function to convert TickType to Duration.
 fn ticks_to_duration(ticks: TickType) -> Duration {
-    let total_nanos = (ticks * 1_000) / TIMER_FREQUENCY;
+    let micros = ticks / TIMER_FREQUENCY;
 
-    Duration::from_nanos(total_nanos)
+    Duration::from_micros(micros)
 }
 
 /// Reads a byte from the given address.
@@ -155,7 +163,7 @@ fn write_byte(address: u64, value: u8) {
 
 /// Mips64 hardware timer setup.
 pub fn setup_hardware_timer() {
-    let mut timer_block = TimerBlock::new();
+    let timer_block = TimerBlock::new();
 
     unsafe {
         TIMER_BLOCK = Some(timer_block);
@@ -186,14 +194,24 @@ pub fn change_period_timer(period: Duration) {
     }
 }
 
-/// Mips64 getting hardware tick counter.
-pub fn get_tick_counter() -> TickType {
+/// Mips64 getting counter value.
+pub fn get_time() -> Duration {
     unsafe {
         let timer_block = TIMER_BLOCK.take().expect("Timer block error");
         let tick_counter = timer_block.timer0.now();
         TIMER_BLOCK = Some(timer_block);
 
-        // ticks_to_duration(tick_counter)
-        tick_counter
+        ticks_to_duration(tick_counter)
     }
+}
+
+/// Mips64 stop hardware timer.
+pub fn stop_hardware_timer() -> bool {
+    unsafe {
+        let mut timer_block = TIMER_BLOCK.take().expect("Timer block error");
+        timer_block.timer0.stop();
+        TIMER_BLOCK = Some(timer_block);
+    }
+
+    true
 }
