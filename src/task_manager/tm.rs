@@ -68,7 +68,7 @@ impl TM {
         // todo!("chooses the next thread and updates TM state")
         unsafe {
             TASK_MANAGER.task_to_execute_index =
-                (TASK_MANAGER.task_to_execute_index + 1) % TASK_MANAGER.tasks.len() - 1
+                (TASK_MANAGER.task_to_execute_index + 1) % TASK_MANAGER.tasks.len()
         }
     }
 

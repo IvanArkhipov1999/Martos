@@ -50,7 +50,7 @@ pub fn setup_stack(thread: &mut crate::task_manager::tm::Thread) {
     thread.context.PC = thread.func as u32;
     thread.context.A0 = 0; // return address
 
-    let stack_ptr = thread.stack as usize + crate::task_manager::tm::THREAD_STACK_SIZE; // stack pointer todo: +stack_size?
+    let stack_ptr = thread.stack as usize + crate::task_manager::tm::THREAD_STACK_SIZE; // stack pointer
     thread.context.A1 = stack_ptr as u32;
 }
 
