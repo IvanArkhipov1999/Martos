@@ -68,12 +68,8 @@ struct Timer {
 }
 
 impl Timer {
-    /// Creates a new timer at the specified address and enables the timer counting.
+    /// Creates a new timer at the specified address.
     fn new(address: u64, enable_mask: u8) -> Self {
-        let mut configuration_value: u8 = read_byte(CONFIGURATION_REGISTERS);
-        configuration_value |= enable_mask;
-        write_byte(CONFIGURATION_REGISTERS, configuration_value);
-
         Timer {
             address,
             duration: 0,
@@ -82,23 +78,27 @@ impl Timer {
         }
     }
 
-    /// Loads a value into the timer, thereby starting it.
-    fn load_and_start(&mut self) {
+    /// Enables the timer counting.
+    fn start(&mut self) {
+        if self.duration == 0 {
+            return;
+        }
+
+        let mut configuration_value: u8 = read_byte(CONFIGURATION_REGISTERS);
+        configuration_value |= self.resolution_mask;
+        write_byte(CONFIGURATION_REGISTERS, configuration_value);
+        self.is_running = true;
+    }
+
+    /// Loads a value into the timer.
+    fn load_value(&mut self, ticks: TickType) {
         while read_byte(self.address + STATUS_AND_CONTROL_REGISTER_OFFSET) & 0x40 != 0 {
             // Wait for the previous load to finish
         }
 
-        if self.duration == 0 {
-            return;
-        }
         for i in 0..8 {
             write_byte(self.address + i, ((self.duration >> (i * 8)) & 0xFF) as u8)
         }
-        self.is_running = true;
-    }
-  
-    /// Changes the duration of the timer in the structure.
-    fn change_duration(&mut self, ticks: TickType) {
         self.duration = ticks;
     }
 
@@ -119,7 +119,7 @@ impl Timer {
         for i in 0..8 {
             counter_ticks |= (read_byte(self.address + i) as TickType) << (i * 8);
         }
-      
+
         self.duration - counter_ticks
     }
 
@@ -174,7 +174,7 @@ pub fn setup_hardware_timer() {
 pub fn start_hardware_timer() {
     unsafe {
         let mut timer_block = TIMER_BLOCK.take().expect("Timer block error");
-        timer_block.timer0.load_and_start();
+        timer_block.timer0.start();
         TIMER_BLOCK = Some(timer_block);
     }
 }
@@ -184,12 +184,7 @@ pub fn start_hardware_timer() {
 pub fn change_period_timer(period: Duration) {
     unsafe {
         let mut timer_block = TIMER_BLOCK.take().expect("Timer block error");
-        timer_block
-            .timer0
-            .change_duration(duration_to_ticks(period));
-        if timer_block.timer0.is_running {
-            timer_block.timer0.load_and_start();
-        }
+        timer_block.timer0.load_value(duration_to_ticks(period));
         TIMER_BLOCK = Some(timer_block);
     }
 }
