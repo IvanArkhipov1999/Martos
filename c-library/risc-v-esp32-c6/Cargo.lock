@@ -499,7 +499,7 @@ dependencies = [
 
 [[package]]
 name = "martos"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "esp-alloc",
  "esp-hal",
@@ -629,7 +629,7 @@ checksum = "ec0be4795e2f6a28069bec0b5ff3e2ac9bafc99e6a9a7dc3547996c5c816922c"
 
 [[package]]
 name = "risc_v_esp32c6_static_lib"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "esp-backtrace",
  "esp-hal",

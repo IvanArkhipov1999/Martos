@@ -1,5 +1,7 @@
 pub mod hardware_timer;
 pub mod memory_manager;
+#[cfg(feature = "network")]
+pub mod network;
 use crate::ports::PortTrait;
 
 /// PortTrait implementation for Mok platform
@@ -27,5 +29,9 @@ impl PortTrait for Mok {
 
     fn stop_hardware_timer() -> bool {
         false
+    }
+    #[cfg(feature = "network")]
+    fn init_network() {
+        network::init_network();
     }
 }
