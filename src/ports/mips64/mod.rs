@@ -24,4 +24,8 @@ impl PortTrait for Mips64 {
     fn get_time() -> core::time::Duration {
         hardware_timer::get_time()
     }
+
+    fn stop_hardware_timer() -> bool {
+        hardware_timer::stop_hardware_timer()
+    }
 }

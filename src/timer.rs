@@ -41,9 +41,9 @@ impl Timer {
         }
     }
 
-    /// Stops timer ticking. By default, it does not stop.
+    /// Stops timer ticking. Returns false if the device doesn't support stopping the counter.
     pub fn stop_condition_timer() -> bool {
-        false
+        Port::stop_hardware_timer()
     }
 
     /// Returns current counter value.

@@ -55,12 +55,14 @@ impl TimerBlock {
     }
 }
 
-/// Structure representing a timer.
+/// Structure representing the timer.
 struct Timer {
-    /// Base address of timer.
+    /// Base address of the timer.
     address: u64,
-    /// The passed value in ticks for counter.
+    /// The passed value in ticks for the counter.
     duration: TickType,
+    /// The count resolution mask for the timer.
+    resolution_mask: u8,
     /// An indicator showing whether the timer is running.
     is_running: bool,
 }
@@ -75,6 +77,7 @@ impl Timer {
         Timer {
             address,
             duration: 0,
+            resolution_mask: enable_mask,
             is_running: false,
         }
     }
@@ -94,7 +97,7 @@ impl Timer {
         self.is_running = true;
     }
 
-    /// Change the duration of the timer in the structure.
+    /// Changes the duration of the timer in the structure.
     fn change_duration(&mut self, ticks: TickType) {
         self.duration = ticks;
     }
@@ -118,6 +121,14 @@ impl Timer {
         }
 
         self.duration - counter_ticks
+    }
+
+    /// Disables the timer count.
+    fn stop(&mut self) {
+        let mut configuration_value: u8 = read_byte(CONFIGURATION_REGISTERS);
+        configuration_value &= !self.resolution_mask;
+        write_byte(CONFIGURATION_REGISTERS, configuration_value);
+        self.is_running = false;
     }
 }
 
@@ -192,4 +203,15 @@ pub fn get_time() -> Duration {
 
         ticks_to_duration(tick_counter)
     }
+}
+
+/// Mips64 stop hardware timer.
+pub fn stop_hardware_timer() -> bool {
+    unsafe {
+        let mut timer_block = TIMER_BLOCK.take().expect("Timer block error");
+        timer_block.timer0.stop();
+        TIMER_BLOCK = Some(timer_block);
+    }
+
+    true
 }

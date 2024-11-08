@@ -8,8 +8,10 @@ pub trait PortTrait {
     fn start_hardware_timer();
     /// Function is used to change the period of a timer.
     fn change_period_timer(period: Duration);
-    /// Function used to get amount of time from the start of a timer
+    /// Function used to get amount of time from the start of a timer.
     fn get_time() -> Duration;
+    /// Function is called to stop timer.
+    fn stop_hardware_timer() -> bool;
 
     /// Function is called when heap is created. Can be used to set configuration.
     fn init_heap();

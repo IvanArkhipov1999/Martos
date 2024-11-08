@@ -24,4 +24,8 @@ impl PortTrait for XtensaEsp32 {
     fn get_time() -> core::time::Duration {
         hardware_timer::get_time()
     }
+
+    fn stop_hardware_timer() -> bool {
+        false
+    }
 }
