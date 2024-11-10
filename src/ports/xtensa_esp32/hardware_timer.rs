@@ -35,10 +35,13 @@ pub fn setup_hardware_timer() {
 /// Esp32 start harware timer.
 pub fn start_hardware_timer() {}
 
-/// Esp32 change the period of a timer.
+/// Esp32 change operating mode of hardware timer.
+pub fn set_reload_mode(auto_reload: bool) {}
+
+/// Esp32 change the period of hardware timer.
 pub fn change_period_timer(period: Duration) {}
 
-/// Esp32 getting counter value.
+/// Esp32 getting counter value of hardware timer.
 pub fn get_time() -> Duration {
     unsafe {
         let timer00 = TIMER00.take().expect("Timer error");

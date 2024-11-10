@@ -65,6 +65,8 @@ struct Timer {
     resolution_mask: u8,
     /// An indicator showing whether the timer is running.
     is_running: bool,
+    /// An indicator showing whether the timer is in auto reload mode or in one shot mode.
+    reload_mode: bool,
 }
 
 impl Timer {
@@ -75,6 +77,7 @@ impl Timer {
             duration: 0,
             resolution_mask: enable_mask,
             is_running: false,
+            reload_mode: false,
         }
     }
 
@@ -88,6 +91,25 @@ impl Timer {
         configuration_value |= self.resolution_mask;
         write_byte(CONFIGURATION_REGISTERS, configuration_value);
         self.is_running = true;
+    }
+
+    /// Changes the timer's operating mode.
+    fn change_operating_mode(&mut self, auto_reload: bool) {
+        if self.reload_mode == auto_reload {
+            return;
+        }
+
+        let mut control_value: u8 = read_byte(self.address + STATUS_AND_CONTROL_REGISTER_OFFSET);
+        if auto_reload {
+            control_value |= 0x04;
+        } else {
+            control_value &= 0xfb;
+        }
+        write_byte(
+            self.address + STATUS_AND_CONTROL_REGISTER_OFFSET,
+            control_value,
+        );
+        self.reload_mode = auto_reload;
     }
 
     /// Loads a value into the timer.
@@ -179,7 +201,16 @@ pub fn start_hardware_timer() {
     }
 }
 
-/// Mips64 change the period of a timer.
+/// Mips64 change operating mode of hardware timer.
+pub fn set_reload_mode(auto_reload: bool) {
+    unsafe {
+        let mut timer_block = TIMER_BLOCK.take().expect("Timer block error");
+        timer_block.timer0.change_operating_mode(auto_reload);
+        TIMER_BLOCK = Some(timer_block);
+    }
+}
+
+/// Mips64 change the period of hardware timer.
 /// If timer was in active state, function will restart timer with a new period.
 pub fn change_period_timer(period: Duration) {
     unsafe {
@@ -189,7 +220,7 @@ pub fn change_period_timer(period: Duration) {
     }
 }
 
-/// Mips64 getting counter value.
+/// Mips64 getting counter value of hardware timer.
 pub fn get_time() -> Duration {
     unsafe {
         let timer_block = TIMER_BLOCK.take().expect("Timer block error");

@@ -19,6 +19,11 @@ pub extern "C" fn start_timer() {
 }
 
 #[no_mangle]
+pub extern "C" fn set_reload_mode(auto_reload: bool) {
+    Timer::set_reload_mode(auto_reload)
+}
+
+#[no_mangle]
 pub extern "C" fn change_period_timer(period: Duration) {
     Timer::change_period_timer(period)
 }
