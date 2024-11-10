@@ -262,20 +262,23 @@ mod unit_tests {
     /// Tests setup timer function and getting counter value (bad unit test).
     fn test_setup_timer() {
         Timer::setup_timer();
-        assert_eq!(Timer::get_time().as_micros(), 0);
+        let timer = Timer::get_timer(0).expect("A timer with this index does not exist.");
+        assert_eq!(timer.get_time().as_micros(), 0);
     }
 
     #[test]
     /// Tests start timer function.
     fn test_start_timer() {
         Timer::setup_timer();
-        Timer::start_timer();
-        assert_eq!(Timer::get_time().as_micros(), 0);
+        let timer = Timer::get_timer(0).expect("A timer with this index does not exist.");
+        timer.start_timer();
+        assert_eq!(timer.get_time().as_micros(), 0);
     }
 
     #[test]
     /// Tests stop condition timer function.
     fn test_stop_condition_timer() {
-        assert!(!Timer::stop_condition_timer());
+        let timer = Timer::get_timer(0).expect("A timer with this index does not exist.");
+        assert!(!timer.stop_condition_timer());
     }
 }

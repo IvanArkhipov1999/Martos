@@ -8,14 +8,9 @@ pub type TickType = u64;
 /// The definition of the timers themselves.
 /// TODO: Should contain synchronization period and synchronization scale.
 pub struct Timer {
-    /// Number of ticks in timer.
-    tick_counter: TickType,
+    /// Timer number in the timer block.
+    timer_index: u8,
 }
-
-/// Operating system timer.
-// TODO: Maybe it can be non static. It is static to make functions to pass to task manager.
-// TODO: Default parameters should be read from config file.
-static mut TIMER: Timer = Timer { tick_counter: 0 };
 
 impl Timer {
     /// Setup function. May be used for setting configuration parameters.
@@ -23,36 +18,38 @@ impl Timer {
         Port::setup_hardware_timer()
     }
 
-    /// Starts the hardware timer.
-    pub fn start_timer() {
-        Port::start_hardware_timer()
-    }
-
-    /// Updates the operating mode of the timer to be either an auto reload timer or a one-shot timer.
-    pub fn set_reload_mode(auto_reload: bool) {
-        Port::set_reload_mode(auto_reload)
-    }
-
-    /// Changes the timer period.
-    pub fn change_period_timer(period: Duration) {
-        Port::change_period_timer(period);
-    }
-
-    /// Starts timer ticking.
-    // TODO: What should happen after overflow?
-    pub fn loop_timer() {
-        unsafe {
-            TIMER.tick_counter += 1;
+    /// Gets the timer instance at the specified index.
+    pub fn get_timer(timer_index: u8) -> Option<Self> {
+        if Port::valid_timer_index(timer_index) {
+            Some(Self { timer_index })
+        } else {
+            None
         }
     }
 
+    /// Starts the hardware timer.
+    /// TODO: What should happen after overflow?
+    pub fn start_timer(&self) {
+        Port::start_hardware_timer(self.timer_index)
+    }
+
+    /// Updates the operating mode of the timer to be either an auto reload timer or a one-shot timer.
+    pub fn set_reload_mode(&self, auto_reload: bool) {
+        Port::set_reload_mode(self.timer_index, auto_reload)
+    }
+
+    /// Changes the timer period.
+    pub fn change_period_timer(&self, period: Duration) {
+        Port::change_period_timer(self.timer_index, period);
+    }
+
     /// Stops timer ticking. Returns false if the device doesn't support stopping the counter.
-    pub fn stop_condition_timer() -> bool {
-        Port::stop_hardware_timer()
+    pub fn stop_condition_timer(&self) -> bool {
+        Port::stop_hardware_timer(self.timer_index)
     }
 
     /// Returns current counter value.
-    pub fn get_time() -> Duration {
-        Port::get_time()
+    pub fn get_time(&self) -> Duration {
+        Port::get_time(self.timer_index)
     }
 }

@@ -193,38 +193,66 @@ pub fn setup_hardware_timer() {
 }
 
 /// Mips64 start harware timer.
-pub fn start_hardware_timer() {
+pub fn start_hardware_timer(timer_index: u8) {
     unsafe {
         let mut timer_block = TIMER_BLOCK.take().expect("Timer block error");
-        timer_block.timer0.start();
+        match timer_index {
+            0 => timer_block.timer0.start(),
+            1 => timer_block.timer1.start(),
+            2 => timer_block.timer2.start(),
+            3 => timer_block.timer3.start(),
+            4 => timer_block.timer4.start(),
+            _ => (),
+        }
         TIMER_BLOCK = Some(timer_block);
     }
 }
 
 /// Mips64 change operating mode of hardware timer.
-pub fn set_reload_mode(auto_reload: bool) {
+pub fn set_reload_mode(timer_index: u8, auto_reload: bool) {
     unsafe {
         let mut timer_block = TIMER_BLOCK.take().expect("Timer block error");
-        timer_block.timer0.change_operating_mode(auto_reload);
+        match timer_index {
+            0 => timer_block.timer0.change_operating_mode(auto_reload),
+            1 => timer_block.timer1.change_operating_mode(auto_reload),
+            2 => timer_block.timer2.change_operating_mode(auto_reload),
+            3 => timer_block.timer3.change_operating_mode(auto_reload),
+            4 => timer_block.timer4.change_operating_mode(auto_reload),
+            _ => (),
+        }
         TIMER_BLOCK = Some(timer_block);
     }
 }
 
 /// Mips64 change the period of hardware timer.
 /// If timer was in active state, function will restart timer with a new period.
-pub fn change_period_timer(period: Duration) {
+pub fn change_period_timer(timer_index: u8, period: Duration) {
     unsafe {
         let mut timer_block = TIMER_BLOCK.take().expect("Timer block error");
-        timer_block.timer0.load_value(duration_to_ticks(period));
+        match timer_index {
+            0 => timer_block.timer0.load_value(duration_to_ticks(period)),
+            1 => timer_block.timer1.load_value(duration_to_ticks(period)),
+            2 => timer_block.timer2.load_value(duration_to_ticks(period)),
+            3 => timer_block.timer3.load_value(duration_to_ticks(period)),
+            4 => timer_block.timer4.load_value(duration_to_ticks(period)),
+            _ => (),
+        }
         TIMER_BLOCK = Some(timer_block);
     }
 }
 
 /// Mips64 getting counter value of hardware timer.
-pub fn get_time() -> Duration {
+pub fn get_time(timer_index: u8) -> Duration {
     unsafe {
         let timer_block = TIMER_BLOCK.take().expect("Timer block error");
-        let tick_counter = timer_block.timer0.now();
+        let tick_counter = match timer_index {
+            0 => timer_block.timer0.now(),
+            1 => timer_block.timer1.now(),
+            2 => timer_block.timer2.now(),
+            3 => timer_block.timer3.now(),
+            4 => timer_block.timer4.now(),
+            _ => 0,
+        };
         TIMER_BLOCK = Some(timer_block);
 
         ticks_to_duration(tick_counter)
@@ -232,10 +260,17 @@ pub fn get_time() -> Duration {
 }
 
 /// Mips64 stop hardware timer.
-pub fn stop_hardware_timer() -> bool {
+pub fn stop_hardware_timer(timer_index: u8) -> bool {
     unsafe {
         let mut timer_block = TIMER_BLOCK.take().expect("Timer block error");
-        timer_block.timer0.stop();
+        match timer_index {
+            0 => timer_block.timer0.stop(),
+            1 => timer_block.timer1.stop(),
+            2 => timer_block.timer2.stop(),
+            3 => timer_block.timer3.stop(),
+            4 => timer_block.timer4.stop(),
+            _ => (),
+        }
         TIMER_BLOCK = Some(timer_block);
     }
 

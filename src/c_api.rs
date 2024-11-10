@@ -14,6 +14,11 @@ pub extern "C" fn setup_timer() {
 }
 
 #[no_mangle]
+pub extern "C" fn get_timer() {
+    Timer::get_timer()
+}
+
+#[no_mangle]
 pub extern "C" fn start_timer() {
     Timer::start_timer()
 }

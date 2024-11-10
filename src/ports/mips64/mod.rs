@@ -15,24 +15,32 @@ impl PortTrait for Mips64 {
         hardware_timer::setup_hardware_timer();
     }
 
-    fn start_hardware_timer() {
-        hardware_timer::start_hardware_timer();
+    fn valid_timer_index(timer_index: u8) -> bool {
+        if timer_index <= 4 {
+            true
+        } else {
+            false
+        }
     }
 
-    fn set_reload_mode(auto_reload: bool) {
-        hardware_timer::set_reload_mode(auto_reload);
+    fn start_hardware_timer(timer_index: u8) {
+        hardware_timer::start_hardware_timer(timer_index);
     }
 
-    fn change_period_timer(period: core::time::Duration) {
-        hardware_timer::change_period_timer(period);
+    fn set_reload_mode(timer_index: u8, auto_reload: bool) {
+        hardware_timer::set_reload_mode(timer_index, auto_reload);
     }
 
-    fn get_time() -> core::time::Duration {
-        hardware_timer::get_time()
+    fn change_period_timer(timer_index: u8, period: core::time::Duration) {
+        hardware_timer::change_period_timer(timer_index, period);
     }
 
-    fn stop_hardware_timer() -> bool {
-        hardware_timer::stop_hardware_timer()
+    fn get_time(timer_index: u8) -> core::time::Duration {
+        hardware_timer::get_time(timer_index)
+    }
+
+    fn stop_hardware_timer(timer_index: u8) -> bool {
+        hardware_timer::stop_hardware_timer(timer_index)
     }
 
     #[cfg(feature = "network")]
