@@ -28,7 +28,7 @@ impl Timer {
         Port::start_hardware_timer()
     }
 
-    /// Updates the opearting mode of the timer to be either an auto reload timer or a one-shot timer.
+    /// Updates the operating mode of the timer to be either an auto reload timer or a one-shot timer.
     pub fn set_reload_mode(auto_reload: bool) {
         Port::set_reload_mode(auto_reload)
     }
