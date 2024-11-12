@@ -267,11 +267,11 @@ mod unit_tests {
     }
 
     #[test]
-    /// Tests start timer function.
-    fn test_start_timer() {
+    /// Tests loop timer function.
+    fn test_loop_timer() {
         Timer::setup_timer();
-        let timer = Timer::get_timer(0).expect("A timer with this index does not exist.");
-        timer.start_timer();
+        let mut timer = Timer::get_timer(0).expect("A timer with this index does not exist.");
+        timer.loop_timer();
         assert_eq!(timer.get_time().as_micros(), 0);
     }
 
@@ -279,6 +279,7 @@ mod unit_tests {
     /// Tests stop condition timer function.
     fn test_stop_condition_timer() {
         let timer = Timer::get_timer(0).expect("A timer with this index does not exist.");
+        timer.start_timer();
         assert!(!timer.stop_condition_timer());
     }
 }

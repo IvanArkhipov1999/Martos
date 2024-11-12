@@ -3,6 +3,18 @@ use core::time::Duration;
 use task_manager::TaskManager;
 use timer::Timer;
 
+#[repr(C)]
+pub struct DurationFFI {
+    secs: u64,
+    micros: u32,
+}
+
+#[repr(C)]
+pub struct TimerOption {
+    is_some: bool,
+    timer: Timer,
+}
+
 #[no_mangle]
 pub extern "C" fn init_system() {
     super::init_system();
@@ -14,38 +26,55 @@ pub extern "C" fn setup_timer() {
 }
 
 #[no_mangle]
-pub extern "C" fn get_timer() {
-    Timer::get_timer()
+pub extern "C" fn get_timer(timer_index: u8) -> TimerOption {
+    if let Some(timer) = Timer::get_timer(timer_index) {
+        TimerOption {
+            is_some: true,
+            timer,
+        }
+    } else {
+        TimerOption {
+            is_some: false,
+            timer: Timer {
+                timer_index: 0,
+                tick_counter: 0,
+            },
+        }
+    }
 }
 
 #[no_mangle]
-pub extern "C" fn start_timer() {
-    Timer::start_timer()
+pub extern "C" fn start_timer(timer: &Timer) {
+    Timer::start_timer(timer)
 }
 
 #[no_mangle]
-pub extern "C" fn set_reload_mode(auto_reload: bool) {
-    Timer::set_reload_mode(auto_reload)
+pub extern "C" fn set_reload_mode(timer: &Timer, auto_reload: bool) {
+    Timer::set_reload_mode(timer, auto_reload)
 }
 
 #[no_mangle]
-pub extern "C" fn change_period_timer(period: Duration) {
-    Timer::change_period_timer(period)
+pub extern "C" fn change_period_timer(timer: &Timer, period: DurationFFI) {
+    Timer::change_period_timer(timer, Duration::new(period.secs, period.micros))
 }
 
 #[no_mangle]
-pub extern "C" fn loop_timer() {
-    Timer::loop_timer()
+pub extern "C" fn loop_timer(timer: &mut Timer) {
+    Timer::loop_timer(timer)
 }
 
 #[no_mangle]
-pub extern "C" fn stop_condition_timer() -> bool {
-    Timer::stop_condition_timer()
+pub extern "C" fn stop_condition_timer(timer: &Timer) -> bool {
+    Timer::stop_condition_timer(timer)
 }
 
 #[no_mangle]
-pub extern "C" fn get_time() -> Duration {
-    Timer::get_time()
+pub extern "C" fn get_time(timer: &Timer) -> DurationFFI {
+    let time = Timer::get_time(timer);
+    DurationFFI {
+        secs: time.as_secs(),
+        micros: time.subsec_micros(),
+    }
 }
 
 #[no_mangle]

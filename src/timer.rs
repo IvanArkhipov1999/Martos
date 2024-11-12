@@ -7,9 +7,12 @@ pub type TickType = u64;
 
 /// The definition of the timers themselves.
 /// TODO: Should contain synchronization period and synchronization scale.
+#[repr(C)]
 pub struct Timer {
     /// Timer number in the timer block.
-    timer_index: u8,
+    pub timer_index: u8,
+    /// Number of ticks in timer.
+    pub tick_counter: TickType,
 }
 
 impl Timer {
@@ -21,10 +24,19 @@ impl Timer {
     /// Gets the timer instance at the specified index.
     pub fn get_timer(timer_index: u8) -> Option<Self> {
         if Port::valid_timer_index(timer_index) {
-            Some(Self { timer_index })
+            Some(Self {
+                timer_index,
+                tick_counter: 0,
+            })
         } else {
             None
         }
+    }
+
+    /// Starts timer ticking.
+    // TODO: What should happen after overflow?
+    pub fn loop_timer(&mut self) {
+        self.tick_counter += 1;
     }
 
     /// Starts the hardware timer.
