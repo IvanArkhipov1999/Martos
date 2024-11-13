@@ -1,6 +1,6 @@
 [package]
-name = "example_xtensa_esp32_wifi"
-version = "0.4.0"
+name = "example_xtensa_esp32_scheduler"
+version = "0.3.0"
 edition = "2021"
 
 [profile.release]
@@ -8,13 +8,13 @@ debug = true
 
 [dependencies]
 # Specifying Martos version
-#martos = "0.4.0"
+#martos = "0.3.0"
 # Specifying current Martos version path for ci
-martos = { path = "../../../../", features = ["network"] }
-esp-hal = "0.21.0"
+martos = { path = "../../../../", features = ["preemptive"]}
+esp-hal = "0.21.1"
 esp-backtrace = { version = "0.14.1", features = ["esp32", "panic-handler", "exception-handler", "println"] }
 esp-println = { version = "0.11.0", features = ["esp32"] }
-esp-wifi = { version = "0.10.1", features = ["wifi", "esp-now"]}
+critical-section = "1.1.3"
 
 [features]
-default = ["esp-hal/esp32", "esp-backtrace/esp32", "esp-println/esp32", "esp-wifi/esp32"]
+default = ["esp-hal/esp32", "esp-backtrace/esp32", "esp-println/esp32"]

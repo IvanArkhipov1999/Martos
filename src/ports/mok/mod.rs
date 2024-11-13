@@ -23,3 +23,5 @@ impl PortTrait for Mok {
         network::init_network();
     }
 }
+
+pub type TrapFrame = ();
