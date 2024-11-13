@@ -41,6 +41,7 @@ pub struct TM {
     pub(crate) tasks: Vec<Thread>,
     pub(crate) task_to_execute_index: usize,
 }
+static mut first: bool = true;
 
 impl TM {
     pub const fn new() -> Self {
@@ -53,13 +54,6 @@ impl TM {
 
     /// Returns ref to task_to_execute_index thread (to save/load context)
     // fn curr_thread() -> *const Thread {
-    //     // todo: should work for array, but not for vec
-    //     unsafe {
-    //         TASK_MANAGER
-    //             .tasks
-    //             .as_ptr()
-    //             .add(TASK_MANAGER.task_to_execute_index)
-    //     }
     // }
 
     fn next_thread() {
@@ -71,13 +65,26 @@ impl TM {
     }
 
     pub fn schedule(isr_ctx: &mut TrapFrame) {
-        let task = unsafe { TASK_MANAGER.tasks.get_mut( TASK_MANAGER.task_to_execute_index ).unwrap() };
-        let ctx = &mut task.context;
-        Port::save_ctx(ctx, isr_ctx);
+        if unsafe { !first }{
+            let task = unsafe {
+                TASK_MANAGER
+                    .tasks
+                    .get_mut(TASK_MANAGER.task_to_execute_index)
+                    .unwrap()
+            };
+            let ctx = &mut task.context;
+            Port::save_ctx(ctx, isr_ctx);
 
-        Self::next_thread();
+            Self::next_thread();
+        }
+        unsafe {first = false}
 
-        let task = unsafe { TASK_MANAGER.tasks.get_mut( TASK_MANAGER.task_to_execute_index ).unwrap() };
+        let task = unsafe {
+            TASK_MANAGER
+                .tasks
+                .get_mut(TASK_MANAGER.task_to_execute_index)
+                .unwrap()
+        };
         let ctx = &mut task.context;
         Port::load_ctx(ctx, isr_ctx);
     }
