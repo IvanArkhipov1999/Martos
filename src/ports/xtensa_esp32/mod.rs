@@ -40,7 +40,7 @@ impl PortTrait for XtensaEsp32 {
         preempt::setup_interrupt();
     }
     #[cfg(feature = "preemptive")]
-    fn setup_stack(thread: &mut crate::task_manager::tm::Thread) {
+    fn setup_stack(thread: &mut crate::task_manager::preemptive::Thread) {
         preempt::setup_stack(thread);
     }
     #[cfg(feature = "preemptive")]

@@ -34,30 +34,40 @@ pub fn setup_interrupt() {
 
 extern "C" fn handler(ctx: &mut TrapFrame) {
     // todo: should disable interrupts?
-    println!("Handler\nCTX: {:?}", ctx);
+    // println!("Handler\nCTX: {:?}", ctx);
 
     let mut timer00 = unsafe { TIMER00.take().expect("Timer error") };
     timer00.clear_interrupt();
+    timer00.load_value(1000u64.millis()).unwrap();
+    timer00.start();
     unsafe {
         TIMER00 = Some(timer00);
     };
 
-    crate::task_manager::tm::TM::schedule(ctx);
+    crate::task_manager::preemptive::TM::schedule(ctx);
 }
 
-pub fn setup_stack(thread: &mut crate::task_manager::tm::Thread) {
+pub fn setup_stack(thread: &mut crate::task_manager::preemptive::Thread) {
     // todo!("setup SP, PC(fn pointer needed), whatever else is needed")
     thread.context.PC = thread.func as u32;
     thread.context.A0 = 0; // return address
 
-    let stack_ptr = thread.stack as usize + crate::task_manager::tm::THREAD_STACK_SIZE; // stack pointer
+    let stack_ptr = thread.stack as usize + crate::task_manager::preemptive::THREAD_STACK_SIZE;
     thread.context.A1 = stack_ptr as u32;
+
+    thread.context.PS = 0x00040000 | (1 & 3) << 16;
+    unsafe {
+        *((stack_ptr - 4) as *mut u32) = 0;
+        *((stack_ptr - 8) as *mut u32) = 0;
+        *((stack_ptr - 12) as *mut u32) = stack_ptr as u32;
+        *((stack_ptr - 16) as *mut u32) = 0;
+    }
 }
 
 pub fn save_ctx(thread_ctx: &mut TrapFrame, isr_ctx: &TrapFrame) {
-    *thread_ctx = *isr_ctx
+    thread_ctx.clone_from(isr_ctx)
 }
 
 pub fn load_ctx(thread_ctx: &TrapFrame, isr_ctx: &mut TrapFrame) {
-    *isr_ctx = *thread_ctx
+    isr_ctx.clone_from(thread_ctx)
 }

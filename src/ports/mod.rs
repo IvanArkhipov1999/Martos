@@ -26,7 +26,7 @@ pub trait PortTrait {
         todo!("triggers one?");
     }
     #[cfg(feature = "preemptive")]
-    fn setup_stack(thread: &mut crate::task_manager::tm::Thread) {
+    fn setup_stack(thread: &mut crate::task_manager::preemptive::Thread) {
         todo!("setup SP, PC(fn pointer needed), whatever else")
     }
     #[cfg(feature = "preemptive")]

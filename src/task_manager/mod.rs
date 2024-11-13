@@ -12,8 +12,8 @@ cfg_if::cfg_if! {
     if #[cfg(feature = "preemptive")] {
         // mod preemptive;
         // pub type TaskManager = preemptive::PreemptiveTaskManager;
-        pub(crate) mod tm;
-        pub type TaskManager = tm::TM;
+        pub(crate) mod preemptive;
+        pub type TaskManager = preemptive::TM;
     } else {
         mod cooperative;
         pub type TaskManager = cooperative::CooperativeTaskManager;
