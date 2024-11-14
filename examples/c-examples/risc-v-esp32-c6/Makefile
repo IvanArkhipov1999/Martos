@@ -44,4 +44,4 @@ main.elf: $(OBJS)
 clean:
 	rm -f $(OBJS)
 	rm -f ./main.bin
-	rm -f ./main.elf.map
+	rm -f ./main.elf ./main.elf.map
