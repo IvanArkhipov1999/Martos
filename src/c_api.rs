@@ -3,15 +3,20 @@ use core::time::Duration;
 use task_manager::TaskManager;
 use timer::Timer;
 
+/// The structure represents duration in seconds and microseconds.
+/// It is used to pass time intervals between programming languages.
 #[repr(C)]
 pub struct DurationFFI {
     secs: u64,
     micros: u32,
 }
 
+/// The structure is used to return information about a timer.
 #[repr(C)]
 pub struct TimerOption {
+    /// Indicator whether the timer exists.
     is_some: bool,
+    /// The timer itself.
     timer: Timer,
 }
 
