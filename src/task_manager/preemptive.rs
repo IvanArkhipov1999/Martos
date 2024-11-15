@@ -6,9 +6,7 @@ use crate::task_manager::{TaskManagerTrait, TASK_MANAGER};
 use alloc::vec::Vec;
 use core::alloc::Layout;
 use core::sync::atomic::{AtomicUsize, Ordering};
-use esp_println::println;
 
-// const NUM_THREADS: usize = 8;
 pub(crate) const THREAD_STACK_SIZE: usize = 1024; // TODO:
 
 static mut NEXT_THREAD_ID: AtomicUsize = AtomicUsize::new(0);
@@ -30,34 +28,27 @@ impl Thread {
         Thread {
             id,
             stack,
-            context: TrapFrame::default(), // todo: default?
+            context: TrapFrame::default(),
             func,
         }
     }
 }
 
-pub struct TM {
-    // pub(crate) threads: [Thread; NUM_THREADS],
+pub struct PreemptiveTaskManager {
     pub(crate) tasks: Vec<Thread>,
     pub(crate) task_to_execute_index: usize,
 }
 static mut first: bool = true;
 
-impl TM {
+impl PreemptiveTaskManager {
     pub const fn new() -> Self {
-        TM {
-            // threads: [Thread::new(); NUM_THREADS],
+        PreemptiveTaskManager {
             tasks: Vec::new(),
             task_to_execute_index: 0,
         }
     }
 
-    /// Returns ref to task_to_execute_index thread (to save/load context)
-    // fn curr_thread() -> *const Thread {
-    // }
-
     fn next_thread() {
-        // todo!("chooses the next thread and updates TM state")
         unsafe {
             TASK_MANAGER.task_to_execute_index =
                 (TASK_MANAGER.task_to_execute_index + 1) % TASK_MANAGER.tasks.len()
@@ -65,7 +56,7 @@ impl TM {
     }
 
     pub fn schedule(isr_ctx: &mut TrapFrame) {
-        if unsafe { !first }{
+        if unsafe { !first } {
             let task = unsafe {
                 TASK_MANAGER
                     .tasks
@@ -77,7 +68,7 @@ impl TM {
 
             Self::next_thread();
         }
-        unsafe {first = false}
+        unsafe { first = false }
 
         let task = unsafe {
             TASK_MANAGER
@@ -90,13 +81,13 @@ impl TM {
     }
 }
 
-impl TaskManagerTrait for TM {
+
+impl TaskManagerTrait for PreemptiveTaskManager {
     fn add_task(
         setup_fn: TaskSetupFunctionType,
         loop_fn: TaskLoopFunctionType,
         stop_condition_fn: TaskStopConditionFunctionType,
     ) {
-        // todo!("takes task's closure, creates new thread, setups stack, adds to Queue");
         let align = 16; //todo: ?
         let layout = Layout::from_size_align(THREAD_STACK_SIZE, align).unwrap();
         let stack = unsafe { alloc::alloc::alloc(layout) };
@@ -108,7 +99,6 @@ impl TaskManagerTrait for TM {
     }
 
     fn start_task_manager() -> ! {
-        // todo!("call arch specific code to initialize periodic interrupt");
         // todo!("idle task?");
         Port::setup_interrupt();
         loop {}

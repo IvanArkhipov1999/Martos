@@ -15,7 +15,7 @@ pub fn setup_hardware_timer() {
     let timer_group0 = TimerGroup::new(peripherals.TIMG0);
 
     let timer00 = timer_group0.timer0;
-    let _ = timer00.load_value(500u64.millis());
+    timer00.load_value(500u64.millis()).unwrap();
     timer00.start();
     timer00.listen();
 
