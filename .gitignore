@@ -17,3 +17,9 @@ examples/**/Cargo.lock
 # Espessif generated files and directories
 sdkconfig
 build/
+
+# C build artifacts
+*.elf
+*.elf.map
+*.o
+*.bin
