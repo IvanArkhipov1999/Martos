@@ -119,7 +119,7 @@ impl Timer {
         }
 
         for i in 0..8 {
-            write_byte(self.address + i, ((self.duration >> (i * 8)) & 0xFF) as u8)
+            write_byte(self.address + i, ((ticks >> (i * 8)) & 0xFF) as u8)
         }
         self.duration = ticks;
     }
