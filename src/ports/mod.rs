@@ -1,4 +1,4 @@
-use crate::timer::TickType;
+use core::time::Duration;
 #[cfg(any(target_arch = "riscv32", target_arch = "xtensa"))]
 #[cfg(feature = "network")]
 use esp_wifi::esp_now::EspNow;
@@ -7,8 +7,19 @@ use esp_wifi::esp_now::EspNow;
 pub trait PortTrait {
     /// Function is called when timer is created. Can be used to set configuration.
     fn setup_hardware_timer();
-    /// Function used to get amount of ticks from the start of a timer
-    fn get_tick_counter() -> TickType;
+    /// Function is used to check the correctness of index.
+    fn valid_timer_index(timer_index: u8) -> bool;
+    /// Function is called to start timer.
+    fn start_hardware_timer(timer_index: u8);
+    /// Function is used to change timer operating mode.
+    fn set_reload_mode(timer_index: u8, auto_reload: bool);
+    /// Function is used to change the period of a timer.
+    fn change_period_timer(timer_index: u8, period: Duration);
+    /// Function is used to get amount of time from the start of a timer.
+    fn get_time(timer_index: u8) -> Duration;
+    /// Function is called to stop timer.
+    fn stop_hardware_timer(timer_index: u8) -> bool;
+
     /// Function is called when heap is created. Can be used to set configuration.
     fn init_heap();
     #[cfg(feature = "network")]

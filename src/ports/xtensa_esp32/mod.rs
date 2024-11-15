@@ -18,8 +18,28 @@ impl PortTrait for XtensaEsp32 {
         hardware_timer::setup_hardware_timer();
     }
 
-    fn get_tick_counter() -> crate::timer::TickType {
-        hardware_timer::get_tick_counter()
+    fn valid_timer_index(_timer_index: u8) -> bool {
+        true
+    }
+
+    fn start_hardware_timer(_timer_index: u8) {
+        hardware_timer::start_hardware_timer();
+    }
+
+    fn set_reload_mode(_timer_index: u8, auto_reload: bool) {
+        hardware_timer::set_reload_mode(auto_reload);
+    }
+
+    fn change_period_timer(_timer_index: u8, period: core::time::Duration) {
+        hardware_timer::change_period_timer(period);
+    }
+
+    fn get_time(_timer_index: u8) -> core::time::Duration {
+        hardware_timer::get_time()
+    }
+
+    fn stop_hardware_timer(_timer_index: u8) -> bool {
+        false
     }
 
     #[cfg(feature = "network")]
