@@ -8,7 +8,7 @@ Additionally, within the loop function, the counter value is incremented fifty t
 ## How to install dependencies
 
 For comprehensive guidance on installing the necessary dependencies for developing applications targeting the RISC-V ESP32-C6 architecture,
-please refer to [the official website](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/index.html#manual-installation).
+please refer to [the official website](https://docs.espressif.com/projects/esp-idf/en/latest/esp32c6/get-started/index.html#manual-installation).
 Below is an illustrative example demonstrating the installation of building toolchains on a Linux (Ubuntu/Debian):
 ```
 sudo apt-get install -y git wget flex bison gperf python3 python3-pip python3-venv cmake ninja-build ccache libffi-dev libssl-dev dfu-util libusb-1.0-0 make
@@ -22,7 +22,7 @@ cd ~/esp/esp-idf
 ## Before building the example
 
 Before proceeding with building the example, it is essential to obtain the Martos C static library
-and [link it](https://github.com/IvanArkhipov1999/Martos/blob/main/examples/c-examples/risc-v-esp32-c6/Makefile#L19) with the example code.
+and link it with the example code.
 
 There are multiple avenues through which you can acquire the Martos C static library:
 1. [From release artifacts.](https://github.com/IvanArkhipov1999/Martos/releases)

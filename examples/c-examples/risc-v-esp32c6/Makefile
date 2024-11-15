@@ -1,6 +1,6 @@
 TOOLCHAIN = riscv32-esp-elf-
 
-# CFLAGS_PLATFORM = -Wjump-misses-init -fstrict-volatile-bitfields
+CFLAGS_PLATFORM = -march=rv32imac -mabi=ilp32
 ASFLAGS_PLATFORM = $(CFLAGS_PLATFORM)
 LDFLAGS_PLATFORM = $(CFLAGS_PLATFORM)
 
