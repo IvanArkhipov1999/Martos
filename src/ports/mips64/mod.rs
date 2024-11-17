@@ -23,6 +23,10 @@ impl PortTrait for Mips64 {
         }
     }
 
+    fn timer_is_active(timer_index: u8) -> bool {
+        hardware_timer::timer_is_active(timer_index)
+    }
+
     fn start_hardware_timer(timer_index: u8) {
         hardware_timer::start_hardware_timer(timer_index);
     }

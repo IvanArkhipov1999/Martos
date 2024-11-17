@@ -154,7 +154,8 @@ impl Timer {
     }
 }
 
-/// Function to convert Duration to TickType. Return value will be saturated if exceed 64 bits.
+/// Function to convert Duration to TickType.
+/// Return value will be saturated if exceed 64 bits.
 fn duration_to_ticks(value: Duration) -> TickType {
     let micros = value.as_micros();
     let ticks = micros * TIMER_FREQUENCY as u128;
@@ -189,6 +190,24 @@ pub fn setup_hardware_timer() {
 
     unsafe {
         TIMER_BLOCK = Some(timer_block);
+    }
+}
+
+/// Mips64 checks if timer is active.
+pub fn timer_is_active(timer_index: u8) -> bool {
+    unsafe {
+        let timer_block = TIMER_BLOCK.take().expect("Timer block error");
+        let return_value = match timer_index {
+            0 => timer_block.timer0.is_running,
+            1 => timer_block.timer1.is_running,
+            2 => timer_block.timer2.is_running,
+            3 => timer_block.timer3.is_running,
+            4 => timer_block.timer4.is_running,
+            _ => false,
+        };
+        TIMER_BLOCK = Some(timer_block);
+
+        return_value
     }
 }
 

@@ -22,6 +22,10 @@ impl PortTrait for XtensaEsp32 {
         true
     }
 
+    fn timer_is_active(_timer_index: u8) -> bool {
+        true
+    }
+
     fn start_hardware_timer(_timer_index: u8) {
         hardware_timer::start_hardware_timer();
     }

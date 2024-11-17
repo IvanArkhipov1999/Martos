@@ -22,8 +22,10 @@ impl Timer {
     }
 
     /// Gets the timer instance at the specified index.
+    /// Returns Some timer instance on success.
+    /// Returns None if timer is active or the specified index is invalid.
     pub fn get_timer(timer_index: u8) -> Option<Self> {
-        if Port::valid_timer_index(timer_index) {
+        if Port::valid_timer_index(timer_index) && !Port::timer_is_active(timer_index) {
             Some(Self {
                 timer_index,
                 tick_counter: 0,
@@ -40,14 +42,13 @@ impl Timer {
     }
 
     /// Starts the hardware timer.
-    /// TODO: What should happen after overflow?
     pub fn start_timer(&self) {
-        Port::start_hardware_timer(self.timer_index)
+        Port::start_hardware_timer(self.timer_index);
     }
 
     /// Updates the operating mode of the timer to be either an auto reload timer or a one-shot timer.
     pub fn set_reload_mode(&self, auto_reload: bool) {
-        Port::set_reload_mode(self.timer_index, auto_reload)
+        Port::set_reload_mode(self.timer_index, auto_reload);
     }
 
     /// Changes the timer period.
@@ -55,7 +56,9 @@ impl Timer {
         Port::change_period_timer(self.timer_index, period);
     }
 
-    /// Stops timer ticking. Returns false if the device doesn't support stopping the counter.
+    /// Stops timer ticking.
+    /// Returns true if successful.
+    /// Returns false if the device doesn't support stopping the counter.
     pub fn stop_condition_timer(&self) -> bool {
         Port::stop_hardware_timer(self.timer_index)
     }

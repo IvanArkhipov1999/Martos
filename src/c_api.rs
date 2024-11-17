@@ -27,7 +27,7 @@ pub extern "C" fn init_system() {
 
 #[no_mangle]
 pub extern "C" fn setup_timer() {
-    Timer::setup_timer()
+    Timer::setup_timer();
 }
 
 #[no_mangle]
@@ -50,22 +50,22 @@ pub extern "C" fn get_timer(timer_index: u8) -> TimerOption {
 
 #[no_mangle]
 pub extern "C" fn start_timer(timer: &Timer) {
-    Timer::start_timer(timer)
+    Timer::start_timer(timer);
 }
 
 #[no_mangle]
 pub extern "C" fn set_reload_mode(timer: &Timer, auto_reload: bool) {
-    Timer::set_reload_mode(timer, auto_reload)
+    Timer::set_reload_mode(timer, auto_reload);
 }
 
 #[no_mangle]
 pub extern "C" fn change_period_timer(timer: &Timer, period: DurationFFI) {
-    Timer::change_period_timer(timer, Duration::new(period.secs, period.micros))
+    Timer::change_period_timer(timer, Duration::new(period.secs, period.micros));
 }
 
 #[no_mangle]
 pub extern "C" fn loop_timer(timer: &mut Timer) {
-    Timer::loop_timer(timer)
+    Timer::loop_timer(timer);
 }
 
 #[no_mangle]
