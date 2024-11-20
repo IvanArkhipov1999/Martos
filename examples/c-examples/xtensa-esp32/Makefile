@@ -14,6 +14,8 @@ LD = $(TOOLCHAIN)ld
 OC = $(TOOLCHAIN)objcopy
 OS = $(TOOLCHAIN)size
 
+# Linker script location.
+LDSCRIPT       = esp32.ld
 # Set C/LD/AS flags.
 CFLAGS += $(INC) -Wall -Werror -std=gnu11 -nostdlib $(CFLAGS_PLATFORM) $(COPT)
 # (Allow access to the same memory location w/ different data widths.)
