@@ -73,10 +73,10 @@ impl PreemptiveTaskManager {
         let task = unsafe {
             TASK_MANAGER
                 .tasks
-                .get_mut(TASK_MANAGER.task_to_execute_index)
+                .get(TASK_MANAGER.task_to_execute_index)
                 .unwrap()
         };
-        let ctx = &mut task.context;
+        let ctx = &task.context;
         Port::load_ctx(ctx, isr_ctx);
     }
 }
