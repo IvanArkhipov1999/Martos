@@ -3,6 +3,7 @@ mod unit_tests {
     use martos::task_manager::TaskManager;
     use martos::timer::Timer;
     use sequential_test::sequential;
+    use martos::task_manager::TaskManagerTrait;
     use std::sync::atomic::{AtomicU32, Ordering};
 
     // TODO: refactor unit tests. They should check less. Separate tests for setup, loop and stop functions.

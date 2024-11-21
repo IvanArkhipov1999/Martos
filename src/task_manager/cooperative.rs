@@ -80,8 +80,7 @@ impl CooperativeTaskManager {
     }
 
     /// Starts task manager work. Returns after 1000 steps only for testing task_manager_step.
-    #[cfg(test)]
-    fn test_start_task_manager() {
+    pub fn test_start_task_manager() {
         for _n in 1..=1000 {
             Self::task_manager_step();
         }
