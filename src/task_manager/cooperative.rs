@@ -5,7 +5,10 @@ use core::{future::Future, pin::Pin, task::Context};
 
 use crate::task_manager::{
     task,
-    task::{FutureTask, TaskNumberType},
+    task::{
+        FutureTask, Task, TaskLoopFunctionType, TaskNumberType, TaskSetupFunctionType,
+        TaskStopConditionFunctionType,
+    },
     TaskManagerTrait, TASK_MANAGER,
 };
 
@@ -22,6 +25,24 @@ impl TaskManagerTrait for CooperativeTaskManager {
     fn start_task_manager() -> ! {
         loop {
             Self::task_manager_step();
+        }
+    }
+    fn add_task(
+        setup_fn: TaskSetupFunctionType,
+        loop_fn: TaskLoopFunctionType,
+        stop_condition_fn: TaskStopConditionFunctionType,
+    ) {
+        let task = Task {
+            setup_fn,
+            loop_fn,
+            stop_condition_fn,
+        };
+        let future_task = FutureTask {
+            task,
+            is_setup_completed: false,
+        };
+        unsafe {
+            TASK_MANAGER.tasks.push(future_task);
         }
     }
 }
