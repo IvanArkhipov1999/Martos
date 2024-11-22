@@ -2,6 +2,7 @@ name: Docker Build and Push
 
 on:
   push:
+  pull_request:
     paths:
       - 'dockers/**'
 
