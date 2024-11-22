@@ -14,24 +14,26 @@ static COUNTER: AtomicU32 = AtomicU32::new(1);
 
 /// Loop function for task to execute.
 fn loop_fn_1() {
-    loop {
-        let old = COUNTER.fetch_add(1, Ordering::Relaxed);
-        println!("Loop 0; Counter = {}", old);
-        delay(10_000_000);
-    }
+    let old = COUNTER.fetch_add(1, Ordering::Relaxed);
+    println!("Loop 0; Counter = {}", old);
+    delay(10_000_000);
 }
 
 fn loop_fn_2() {
-    loop {
-        let old = COUNTER.fetch_add(1, Ordering::Relaxed);
-        println!("Loop 1; Counter = {}", old);
-        delay(10_000_000);
-    }
+    let old = COUNTER.fetch_add(1, Ordering::Relaxed);
+    println!("Loop 1; Counter = {}", old);
+    delay(10_000_000);
 }
 
-fn temp() {}
-fn temp_2() -> bool {
-    true
+fn setup() {
+    println!("Setup")
+}
+fn stop() -> bool {
+    if COUNTER.fetch_add(0, Ordering::Relaxed) > 20 {
+        true
+    } else {
+        false
+    }
 }
 
 #[entry]
@@ -39,8 +41,8 @@ fn main() -> ! {
     // Initialize Martos.
     init_system();
     // Add task to execute.
-    TaskManager::add_task(temp, loop_fn_1, temp_2);
-    TaskManager::add_task(temp, loop_fn_2, temp_2);
+    TaskManager::add_task(setup, loop_fn_1, stop);
+    TaskManager::add_task(setup, loop_fn_2, stop);
     // Start task manager.
     TaskManager::start_task_manager();
 }

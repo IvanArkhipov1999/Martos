@@ -42,9 +42,13 @@ extern "C" fn handler(ctx: &mut TrapFrame) {
 }
 
 pub fn setup_stack(thread: &mut crate::task_manager::preemptive::Thread) {
-    // 8.1
+    // manual 8.1
     thread.context.PC = thread.func as u32;
     thread.context.A0 = 0; // return address
+
+    thread.context.A6 = thread.start as u32; // A2 after `entry` instruction
+    thread.context.A7 = thread.loop_ as u32; // A3
+    thread.context.A8 = thread.stop as u32; // A4
 
     let stack_ptr = thread.stack as usize + crate::task_manager::preemptive::THREAD_STACK_SIZE;
     thread.context.A1 = stack_ptr as u32;
