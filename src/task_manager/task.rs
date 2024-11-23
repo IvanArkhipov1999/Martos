@@ -12,19 +12,19 @@ pub type TaskNumberType = usize;
 pub type TaskSetupFunctionType = fn() -> ();
 #[cfg(feature = "c-library")]
 /// Type of setup function, that is called once at the beginning of task.
-type TaskSetupFunctionType = extern "C" fn() -> ();
+pub type TaskSetupFunctionType = extern "C" fn() -> ();
 #[cfg(not(feature = "c-library"))]
 /// Type of loop function, that is called in loop.
 pub type TaskLoopFunctionType = fn() -> ();
 #[cfg(feature = "c-library")]
 /// Type of loop function, that is called in loop.
-type TaskLoopFunctionType = extern "C" fn() -> ();
+pub type TaskLoopFunctionType = extern "C" fn() -> ();
 #[cfg(not(feature = "c-library"))]
 /// Type of condition function for stopping loop function execution.
 pub type TaskStopConditionFunctionType = fn() -> bool;
 #[cfg(feature = "c-library")]
 /// Type of condition function for stopping loop function execution.
-type TaskStopConditionFunctionType = extern "C" fn() -> bool;
+pub type TaskStopConditionFunctionType = extern "C" fn() -> bool;
 
 #[repr(C)]
 /// Task representation for task manager.

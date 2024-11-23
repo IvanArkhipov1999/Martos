@@ -20,6 +20,7 @@ pub(crate) struct Thread {
     /// **Arch specific** state of the registers at the moment of context switch
     pub(crate) context: TrapFrame,
     pub(crate) func: fn(TaskSetupFunctionType, TaskLoopFunctionType, TaskStopConditionFunctionType),
+    // TODO: use Task
     pub(crate) start: TaskSetupFunctionType,
     pub(crate) loop_: TaskLoopFunctionType,
     pub(crate) stop: TaskStopConditionFunctionType,

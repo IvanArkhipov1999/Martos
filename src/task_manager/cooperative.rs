@@ -22,11 +22,6 @@ pub struct CooperativeTaskManager {
 }
 
 impl TaskManagerTrait for CooperativeTaskManager {
-    fn start_task_manager() -> ! {
-        loop {
-            Self::task_manager_step();
-        }
-    }
     fn add_task(
         setup_fn: TaskSetupFunctionType,
         loop_fn: TaskLoopFunctionType,
@@ -43,6 +38,12 @@ impl TaskManagerTrait for CooperativeTaskManager {
         };
         unsafe {
             TASK_MANAGER.tasks.push(future_task);
+        }
+    }
+
+    fn start_task_manager() -> ! {
+        loop {
+            Self::task_manager_step();
         }
     }
 }
