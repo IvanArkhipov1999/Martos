@@ -26,10 +26,12 @@ pub(crate) struct Thread {
 }
 
 impl Thread {
-    fn new(stack: *mut u8, func: fn(TaskSetupFunctionType, TaskLoopFunctionType, TaskStopConditionFunctionType),
-           start: TaskSetupFunctionType,
-           loop_: TaskLoopFunctionType,
-           stop: TaskStopConditionFunctionType,
+    fn new(
+        stack: *mut u8,
+        func: fn(TaskSetupFunctionType, TaskLoopFunctionType, TaskStopConditionFunctionType),
+        start: TaskSetupFunctionType,
+        loop_: TaskLoopFunctionType,
+        stop: TaskStopConditionFunctionType,
     ) -> Self {
         let id = unsafe { NEXT_THREAD_ID.fetch_add(1, Ordering::Relaxed) };
         Thread {
@@ -37,7 +39,9 @@ impl Thread {
             stack,
             context: TrapFrame::default(),
             func,
-            start, loop_,stop
+            start,
+            loop_,
+            stop,
         }
     }
 }
@@ -89,17 +93,16 @@ impl PreemptiveTaskManager {
     }
 }
 
-
 fn thread_func(
     setup_fn: TaskSetupFunctionType,
     loop_fn: TaskLoopFunctionType,
     stop_fn: TaskStopConditionFunctionType,
-){
+) {
     setup_fn();
-    loop{
+    loop {
         if stop_fn() {
             // TODO:
-            loop{}
+            loop {}
         } else {
             loop_fn();
         }

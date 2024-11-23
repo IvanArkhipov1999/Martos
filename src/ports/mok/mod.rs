@@ -24,13 +24,13 @@ impl PortTrait for Mok {
         network::init_network();
     }
     #[cfg(feature = "preemptive")]
-    fn setup_interrupt(){}
+    fn setup_interrupt() {}
     #[cfg(feature = "preemptive")]
-    fn setup_stack(thread: &mut crate::task_manager::preemptive::Thread){}
+    fn setup_stack(thread: &mut crate::task_manager::preemptive::Thread) {}
     #[cfg(feature = "preemptive")]
-    fn save_ctx(thread_ctx: &mut crate::ports::TrapFrame, isr_ctx: &crate::ports::TrapFrame){}
+    fn save_ctx(thread_ctx: &mut crate::ports::TrapFrame, isr_ctx: &crate::ports::TrapFrame) {}
     #[cfg(feature = "preemptive")]
-    fn load_ctx(thread_ctx: &crate::ports::TrapFrame, isr_ctx: &mut crate::ports::TrapFrame){}
+    fn load_ctx(thread_ctx: &crate::ports::TrapFrame, isr_ctx: &mut crate::ports::TrapFrame) {}
 }
 
 pub type TrapFrame = ();
