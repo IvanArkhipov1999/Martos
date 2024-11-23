@@ -1,6 +1,6 @@
 use crate::ports::{Port, PortTrait, TrapFrame};
 use crate::task_manager::task::{
-    TaskLoopFunctionType, TaskSetupFunctionType, TaskStopConditionFunctionType,
+    Task, TaskLoopFunctionType, TaskSetupFunctionType, TaskStopConditionFunctionType,
 };
 use crate::task_manager::{TaskManagerTrait, TASK_MANAGER};
 use alloc::vec::Vec;
@@ -11,7 +11,6 @@ pub(crate) const THREAD_STACK_SIZE: usize = 1024; // TODO:
 
 static mut NEXT_THREAD_ID: AtomicUsize = AtomicUsize::new(0);
 
-#[derive(Debug, Clone, Copy)]
 pub(crate) struct Thread {
     /// id of this thread
     id: usize,
@@ -21,9 +20,7 @@ pub(crate) struct Thread {
     pub(crate) context: TrapFrame,
     pub(crate) func: fn(TaskSetupFunctionType, TaskLoopFunctionType, TaskStopConditionFunctionType),
     // TODO: use Task
-    pub(crate) start: TaskSetupFunctionType,
-    pub(crate) loop_: TaskLoopFunctionType,
-    pub(crate) stop: TaskStopConditionFunctionType,
+    pub(crate) task: Task,
 }
 
 impl Thread {
@@ -40,9 +37,11 @@ impl Thread {
             stack,
             context: TrapFrame::default(),
             func,
-            start,
-            loop_,
-            stop,
+            task: Task {
+                setup_fn: start,
+                loop_fn: loop_,
+                stop_condition_fn: stop,
+            },
         }
     }
 }
