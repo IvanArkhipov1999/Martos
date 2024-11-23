@@ -8,9 +8,11 @@ use esp_wifi::{
     current_millis,
     esp_now::{EspNow, PeerInfo, BROADCAST_ADDRESS},
 };
-use martos::get_esp_now;
-use martos::init_system;
-use martos::task_manager::TaskManager;
+use martos::{
+    init_system,
+    task_manager::{TaskManager, TaskManagerTrait},
+    get_esp_now,
+};
 
 /// Esp-now object for network
 static mut ESP_NOW: Option<EspNow> = None;

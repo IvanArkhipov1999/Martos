@@ -6,8 +6,10 @@ use esp_backtrace as _;
 use esp_hal::entry;
 use esp_hal::xtensa_lx_rt::xtensa_lx::timer::delay;
 use esp_println::println;
-use martos::task_manager::TaskManagerTrait;
-use martos::{init_system, task_manager::TaskManager};
+use martos::{
+    init_system,
+    task_manager::{TaskManager, TaskManagerTrait},
+};
 
 /// Counter to work with in loop.
 static COUNTER: AtomicU32 = AtomicU32::new(1);
