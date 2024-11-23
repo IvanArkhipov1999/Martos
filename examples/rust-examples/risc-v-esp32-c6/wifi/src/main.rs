@@ -2,16 +2,12 @@
 #![no_main]
 
 use esp_backtrace as _;
-use esp_hal::entry;
+use esp_hal::{entry, time};
 use esp_println::println;
-use esp_wifi::{
-    current_millis,
-    esp_now::{EspNow, PeerInfo, BROADCAST_ADDRESS},
-};
+use esp_wifi::esp_now::{EspNow, PeerInfo, BROADCAST_ADDRESS};
 use martos::{
-    init_system,
+    get_esp_now, init_system,
     task_manager::{TaskManager, TaskManagerTrait},
-    get_esp_now,
 };
 
 /// Esp-now object for network
@@ -24,7 +20,7 @@ fn setup_fn() {
     println!("Setup hello world!");
     unsafe {
         ESP_NOW = Some(get_esp_now());
-        NEXT_SEND_TIME = Some(current_millis() + 5 * 1000);
+        NEXT_SEND_TIME = Some(time::now().duration_since_epoch().to_millis() + 5 * 1000);
     }
 }
 
@@ -57,8 +53,8 @@ fn loop_fn() {
         }
 
         let mut next_send_time = NEXT_SEND_TIME.take().expect("Next send time error in main");
-        if current_millis() >= next_send_time {
-            next_send_time = current_millis() + 5 * 1000;
+        if time::now().duration_since_epoch().to_millis() >= next_send_time {
+            next_send_time = time::now().duration_since_epoch().to_millis() + 5 * 1000;
             println!("Send");
             let status = esp_now
                 .send(&BROADCAST_ADDRESS, b"0123456789")

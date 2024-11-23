@@ -8,7 +8,7 @@ use core::sync::atomic::{AtomicU32, Ordering};
 use martos::{
     init_system,
     task_manager::{TaskManager, TaskManagerTrait},
-    timer::Timer
+    timer::Timer,
 };
 
 /// Counter to work with in loop.
