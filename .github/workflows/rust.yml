@@ -46,6 +46,7 @@ jobs:
     env:
       CARGO_HOME: /root/.cargo
       RUSTUP_HOME: /root/.rustup
+      DOCKERHUB_USERNAME: ${{ env.DOCKERHUB_USERNAME }}
     container:
       image: ${{ env.DOCKERHUB_USERNAME }}/xtensa-esp32-rust:latest
       options: --user root
@@ -61,6 +62,7 @@ jobs:
     env:
       CARGO_HOME: /root/.cargo
       RUSTUP_HOME: /root/.rustup
+      DOCKERHUB_USERNAME: ${{ env.DOCKERHUB_USERNAME }}
     container:
       image: ${{ env.DOCKERHUB_USERNAME }}/xtensa-esp32-rust:latest
       options: --user root
@@ -76,6 +78,7 @@ jobs:
     env:
       CARGO_HOME: /root/.cargo
       RUSTUP_HOME: /root/.rustup
+      DOCKERHUB_USERNAME: ${{ env.DOCKERHUB_USERNAME }}
     container:
       image: ${{ env.DOCKERHUB_USERNAME }}/xtensa-esp32-rust:latest
       options: --user root
@@ -91,6 +94,7 @@ jobs:
     env:
       CARGO_HOME: /root/.cargo
       RUSTUP_HOME: /root/.rustup
+      DOCKERHUB_USERNAME: ${{ env.DOCKERHUB_USERNAME }}
     container:
       image: ${{ env.DOCKERHUB_USERNAME }}/xtensa-esp32-rust:latest
       options: --user root
@@ -106,6 +110,7 @@ jobs:
     env:
       CARGO_HOME: /root/.cargo
       RUSTUP_HOME: /root/.rustup
+      DOCKERHUB_USERNAME: ${{ env.DOCKERHUB_USERNAME }}
     container:
       image: ${{ env.DOCKERHUB_USERNAME }}/xtensa-esp32-rust:latest
       options: --user root
@@ -128,6 +133,7 @@ jobs:
     env:
       IDF_PATH: /root/esp/esp-idf
       IDF_TOOLS_PATH: /root/.espressif
+      DOCKERHUB_USERNAME: ${{ env.DOCKERHUB_USERNAME }}
     container:
       image: ${{ env.DOCKERHUB_USERNAME }}/xtensa-esp32-c:latest
       options: --user root
@@ -147,6 +153,7 @@ jobs:
     env:
       CARGO_HOME: /root/.cargo
       RUSTUP_HOME: /root/.rustup
+      DOCKERHUB_USERNAME: ${{ env.DOCKERHUB_USERNAME }}
     container:
       image: ${{ env.DOCKERHUB_USERNAME }}/xtensa-esp32-rust:latest
       options: --user root
@@ -162,6 +169,7 @@ jobs:
     env:
       CARGO_HOME: /root/.cargo
       RUSTUP_HOME: /root/.rustup
+      DOCKERHUB_USERNAME: ${{ env.DOCKERHUB_USERNAME }}
     container:
       image: ${{ env.DOCKERHUB_USERNAME }}/xtensa-esp32-rust:latest
       options: --user root
@@ -177,6 +185,7 @@ jobs:
     env:
       CARGO_HOME: /root/.cargo
       RUSTUP_HOME: /root/.rustup
+      DOCKERHUB_USERNAME: ${{ env.DOCKERHUB_USERNAME }}
     container:
       image: ${{ env.DOCKERHUB_USERNAME }}/xtensa-esp32-rust:latest
       options: --user root
@@ -192,6 +201,7 @@ jobs:
     env:
       CARGO_HOME: /root/.cargo
       RUSTUP_HOME: /root/.rustup
+      DOCKERHUB_USERNAME: ${{ env.DOCKERHUB_USERNAME }}
     container:
       image: ${{ env.DOCKERHUB_USERNAME }}/xtensa-esp32-rust:latest
       options: --user root
@@ -207,6 +217,7 @@ jobs:
     env:
       CARGO_HOME: /root/.cargo
       RUSTUP_HOME: /root/.rustup
+      DOCKERHUB_USERNAME: ${{ env.DOCKERHUB_USERNAME }}
     container:
       image: ${{ env.DOCKERHUB_USERNAME }}/xtensa-esp32-rust:latest
       options: --user root
@@ -229,6 +240,7 @@ jobs:
     env:
       IDF_PATH: /root/esp/esp-idf
       IDF_TOOLS_PATH: /root/.espressif
+      DOCKERHUB_USERNAME: ${{ env.DOCKERHUB_USERNAME }}
     container:
       image: ${{ env.DOCKERHUB_USERNAME }}/risc-v-esp32c6-c:latest
       options: --user root
