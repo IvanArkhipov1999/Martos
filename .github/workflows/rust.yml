@@ -8,7 +8,6 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
-  DOCKERHUB_USERNAME: sevenbunu
 
 
 jobs:
@@ -46,7 +45,7 @@ jobs:
     steps:
       - run: echo "null"
     outputs:
-      username: ${{ env.DOCKERHUB_USERNAME }}
+      username: ${{ secrets.DOCKERHUB_USERNAME }}
 
   xtensa-esp32-rust-example-hello-world:
     runs-on: ubuntu-latest
