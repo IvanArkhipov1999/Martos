@@ -46,7 +46,7 @@ jobs:
       CARGO_HOME: /root/.cargo
       RUSTUP_HOME: /root/.rustup
     container:
-      image: arkhipovivan1/xtensa-esp32-rust:latest
+      image: ${{ secrets.DOCKERHUB_TOKEN }}/xtensa-esp32-rust:latest
       options: --user root
     steps:
       - uses: actions/checkout@v3
@@ -61,7 +61,7 @@ jobs:
       CARGO_HOME: /root/.cargo
       RUSTUP_HOME: /root/.rustup
     container:
-      image: arkhipovivan1/xtensa-esp32-rust:latest
+      image: ${{ secrets.DOCKERHUB_TOKEN }}/xtensa-esp32-rust:latest
       options: --user root
     steps:
       - uses: actions/checkout@v3
@@ -76,7 +76,7 @@ jobs:
       CARGO_HOME: /root/.cargo
       RUSTUP_HOME: /root/.rustup
     container:
-      image: arkhipovivan1/xtensa-esp32-rust:latest
+      image: ${{ secrets.DOCKERHUB_TOKEN }}/xtensa-esp32-rust:latest
       options: --user root
     steps:
       - uses: actions/checkout@v3
@@ -91,7 +91,7 @@ jobs:
       CARGO_HOME: /root/.cargo
       RUSTUP_HOME: /root/.rustup
     container:
-      image: arkhipovivan1/xtensa-esp32-rust:latest
+      image: ${{ secrets.DOCKERHUB_TOKEN }}/xtensa-esp32-rust:latest
       options: --user root
     steps:
       - uses: actions/checkout@v3
@@ -106,7 +106,7 @@ jobs:
       CARGO_HOME: /root/.cargo
       RUSTUP_HOME: /root/.rustup
     container:
-      image: arkhipovivan1/xtensa-esp32-rust:latest
+      image: ${{ secrets.DOCKERHUB_TOKEN }}/xtensa-esp32-rust:latest
       options: --user root
     steps:
       - uses: actions/checkout@v3
@@ -128,7 +128,7 @@ jobs:
       IDF_PATH: /root/esp/esp-idf
       IDF_TOOLS_PATH: /root/.espressif
     container:
-      image: arkhipovivan1/xtensa-esp32-c:latest
+      image: ${{ secrets.DOCKERHUB_TOKEN }}/xtensa-esp32-c:latest
       options: --user root
     steps:
       - uses: actions/checkout@v3
@@ -147,7 +147,7 @@ jobs:
       CARGO_HOME: /root/.cargo
       RUSTUP_HOME: /root/.rustup
     container:
-      image: arkhipovivan1/xtensa-esp32-rust:latest
+      image: ${{ secrets.DOCKERHUB_TOKEN }}/xtensa-esp32-rust:latest
       options: --user root
     steps:
       - uses: actions/checkout@v3
@@ -162,7 +162,7 @@ jobs:
       CARGO_HOME: /root/.cargo
       RUSTUP_HOME: /root/.rustup
     container:
-      image: arkhipovivan1/xtensa-esp32-rust:latest
+      image: ${{ secrets.DOCKERHUB_TOKEN }}/xtensa-esp32-rust:latest
       options: --user root
     steps:
       - uses: actions/checkout@v3
@@ -177,7 +177,7 @@ jobs:
       CARGO_HOME: /root/.cargo
       RUSTUP_HOME: /root/.rustup
     container:
-      image: arkhipovivan1/xtensa-esp32-rust:latest
+      image: ${{ secrets.DOCKERHUB_TOKEN }}/xtensa-esp32-rust:latest
       options: --user root
     steps:
       - uses: actions/checkout@v3
@@ -192,7 +192,7 @@ jobs:
       CARGO_HOME: /root/.cargo
       RUSTUP_HOME: /root/.rustup
     container:
-      image: arkhipovivan1/xtensa-esp32-rust:latest
+      image: ${{ secrets.DOCKERHUB_TOKEN }}/xtensa-esp32-rust:latest
       options: --user root
     steps:
       - uses: actions/checkout@v3
@@ -207,7 +207,7 @@ jobs:
       CARGO_HOME: /root/.cargo
       RUSTUP_HOME: /root/.rustup
     container:
-      image: arkhipovivan1/xtensa-esp32-rust:latest
+      image: ${{ secrets.DOCKERHUB_TOKEN }}/xtensa-esp32-rust:latest
       options: --user root
     steps:
       - uses: actions/checkout@v3
@@ -229,7 +229,7 @@ jobs:
       IDF_PATH: /root/esp/esp-idf
       IDF_TOOLS_PATH: /root/.espressif
     container:
-      image: arkhipovivan1/risc-v-esp32c6-c:latest
+      image: ${{ secrets.DOCKERHUB_TOKEN }}/risc-v-esp32c6-c:latest
       options: --user root
     steps:
       - uses: actions/checkout@v3
