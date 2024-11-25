@@ -1,167 +1,121 @@
 extern crate alloc;
 
-use alloc::vec::Vec;
-use core::future::Future;
-use core::pin::Pin;
-use core::task::{Context, Poll, RawWaker, RawWakerVTable, Waker};
+// A double-ended queue implemented with a growable ring buffer
+use alloc::collections::VecDeque;
+use core::array;
+use crate::context;
 
-/// The number of tasks can fit into a type usize.
-pub type TaskNumberType = usize;
-
-// TODO: rewrite with cfg!
 #[cfg(not(feature = "c-library"))]
-/// Type of setup function, that is called once at the beginning of task.
-type TaskSetupFunctionType = fn() -> ();
+type FunctionType = fn();
 #[cfg(feature = "c-library")]
-/// Type of setup function, that is called once at the beginning of task.
-type TaskSetupFunctionType = extern "C" fn() -> ();
-#[cfg(not(feature = "c-library"))]
+type FunctionType = extern "C" fn();
+
 /// Type of loop function, that is called in loop.
-type TaskLoopFunctionType = fn() -> ();
-#[cfg(feature = "c-library")]
-/// Type of loop function, that is called in loop.
-type TaskLoopFunctionType = extern "C" fn() -> ();
-#[cfg(not(feature = "c-library"))]
-/// Type of condition function for stopping loop function execution.
-type TaskStopConditionFunctionType = fn() -> bool;
-#[cfg(feature = "c-library")]
-/// Type of condition function for stopping loop function execution.
-type TaskStopConditionFunctionType = extern "C" fn() -> bool;
+type TaskLoopFunctionType = FunctionType;
+type TaskPriorityType = usize;
 
-#[repr(C)]
-/// Task representation for task manager.
-struct Task {
-    /// Setup function, that is called once at the beginning of task.
-    setup_fn: TaskSetupFunctionType,
+const NUM_PRIORITIES: usize = 11;
+
+enum TaskStatusType {
+    Ready,
+    Sleep,
+    WokeUp,
+    Terminated,
+}
+
+pub struct Task {
     /// Loop function, that is called in loop.
     loop_fn: TaskLoopFunctionType,
-    /// Condition function for stopping loop function execution.
-    stop_condition_fn: TaskStopConditionFunctionType,
+    status: TaskStatusType,
+    priority: TaskPriorityType,
 }
 
-#[repr(C)]
-/// Future shell for task for execution.
-struct FutureTask {
-    /// Task to execute in task manager.
-    task: Task,
-    /// Marker for setup function completion.
-    is_setup_completed: bool,
-}
+impl Task {
+    pub fn new(loop_fn: TaskLoopFunctionType, priority: TaskPriorityType) -> Self {
+        Task {loop_fn, status: TaskStatusType::Ready, priority}
+    }
 
-impl Future for FutureTask {
-    type Output = ();
-
-    fn poll(mut self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<Self::Output> {
-        let mut array: [usize; 8] = core::array::from_fn(|i| i);
-        array[0] = 5;
-        if (self.task.stop_condition_fn)() {
-            Poll::Ready(())
-        } else {
-            if !self.is_setup_completed {
-                (self.task.setup_fn)();
-                self.is_setup_completed = true;
-            } else {
-                (self.task.loop_fn)();
-            }
-            Poll::Pending
-        }
+    fn update_status(&mut self, new_status: TaskStatusType) {
+        self.status = new_status;
     }
 }
 
-/// Creates simple task waker. May be more difficult in perspective.
-fn task_waker() -> Waker {
-    fn raw_clone(_: *const ()) -> RawWaker {
-        RawWaker::new(core::ptr::null::<()>(), &NOOP_WAKER_VTABLE)
-    }
-
-    fn raw_wake(_: *const ()) {}
-
-    fn raw_wake_by_ref(_: *const ()) {}
-
-    fn raw_drop(_: *const ()) {}
-
-    static NOOP_WAKER_VTABLE: RawWakerVTable =
-        RawWakerVTable::new(raw_clone, raw_wake, raw_wake_by_ref, raw_drop);
-
-    let raw_waker = RawWaker::new(core::ptr::null::<()>(), &NOOP_WAKER_VTABLE);
-    unsafe { Waker::from_raw(raw_waker) }
+struct TaskManager {
+    priority_array: [VecDeque<Task>; NUM_PRIORITIES],
 }
-
-#[repr(C)]
-/// Task manager representation. Based on round-robin scheduling without priorities.
-pub struct TaskManager {
-    /// Vector of tasks to execute.
-    tasks: Vec<FutureTask>,
-    /// Index of task, that should be executed.
-    task_to_execute_index: TaskNumberType,
-}
-
-/// Operating system task manager.
-static mut TASK_MANAGER: TaskManager = TaskManager::new();
 
 impl TaskManager {
-    /// Creates new task manager.
-    const fn new() -> TaskManager {
+    fn new() -> TaskManager {
         TaskManager {
-            tasks: Vec::new(),
-            task_to_execute_index: 0,
+            priority_array: array::from_fn(|_| VecDeque::new()),
         }
     }
 
-    /// Add task to task manager. You should pass setup, loop and condition functions.
+    fn pop_from_queue(&mut self, priority: TaskPriorityType) -> Option<Task> {
+        self.priority_array[priority].pop_front()
+    }
+
+    fn push_to_queue(&mut self, task: Task) {
+        self.priority_array[task.priority].push_back(task);
+    }
+
+    fn is_queue_empty(&self, priority: TaskPriorityType) -> bool {
+        self.priority_array[priority].is_empty()
+    }
+
+    fn pop_next_task(&mut self) -> Option<Task> {
+        for priority in (0 ..NUM_PRIORITIES).rev(){
+            if self.is_queue_empty(priority) { continue; }
+            let next_task = self.pop_from_queue(priority);
+            return next_task;
+        }
+        None
+    }
+
     pub fn add_task(
-        setup_fn: TaskSetupFunctionType,
+        &mut self,
         loop_fn: TaskLoopFunctionType,
-        stop_condition_fn: TaskStopConditionFunctionType,
-    ) {
-        let task = Task {
-            setup_fn,
-            loop_fn,
-            stop_condition_fn,
-        };
-        let future_task = FutureTask {
-            task,
-            is_setup_completed: false,
-        };
-        unsafe {
-            TASK_MANAGER.tasks.push(future_task);
+        priority: TaskPriorityType,
+    ) -> Result<(), &'static str> {
+        if (priority >= NUM_PRIORITIES) {
+            return Err("Invalid priority value");
         }
+        let new_task = Task::new(loop_fn, priority);
+        self.push_to_queue(new_task);
+        Ok(())
     }
 
-    /// One step of task manager's work.
-    // TODO: Support priorities.
-    // TODO: Delete tasks from task vector if they are pending?
-    fn task_manager_step() {
-        if unsafe { !TASK_MANAGER.tasks.is_empty() } {
-            let waker = task_waker();
-
-            let task = unsafe { &mut TASK_MANAGER.tasks[TASK_MANAGER.task_to_execute_index] };
-            let mut task_future_pin = Pin::new(task);
-            let _ = task_future_pin
-                .as_mut()
-                .poll(&mut Context::from_waker(&waker));
-
-            unsafe {
-                if TASK_MANAGER.task_to_execute_index + 1 < TASK_MANAGER.tasks.len() {
-                    TASK_MANAGER.task_to_execute_index += 1;
-                } else {
-                    TASK_MANAGER.task_to_execute_index = 0;
-                }
-            }
-        }
+    pub fn yield_to_scheduler(&self, mut task: Task, new_status: TaskStatusType) {
+        save_context(&mut task); // WIP
+        task.update_status(new_status);
     }
 
-    /// Starts task manager work.
-    pub fn start_task_manager() -> ! {
+    pub fn wake_up(&self, task: &mut Task) {
+        load_context(task); // WIP
+        task.update_status(TaskStatusType::Ready);
+    }
+
+    pub fn start_task_manager(&mut self) {
         loop {
-            TaskManager::task_manager_step();
-        }
-    }
-
-    /// Starts task manager work. Returns after 1000 steps only for testing task_manager_step.
-    pub fn test_start_task_manager() {
-        for _n in 1..=1000 {
-            TaskManager::task_manager_step();
+            // if task is None, array is empty, waiting for new tasks in system
+            let Some(mut task) = self.pop_next_task();
+            match task.status {
+                TaskStatusType::Ready => {
+                    (task.loop_fn)();
+                    if task.status = TaskStatusType::Sleep {
+                        self.push_to_queue(task);
+                    } // deleting task is not adding it back to the queue
+                }
+                TaskStatusType::Sleep => {
+                    self.push_to_queue(task);
+                }
+                TaskStatusType::WokeUp => {
+                    self.wake_up(&mut task);
+                    task.status = TaskStatusType::Ready;
+                    self.push_to_queue(task);
+                }
+                TaskStatusType::Terminated => {}
+            }
         }
     }
 }
