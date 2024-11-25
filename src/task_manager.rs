@@ -5,13 +5,12 @@ use alloc::collections::VecDeque;
 use core::array;
 use crate::context_switcher::ContextSwitcher;
 
-#[cfg(not(feature = "c-library"))]
-type FunctionType = fn();
-#[cfg(feature = "c-library")]
-type FunctionType = extern "C" fn();
-
 /// Type of loop function, that is called in loop.
-type TaskLoopFunctionType = FunctionType;
+#[cfg(not(feature = "c-library"))]
+type TaskLoopFunctionType = fn();
+#[cfg(feature = "c-library")]
+type TaskLoopFunctionType = extern "C" fn();
+
 type TaskPriorityType = usize;
 
 const NUM_PRIORITIES: usize = 11;
