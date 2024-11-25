@@ -251,7 +251,7 @@ jobs:
       IDF_PATH: /root/esp/esp-idf
       IDF_TOOLS_PATH: /root/.espressif
     container:
-      image: ${{ needs.risc-v-esp32c6-static-library.outputs.username }}/xtensa-esp32-c:latest
+      image: ${{ needs.risc-v-esp32c6-static-library.outputs.username }}/risc-v-esp32c6-c:latest
       options: --user root
     steps:
       - uses: actions/checkout@v3
