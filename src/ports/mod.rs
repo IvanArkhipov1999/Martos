@@ -41,6 +41,8 @@ mod arch {
     pub type Port = crate::ports::xtensa_esp32::XtensaEsp32;
     #[cfg(feature = "preemptive")]
     pub type TrapFrame = crate::ports::xtensa_esp32::TrapFrame;
+    #[cfg(feature = "preemptive")]
+    pub const STACK_ALIGN: usize = 16;
 }
 
 #[cfg(all(
@@ -57,6 +59,8 @@ mod arch {
     pub type Port = mok::Mok;
     #[cfg(feature = "preemptive")]
     pub type TrapFrame = mok::TrapFrame;
+    #[cfg(feature = "preemptive")]
+    pub const STACK_ALIGN: usize = 0;
 }
 
 #[cfg(target_arch = "mips64")]
@@ -67,6 +71,8 @@ mod arch {
     pub type Port = mips64::Mips64;
     #[cfg(feature = "preemptive")]
     pub type TrapFrame = ();
+    #[cfg(feature = "preemptive")]
+    pub const STACK_ALIGN: usize = 0;
 }
 
 pub use arch::*;

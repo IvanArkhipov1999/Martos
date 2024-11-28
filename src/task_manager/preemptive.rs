@@ -1,4 +1,4 @@
-use crate::ports::{Port, PortTrait, TrapFrame};
+use crate::ports::{Port, PortTrait, TrapFrame, STACK_ALIGN};
 use crate::task_manager::task::{
     Task, TaskLoopFunctionType, TaskSetupFunctionType, TaskStopConditionFunctionType,
 };
@@ -114,8 +114,7 @@ impl TaskManagerTrait for PreemptiveTaskManager {
         loop_fn: TaskLoopFunctionType,
         stop_condition_fn: TaskStopConditionFunctionType,
     ) {
-        let align = 16; //todo: move to port
-        let layout = Layout::from_size_align(THREAD_STACK_SIZE, align).unwrap();
+        let layout = Layout::from_size_align(THREAD_STACK_SIZE, STACK_ALIGN).unwrap();
         let stack = unsafe { alloc::alloc::alloc(layout) };
         let mut thread = Thread::new(stack, thread_func, setup_fn, loop_fn, stop_condition_fn);
         Port::setup_stack(&mut thread);
