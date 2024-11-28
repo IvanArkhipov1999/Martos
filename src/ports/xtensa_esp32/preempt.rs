@@ -1,4 +1,5 @@
 use crate::ports::xtensa_esp32::hardware_timer::*;
+use crate::task_manager::preemptive::Thread;
 use esp_hal::timer::timg::{Timer, Timer0, TimerGroup};
 use esp_hal::trapframe::TrapFrame;
 use esp_hal::xtensa_lx_rt;
@@ -7,7 +8,8 @@ use esp_hal::{
     prelude::*,
 };
 use esp_hal::{peripherals::*, prelude::*, Cpu};
-use crate::task_manager::preemptive::Thread;
+
+const TIME_SLICE_MILLIS: u64 = 1000;
 
 pub fn setup_interrupt() {
     let timer0 = unsafe { TIMER00.take().expect("Timer error") };
@@ -19,8 +21,7 @@ pub fn setup_interrupt() {
     timer0.enable_auto_reload(true);
     interrupt::enable(Interrupt::TG0_T0_LEVEL, Priority::Priority1).unwrap();
 
-    // timer0.reset();
-    timer0.load_value(1000u64.millis()).unwrap();
+    timer0.load_value(TIME_SLICE_MILLIS.millis()).unwrap();
     timer0.start();
     timer0.listen();
 
@@ -30,12 +31,11 @@ pub fn setup_interrupt() {
 }
 
 extern "C" fn handler(ctx: &mut TrapFrame) {
-    // todo: should disable interrupts?
     crate::task_manager::preemptive::PreemptiveTaskManager::schedule(ctx);
 
     let mut timer00 = unsafe { TIMER00.take().expect("Timer error") };
     timer00.clear_interrupt();
-    timer00.load_value(1000u64.millis()).unwrap();
+    timer00.load_value(TIME_SLICE_MILLIS.millis()).unwrap();
     timer00.start();
     unsafe {
         TIMER00 = Some(timer00);
