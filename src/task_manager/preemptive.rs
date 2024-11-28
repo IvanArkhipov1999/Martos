@@ -61,14 +61,15 @@ impl Thread {
 pub struct PreemptiveTaskManager {
     pub(crate) tasks: Vec<Thread>,
     pub(crate) task_to_execute_index: usize,
+    first_task: bool,
 }
-static mut first: bool = true;
 
 impl PreemptiveTaskManager {
     pub const fn new() -> Self {
         PreemptiveTaskManager {
             tasks: Vec::new(),
             task_to_execute_index: 0,
+            first_task: true,
         }
     }
 
@@ -80,7 +81,7 @@ impl PreemptiveTaskManager {
     }
 
     pub fn schedule(isr_ctx: &mut TrapFrame) {
-        if unsafe { !first } {
+        if unsafe { !TASK_MANAGER.first_task } {
             let task = unsafe {
                 TASK_MANAGER
                     .tasks
@@ -92,7 +93,7 @@ impl PreemptiveTaskManager {
 
             Self::next_thread();
         }
-        unsafe { first = false }
+        unsafe { TASK_MANAGER.first_task = false }
 
         let task = unsafe {
             TASK_MANAGER

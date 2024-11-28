@@ -18,7 +18,6 @@ pub fn setup_interrupt() {
         Priority::Priority1,
     ));
     timer0.enable_interrupt(true);
-    timer0.enable_auto_reload(true);
     interrupt::enable(Interrupt::TG0_T0_LEVEL, Priority::Priority1).unwrap();
 
     timer0.load_value(TIME_SLICE_MILLIS.millis()).unwrap();
