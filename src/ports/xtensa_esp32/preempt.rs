@@ -7,6 +7,7 @@ use esp_hal::{
     prelude::*,
 };
 use esp_hal::{peripherals::*, prelude::*, Cpu};
+use crate::task_manager::preemptive::Thread;
 
 pub fn setup_interrupt() {
     let timer0 = unsafe { TIMER00.take().expect("Timer error") };
@@ -43,7 +44,7 @@ extern "C" fn handler(ctx: &mut TrapFrame) {
 
 pub fn setup_stack(thread: &mut crate::task_manager::preemptive::Thread) {
     // manual 8.1
-    thread.context.PC = thread.func as u32;
+    thread.context.PC = Thread::run_task as u32;
     thread.context.A0 = 0; // return address
 
     thread.context.A6 = thread.task.setup_fn as u32; // A2 after `entry` instruction

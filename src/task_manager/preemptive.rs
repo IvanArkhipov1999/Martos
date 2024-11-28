@@ -18,15 +18,13 @@ pub(crate) struct Thread {
     pub(crate) stack: *mut u8,
     /// **Arch specific** state of the registers at the moment of context switch
     pub(crate) context: TrapFrame,
-    pub(crate) func: fn(TaskSetupFunctionType, TaskLoopFunctionType, TaskStopConditionFunctionType),
-    // TODO: use Task
+    /// Task that is executed by this thread
     pub(crate) task: Task,
 }
 
 impl Thread {
     fn new(
         stack: *mut u8,
-        func: fn(TaskSetupFunctionType, TaskLoopFunctionType, TaskStopConditionFunctionType),
         start: TaskSetupFunctionType,
         loop_: TaskLoopFunctionType,
         stop: TaskStopConditionFunctionType,
@@ -36,12 +34,26 @@ impl Thread {
             id,
             stack,
             context: TrapFrame::default(),
-            func,
             task: Task {
                 setup_fn: start,
                 loop_fn: loop_,
                 stop_condition_fn: stop,
             },
+        }
+    }
+    pub(crate) fn run_task(
+        start: TaskSetupFunctionType,
+        loop_: TaskLoopFunctionType,
+        stop: TaskStopConditionFunctionType,
+    ) {
+        start();
+        loop {
+            if stop() {
+                // TODO: yield
+                loop {}
+            } else {
+                loop_();
+            }
         }
     }
 }
@@ -93,21 +105,6 @@ impl PreemptiveTaskManager {
     }
 }
 
-fn thread_func(
-    setup_fn: TaskSetupFunctionType,
-    loop_fn: TaskLoopFunctionType,
-    stop_fn: TaskStopConditionFunctionType,
-) {
-    setup_fn();
-    loop {
-        if stop_fn() {
-            // TODO:
-            loop {}
-        } else {
-            loop_fn();
-        }
-    }
-}
 impl TaskManagerTrait for PreemptiveTaskManager {
     fn add_task(
         setup_fn: TaskSetupFunctionType,
@@ -116,7 +113,7 @@ impl TaskManagerTrait for PreemptiveTaskManager {
     ) {
         let layout = Layout::from_size_align(THREAD_STACK_SIZE, STACK_ALIGN).unwrap();
         let stack = unsafe { alloc::alloc::alloc(layout) };
-        let mut thread = Thread::new(stack, thread_func, setup_fn, loop_fn, stop_condition_fn);
+        let mut thread = Thread::new(stack, setup_fn, loop_fn, stop_condition_fn);
         Port::setup_stack(&mut thread);
         unsafe { TASK_MANAGER.tasks.push(thread) }
         // todo: dealloc
