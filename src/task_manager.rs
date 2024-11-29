@@ -117,6 +117,24 @@ impl TaskManager {
         }
     }
 
+    pub fn terminate_task(&mut self, id: TaskIdType) -> Result<(), &'static str> {
+        match self.find_task(id) {
+            None => {
+                Err("Error: terminate_task: No task with that id")
+            }
+            Some(mut task) => {
+                if task.status == TaskStatusType::Running {
+                    return Err("Error: terminate_task: Task with this id is currently running")
+                }
+                if task.status != TaskStatusType::Ready {
+                    return Err("Error: terminate_task: Task with this id can not go to sleep");
+                }
+                self.update_status(&mut task, TaskStatusType::Terminated);
+                Ok(())
+            }
+        }
+    }
+
     pub fn start_task_manager(&mut self) {
         loop {
             // if task is None, array is empty, waiting for new tasks in system
