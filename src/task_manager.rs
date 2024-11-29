@@ -14,10 +14,11 @@ type TaskPriorityType = usize;
 
 const NUM_PRIORITIES: usize = 11;
 
+#[derive(PartialEq)]
 enum TaskStatusType {
+    Running,
     Ready,
     Sleep,
-    WokeUp,
     Terminated,
 }
 
@@ -35,7 +36,7 @@ struct TaskManager {
 }
 
 impl TaskManager {
-    fn new() -> Self {
+    pub fn new() -> Self {
         TaskManager {
             priority_array: array::from_fn(|_| VecDeque::new()),
             next_task_id: 0,
@@ -86,26 +87,53 @@ impl TaskManager {
         Ok(())
     }
 
+    fn find_task(&mut self, id: TaskIdType) -> Option<Task> {
+        for queue in self.priority_array {
+            for task in queue {
+                if task.id == id {
+                    return Some(task);
+                }
+                continue;
+            }
+        }
+        None
+    }
+
+    pub fn put_to_sleep(&mut self, id: TaskIdType) -> Result<(), &'static str> {
+        match self.find_task(id) {
+            None => {
+                Err("Error: put_to_sleep: No task with that id")
+            }
+            Some(mut task) => {
+                if task.status == TaskStatusType::Running {
+                    return Err("Error: put_to_sleep: Task with this id is currently running")
+                }
+                if task.status != TaskStatusType::Ready {
+                    return Err("Error: put_to_sleep: Task with this id can not go to sleep");
+                }
+                self.update_status(&mut task, TaskStatusType::Sleep);
+                Ok(())
+            }
+        }
+    }
+
     pub fn start_task_manager(&mut self) {
         loop {
             // if task is None, array is empty, waiting for new tasks in system
             let Some(mut task) = self.pop_next_task();
             match task.status {
                 TaskStatusType::Ready => {
+                    task.status = TaskStatusType::Running;
                     (task.loop_fn)();
-                    if task.status = TaskStatusType::Sleep {
+                    if task.status != TaskStatusType::Sleep {
                         self.push_to_queue(task);
                     } // deleting task is not adding it back to the queue
                 }
                 TaskStatusType::Sleep => {
                     self.push_to_queue(task);
                 }
-                TaskStatusType::WokeUp => {
-                    self.wake_up(&mut task);
-                    task.status = TaskStatusType::Ready;
-                    self.push_to_queue(task);
-                }
                 TaskStatusType::Terminated => {}
+                _ => {}
             }
         }
     }
