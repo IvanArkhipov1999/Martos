@@ -35,3 +35,33 @@ jobs:
 
       - name: Push Docker image to Docker Hub
         run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/xtensa-esp32-c:latest
+
+  build-risc-v-esp32c6-c-dependencies-docker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Login to Docker Hub
+        run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
+
+      - name: Build Docker image with risc-v esp32c6 C dependencies
+        run: docker build -f ./dockers/risc-v-esp32c6/c-dependencies/risc-v-esp32c6-c.dockerfile -t ${{ secrets.DOCKERHUB_USERNAME }}/risc-v-esp32c6-c .
+
+      - name: Push Docker image to Docker Hub
+        run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/risc-v-esp32c6-c:latest
+
+  build-esp-c-dependencies-docker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Login to Docker Hub
+        run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
+
+      - name: Build Docker image with C dependencies for all esp targets
+        run: docker build -f ./dockers/esp/esp.dockerfile -t ${{ secrets.DOCKERHUB_USERNAME }}/esp-c .
+
+      - name: Push Docker image to Docker Hub
+        run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/esp-c:latest
