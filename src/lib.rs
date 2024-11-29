@@ -5,7 +5,6 @@ use ports::PortTrait;
 #[cfg(feature = "c-library")]
 pub mod c_api;
 pub mod task_manager;
-mod context_switcher;
 pub mod timer;
 #[cfg(any(target_arch = "riscv32", target_arch = "xtensa"))]
 #[cfg(feature = "network")]
