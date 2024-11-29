@@ -3,7 +3,6 @@ extern crate alloc;
 // A double-ended queue implemented with a growable ring buffer
 use alloc::collections::VecDeque;
 use core::array;
-use crate::context_switcher::ContextSwitcher;
 
 /// Type of loop function, that is called in loop.
 #[cfg(not(feature = "c-library"))]
@@ -32,7 +31,6 @@ pub struct Task {
 
 struct TaskManager {
     priority_array: [VecDeque<Task>; NUM_PRIORITIES],
-    switcher: ContextSwitcher,
     next_task_id: TaskIdType,
 }
 
@@ -40,7 +38,6 @@ impl TaskManager {
     fn new() -> Self {
         TaskManager {
             priority_array: array::from_fn(|_| VecDeque::new()),
-            switcher: ContextSwitcher::new(),
             next_task_id: 0,
         }
     }
@@ -87,16 +84,6 @@ impl TaskManager {
         let new_task = self.create_task(loop_fn, priority);
         self.push_to_queue(new_task);
         Ok(())
-    }
-
-    pub fn yield_to_scheduler(&self, mut task: Task, new_status: TaskStatusType) {
-        self.switcher.save_context(&mut task);
-        self.update_status(&mut task, new_status);
-    }
-
-    pub fn wake_up(&self, task: &mut Task) {
-        self.switcher.load_context(task);
-        task.update_status(TaskStatusType::Ready);
     }
 
     pub fn start_task_manager(&mut self) {
