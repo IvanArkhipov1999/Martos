@@ -10,7 +10,7 @@ use crate::context_switcher::ContextSwitcher;
 type TaskLoopFunctionType = fn();
 #[cfg(feature = "c-library")]
 type TaskLoopFunctionType = extern "C" fn();
-
+type TaskIdType = usize;
 type TaskPriorityType = usize;
 
 const NUM_PRIORITIES: usize = 11;
@@ -23,33 +23,36 @@ enum TaskStatusType {
 }
 
 pub struct Task {
+    id: TaskIdType,
     /// Loop function, that is called in loop.
     loop_fn: TaskLoopFunctionType,
     status: TaskStatusType,
     priority: TaskPriorityType,
 }
 
-impl Task {
-    pub fn new(loop_fn: TaskLoopFunctionType, priority: TaskPriorityType) -> Self {
-        Task {loop_fn, status: TaskStatusType::Ready, priority}
-    }
-
-    fn update_status(&mut self, new_status: TaskStatusType) {
-        self.status = new_status;
-    }
-}
-
 struct TaskManager {
     priority_array: [VecDeque<Task>; NUM_PRIORITIES],
     switcher: ContextSwitcher,
+    next_task_id: TaskIdType,
 }
 
 impl TaskManager {
-    fn new() -> TaskManager {
+    fn new() -> Self {
         TaskManager {
             priority_array: array::from_fn(|_| VecDeque::new()),
             switcher: ContextSwitcher::new(),
+            next_task_id: 0,
         }
+    }
+
+    fn create_task(&mut self, loop_fn: TaskLoopFunctionType, priority: TaskPriorityType) -> Task {
+        self.next_task_id += 1;
+        let id = self.next_task_id;
+        Task {id, loop_fn, status: TaskStatusType::Ready, priority}
+    }
+
+    fn update_status(task: &mut Task, new_status: TaskStatusType) {
+        task.status = new_status;
     }
 
     fn pop_from_queue(&mut self, priority: TaskPriorityType) -> Option<Task> {
@@ -81,14 +84,14 @@ impl TaskManager {
         if priority >= NUM_PRIORITIES {
             return Err("Invalid priority value");
         }
-        let new_task = Task::new(loop_fn, priority);
+        let new_task = self.create_task(loop_fn, priority);
         self.push_to_queue(new_task);
         Ok(())
     }
 
     pub fn yield_to_scheduler(&self, mut task: Task, new_status: TaskStatusType) {
         self.switcher.save_context(&mut task);
-        task.update_status(new_status);
+        self.update_status(&mut task, new_status);
     }
 
     pub fn wake_up(&self, task: &mut Task) {
