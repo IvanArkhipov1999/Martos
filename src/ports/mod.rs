@@ -51,7 +51,7 @@ pub mod mok;
 ))]
 pub type Port = mok::Mok;
 
-#[cfg(target_arch = "mips64")]
+#[cfg(any(target_arch = "mips64", feature = "mips64_timer_tests"))]
 pub mod mips64;
 #[cfg(target_arch = "mips64")]
 pub type Port = mips64::Mips64;

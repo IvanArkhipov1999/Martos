@@ -1,4 +1,5 @@
 pub mod hardware_timer;
+#[cfg(not(feature = "mips64_timer_tests"))]
 pub mod memory_manager;
 #[cfg(feature = "network")]
 pub mod network;
@@ -8,6 +9,7 @@ use crate::ports::PortTrait;
 pub struct Mips64;
 impl PortTrait for Mips64 {
     fn init_heap() {
+        #[cfg(not(feature = "mips64_timer_tests"))]
         memory_manager::init_heap();
     }
 

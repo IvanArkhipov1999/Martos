@@ -1,8 +1,14 @@
 use crate::timer::TickType;
+use core::sync::atomic::{AtomicBool, Ordering};
 use core::time::Duration;
 
+// Declare timer_tests file as child file to test private functions.
+#[cfg(test)]
+#[path = "../../../tests/mips64/timer_tests.rs"]
+mod mips64_timer_tests;
+
 /// Static variable for storing an instance of the timer block.
-static mut TIMER_BLOCK: Option<TimerBlock> = None;
+static mut TIMER_BLOCK: Option<TimerBlock<MemoryAccess>> = None;
 
 /// Base address of timer 0.
 const TIMER_0: u64 = 0x01B400080;
@@ -23,27 +29,27 @@ const STATUS_AND_CONTROL_REGISTER_OFFSET: u64 = 0x08;
 const TIMER_FREQUENCY: u64 = 4;
 
 /// Structure representing a block of timers.
-struct TimerBlock {
+struct TimerBlock<M: ByteAccess> {
     /// Timer 0.
-    timer0: Timer,
+    timer0: Timer<M>,
     /// Timer 1.
-    timer1: Timer,
+    timer1: Timer<M>,
     /// Timer 2.
-    timer2: Timer,
+    timer2: Timer<M>,
     /// Timer 3.
-    timer3: Timer,
+    timer3: Timer<M>,
     /// Timer 4.
-    timer4: Timer,
+    timer4: Timer<M>,
 }
 
-impl TimerBlock {
+impl<M: ByteAccess + core::clone::Clone> TimerBlock<M> {
     /// Creates a new timer block and initializes each timer.
-    fn new() -> Self {
-        let timer0 = Timer::new(TIMER_0, 0x0);
-        let timer1 = Timer::new(TIMER_1, 0x1);
-        let timer2 = Timer::new(TIMER_2, 0x2);
-        let timer3 = Timer::new(TIMER_3, 0x3);
-        let timer4 = Timer::new(TIMER_4, 0x4);
+    fn new(accessibility: M) -> Self {
+        let timer0 = Timer::new(TIMER_0, 0x0, accessibility.clone());
+        let timer1 = Timer::new(TIMER_1, 0x1, accessibility.clone());
+        let timer2 = Timer::new(TIMER_2, 0x2, accessibility.clone());
+        let timer3 = Timer::new(TIMER_3, 0x3, accessibility.clone());
+        let timer4 = Timer::new(TIMER_4, 0x4, accessibility.clone());
 
         Self {
             timer0,
@@ -56,7 +62,7 @@ impl TimerBlock {
 }
 
 /// Structure representing the timer.
-struct Timer {
+struct Timer<M: ByteAccess> {
     /// Base address of the timer.
     address: u64,
     /// The passed value in ticks for the counter.
@@ -67,17 +73,26 @@ struct Timer {
     is_running: bool,
     /// An indicator showing whether the timer is in auto reload mode or in one shot mode.
     reload_mode: bool,
+    /// An indicator showing whether it is possible to start loading a new value into the timer.
+    lock_for_load: AtomicBool,
+    /// An indicator showing whether it is possible to start receiving the current ticks of the timer counter.
+    lock_for_now: AtomicBool,
+    /// Methods for reading and writing a byte at a given address.
+    accessibility: M,
 }
 
-impl Timer {
+impl<M: ByteAccess> Timer<M> {
     /// Creates a new timer at the specified address.
-    fn new(address: u64, enable_mask: u8) -> Self {
+    fn new(address: u64, enable_mask: u8, accessibility: M) -> Self {
         Timer {
             address,
             duration: 0,
             resolution_mask: enable_mask,
             is_running: false,
             reload_mode: false,
+            lock_for_load: AtomicBool::new(false),
+            lock_for_now: AtomicBool::new(false),
+            accessibility,
         }
     }
 
@@ -87,9 +102,10 @@ impl Timer {
             return;
         }
 
-        let mut configuration_value: u8 = read_byte(CONFIGURATION_REGISTERS);
+        let mut configuration_value: u8 = self.accessibility.read_byte(CONFIGURATION_REGISTERS);
         configuration_value |= self.resolution_mask;
-        write_byte(CONFIGURATION_REGISTERS, configuration_value);
+        self.accessibility
+            .write_byte(CONFIGURATION_REGISTERS, configuration_value);
         self.is_running = true;
     }
 
@@ -99,13 +115,15 @@ impl Timer {
             return;
         }
 
-        let mut control_value: u8 = read_byte(self.address + STATUS_AND_CONTROL_REGISTER_OFFSET);
+        let mut control_value: u8 = self
+            .accessibility
+            .read_byte(self.address + STATUS_AND_CONTROL_REGISTER_OFFSET);
         if auto_reload {
             control_value |= 0x04;
         } else {
             control_value &= 0xfb;
         }
-        write_byte(
+        self.accessibility.write_byte(
             self.address + STATUS_AND_CONTROL_REGISTER_OFFSET,
             control_value,
         );
@@ -114,42 +132,69 @@ impl Timer {
 
     /// Loads a value into the timer.
     fn load_value(&mut self, ticks: TickType) {
-        while read_byte(self.address + STATUS_AND_CONTROL_REGISTER_OFFSET) & 0x40 != 0 {
+        while self.lock_for_load.swap(true, Ordering::Acquire) {
+            // Wait until lock_for_load becomes false
+        }
+
+        while self
+            .accessibility
+            .read_byte(self.address + STATUS_AND_CONTROL_REGISTER_OFFSET)
+            & 0x40
+            != 0
+        {
             // Wait for the previous load to finish
         }
 
         for i in 0..8 {
-            write_byte(self.address + i, ((ticks >> (i * 8)) & 0xFF) as u8)
+            self.accessibility
+                .write_byte(self.address + i, ((ticks >> (i * 8)) & 0xFF) as u8)
         }
         self.duration = ticks;
+
+        self.lock_for_load.store(false, Ordering::Release);
     }
 
     /// Gets the current ticks of the timer counter.
     fn now(&self) -> TickType {
-        let mut control_value: u8 = read_byte(self.address + STATUS_AND_CONTROL_REGISTER_OFFSET);
+        while self.lock_for_now.swap(true, Ordering::Acquire) {
+            // Wait until lock_for_now becomes false
+        }
+
+        let mut control_value: u8 = self
+            .accessibility
+            .read_byte(self.address + STATUS_AND_CONTROL_REGISTER_OFFSET);
         control_value |= 0x01;
-        write_byte(
+        self.accessibility.write_byte(
             self.address + STATUS_AND_CONTROL_REGISTER_OFFSET,
             control_value,
         );
 
-        while read_byte(self.address + STATUS_AND_CONTROL_REGISTER_OFFSET) & 0x20 != 0 {
+        while self
+            .accessibility
+            .read_byte(self.address + STATUS_AND_CONTROL_REGISTER_OFFSET)
+            & 0x20
+            != 0
+        {
             // Wait for the update to complete
         }
 
         let mut counter_ticks: TickType = 0x0;
         for i in 0..8 {
-            counter_ticks |= (read_byte(self.address + i) as TickType) << (i * 8);
+            counter_ticks |=
+                (self.accessibility.read_byte(self.address + i) as TickType) << (i * 8);
         }
+
+        self.lock_for_now.store(false, Ordering::Release);
 
         self.duration - counter_ticks
     }
 
     /// Disables the timer count.
     fn stop(&mut self) {
-        let mut configuration_value: u8 = read_byte(CONFIGURATION_REGISTERS);
+        let mut configuration_value: u8 = self.accessibility.read_byte(CONFIGURATION_REGISTERS);
         configuration_value &= !self.resolution_mask;
-        write_byte(CONFIGURATION_REGISTERS, configuration_value);
+        self.accessibility
+            .write_byte(CONFIGURATION_REGISTERS, configuration_value);
         self.is_running = false;
     }
 }
@@ -174,19 +219,32 @@ fn ticks_to_duration(ticks: TickType) -> Duration {
     Duration::from_micros(micros)
 }
 
-/// Reads a byte from the given address.
-fn read_byte(address: u64) -> u8 {
-    unsafe { *(address as *const u8) }
+/// Provides methods for reading and writing individual bytes at a given address.
+/// This trait is required to implement both direct memory access and simulated memory access for tests.
+trait ByteAccess {
+    /// Reads a byte from the given address.
+    fn read_byte(&self, address: u64) -> u8;
+
+    /// Writes the given byte value to the specified address.
+    fn write_byte(&self, address: u64, value: u8);
 }
 
-/// Writes the given byte value to the specified address.
-fn write_byte(address: u64, value: u8) {
-    unsafe { *(address as *mut u8) = value }
+/// Provides the ability to access bytes in memory.
+#[derive(Clone)]
+struct MemoryAccess;
+impl ByteAccess for MemoryAccess {
+    fn read_byte(&self, address: u64) -> u8 {
+        unsafe { *(address as *const u8) }
+    }
+
+    fn write_byte(&self, address: u64, value: u8) {
+        unsafe { *(address as *mut u8) = value };
+    }
 }
 
 /// Mips64 hardware timer setup.
 pub fn setup_hardware_timer() {
-    let timer_block = TimerBlock::new();
+    let timer_block = TimerBlock::new(MemoryAccess);
 
     unsafe {
         TIMER_BLOCK = Some(timer_block);
