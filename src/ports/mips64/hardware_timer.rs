@@ -45,11 +45,11 @@ struct TimerBlock<M: ByteAccess> {
 impl<M: ByteAccess + core::clone::Clone> TimerBlock<M> {
     /// Creates a new timer block and initializes each timer.
     fn new(accessibility: M) -> Self {
-        let timer0 = Timer::new(TIMER_0, 0x0, accessibility.clone());
-        let timer1 = Timer::new(TIMER_1, 0x1, accessibility.clone());
-        let timer2 = Timer::new(TIMER_2, 0x2, accessibility.clone());
-        let timer3 = Timer::new(TIMER_3, 0x3, accessibility.clone());
-        let timer4 = Timer::new(TIMER_4, 0x4, accessibility.clone());
+        let timer0 = Timer::new(TIMER_0, 0x1, accessibility.clone());
+        let timer1 = Timer::new(TIMER_1, 0x2, accessibility.clone());
+        let timer2 = Timer::new(TIMER_2, 0x4, accessibility.clone());
+        let timer3 = Timer::new(TIMER_3, 0x8, accessibility.clone());
+        let timer4 = Timer::new(TIMER_4, 0x10, accessibility.clone());
 
         Self {
             timer0,
