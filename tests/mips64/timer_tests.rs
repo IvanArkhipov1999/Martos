@@ -11,6 +11,7 @@ mod timer_tests {
             (TIMER_FREQUENCY * 1_000_001) as TickType
         );
 
+        // Testing that the return value will saturate if it exceeds 64 bits
         assert_eq!(
             duration_to_ticks(Duration::from_micros(u64::MAX / TIMER_FREQUENCY + 1)),
             u64::MAX as TickType
