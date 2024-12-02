@@ -9,7 +9,7 @@ LD = $(TOOLCHAIN)ld
 OC = $(TOOLCHAIN)objcopy
 OS = $(TOOLCHAIN)size
 
-LDSCRIPT       = ./ld/esp32.ld
+LDSCRIPT       = ./ld/esp32c6.ld
 
 CFLAGS += $(INC) -Wall -Werror -std=gnu11 -nostdlib $(CFLAGS_PLATFORM) $(COPT)
 CFLAGS += -fno-strict-aliasing
