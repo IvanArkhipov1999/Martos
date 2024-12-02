@@ -2,13 +2,12 @@ name: Martos ci workflow
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "riscv-example" ]
   pull_request:
     branches: [ "main" ]
 
 env:
   CARGO_TERM_COLOR: always
-  DOCKERHUB_USERNAME: sevenbunu
 
 
 jobs:
@@ -41,21 +40,13 @@ jobs:
       - name: Clippy
         run: cargo clippy -- -D clippy::all
 
-  prepare-image:
-    runs-on: ubuntu-latest
-    steps:
-      - run: echo "null"
-    outputs:
-      username: ${{ env.DOCKERHUB_USERNAME }}
-
   xtensa-esp32-rust-example-hello-world:
     runs-on: ubuntu-latest
-    needs: [prepare-image]
     env:
       CARGO_HOME: /root/.cargo
       RUSTUP_HOME: /root/.rustup
     container:
-      image: ${{ needs.prepare-image.outputs.username }}/xtensa-esp32-rust:latest
+      image: arkhipovivan1/xtensa-esp32-rust:latest
       options: --user root
     steps:
       - uses: actions/checkout@v3
@@ -66,12 +57,11 @@ jobs:
 
   xtensa-esp32-rust-example-dynamic-memory:
     runs-on: ubuntu-latest
-    needs: [prepare-image]
     env:
       CARGO_HOME: /root/.cargo
       RUSTUP_HOME: /root/.rustup
     container:
-      image: ${{ needs.prepare-image.outputs.username }}/xtensa-esp32-rust:latest
+      image: arkhipovivan1/xtensa-esp32-rust:latest
       options: --user root
     steps:
       - uses: actions/checkout@v3
@@ -82,12 +72,11 @@ jobs:
 
   xtensa-esp32-rust-example-timer:
     runs-on: ubuntu-latest
-    needs: [prepare-image]
     env:
       CARGO_HOME: /root/.cargo
       RUSTUP_HOME: /root/.rustup
     container:
-      image: ${{ needs.prepare-image.outputs.username }}/xtensa-esp32-rust:latest
+      image: arkhipovivan1/xtensa-esp32-rust:latest
       options: --user root
     steps:
       - uses: actions/checkout@v3
@@ -98,12 +87,11 @@ jobs:
 
   xtensa-esp32-rust-example-wifi:
     runs-on: ubuntu-latest
-    needs: [prepare-image]
     env:
       CARGO_HOME: /root/.cargo
       RUSTUP_HOME: /root/.rustup
     container:
-      image: ${{ needs.prepare-image.outputs.username }}/xtensa-esp32-rust:latest
+      image: arkhipovivan1/xtensa-esp32-rust:latest
       options: --user root
     steps:
       - uses: actions/checkout@v3
@@ -114,12 +102,11 @@ jobs:
 
   xtensa-esp32-static-library:
     runs-on: ubuntu-latest
-    needs: [prepare-image]
     env:
       CARGO_HOME: /root/.cargo
       RUSTUP_HOME: /root/.rustup
     container:
-      image: ${{ needs.prepare-image.outputs.username }}/xtensa-esp32-rust:latest
+      image: arkhipovivan1/xtensa-esp32-rust:latest
       options: --user root
     steps:
       - uses: actions/checkout@v3
@@ -133,8 +120,6 @@ jobs:
           name: xtensa-esp32-static-library
           path: c-library/xtensa-esp32/target/xtensa-esp32-none-elf/release/libxtensa_esp32_static_lib.a
           retention-days: 7
-    outputs:
-      username: ${{ needs.prepare-image.outputs.username }}
 
   xtensa-esp32-c-example:
     needs: xtensa-esp32-static-library
@@ -143,7 +128,7 @@ jobs:
       IDF_PATH: /root/esp/esp-idf
       IDF_TOOLS_PATH: /root/.espressif
     container:
-      image: ${{ needs.xtensa-esp32-static-library.outputs.username }}/xtensa-esp32-c:latest
+      image: arkhipovivan1/xtensa-esp32-c:latest
       options: --user root
     steps:
       - uses: actions/checkout@v3
@@ -158,12 +143,11 @@ jobs:
  
   risc-v-esp32c6-rust-example-hello-world:
     runs-on: ubuntu-latest
-    needs: [prepare-image]
     env:
       CARGO_HOME: /root/.cargo
       RUSTUP_HOME: /root/.rustup
     container:
-      image: ${{ needs.prepare-image.outputs.username }}/xtensa-esp32-rust:latest
+      image: arkhipovivan1/xtensa-esp32-rust:latest
       options: --user root
     steps:
       - uses: actions/checkout@v3
@@ -174,12 +158,11 @@ jobs:
 
   risc-v-esp32c6-rust-example-dynamic-memory:
     runs-on: ubuntu-latest
-    needs: [prepare-image]
     env:
       CARGO_HOME: /root/.cargo
       RUSTUP_HOME: /root/.rustup
     container:
-      image: ${{ needs.prepare-image.outputs.username }}/xtensa-esp32-rust:latest
+      image: arkhipovivan1/xtensa-esp32-rust:latest
       options: --user root
     steps:
       - uses: actions/checkout@v3
@@ -190,12 +173,11 @@ jobs:
 
   risc-v-esp32c6-rust-example-timer:
     runs-on: ubuntu-latest
-    needs: [prepare-image]
     env:
       CARGO_HOME: /root/.cargo
       RUSTUP_HOME: /root/.rustup
     container:
-      image: ${{ needs.prepare-image.outputs.username }}/xtensa-esp32-rust:latest
+      image: arkhipovivan1/xtensa-esp32-rust:latest
       options: --user root
     steps:
       - uses: actions/checkout@v3
@@ -206,12 +188,11 @@ jobs:
 
   risc-v-esp32c6-rust-example-wifi:
     runs-on: ubuntu-latest
-    needs: [prepare-image]
     env:
       CARGO_HOME: /root/.cargo
       RUSTUP_HOME: /root/.rustup
     container:
-      image: ${{ needs.prepare-image.outputs.username }}/xtensa-esp32-rust:latest
+      image: arkhipovivan1/xtensa-esp32-rust:latest
       options: --user root
     steps:
       - uses: actions/checkout@v3
@@ -222,12 +203,11 @@ jobs:
 
   risc-v-esp32c6-static-library:
     runs-on: ubuntu-latest
-    needs: [prepare-image]
     env:
       CARGO_HOME: /root/.cargo
       RUSTUP_HOME: /root/.rustup
     container:
-      image: ${{ needs.prepare-image.outputs.username }}/xtensa-esp32-rust:latest
+      image: arkhipovivan1/xtensa-esp32-rust:latest
       options: --user root
     steps:
       - uses: actions/checkout@v3
@@ -241,8 +221,6 @@ jobs:
           name: risc-v-esp32c6-static-library
           path: c-library/risc-v-esp32-c6/target/riscv32imac-unknown-none-elf/release/librisc_v_esp32c6_static_lib.a
           retention-days: 7
-    outputs:
-      username: ${{ needs.prepare-image.outputs.username }}
 
   risc-v-esp32c6-c-example:
     needs: risc-v-esp32c6-static-library
@@ -251,7 +229,7 @@ jobs:
       IDF_PATH: /root/esp/esp-idf
       IDF_TOOLS_PATH: /root/.espressif
     container:
-      image: ${{ needs.risc-v-esp32c6-static-library.outputs.username }}/risc-v-esp32c6-c:latest
+      image: arkhipovivan1/risc-v-esp32c6-c:latest
       options: --user root
     steps:
       - uses: actions/checkout@v3
@@ -262,6 +240,7 @@ jobs:
           path: c-library/risc-v-esp32-c6/target/riscv32imac-unknown-none-elf/release
       - name: Build
         run: cd ./examples/c-examples/risc-v-esp32c6 && . /root/esp/esp-idf/export.sh && make && esptool.py --chip esp32c6 elf2image --flash_mode="dio" --flash_freq "40m" --flash_size "4MB" -o main.bin main.elf
+
 
   mips64-rust-example-hello-world:
     runs-on: ubuntu-latest
