@@ -65,18 +65,25 @@ impl<M: ByteAccess + core::clone::Clone> TimerBlock<M> {
 struct Timer<M: ByteAccess> {
     /// Base address of the timer.
     address: u64,
+
     /// The passed value in ticks for the counter.
     duration: TickType,
+
     /// The count resolution mask for the timer.
     resolution_mask: u8,
+
     /// An indicator showing whether the timer is running.
     is_running: bool,
+
     /// An indicator showing whether the timer is in auto reload mode or in one shot mode.
     reload_mode: bool,
+
     /// An indicator showing whether it is possible to start loading a new value into the timer.
     lock_for_load: AtomicBool,
+
     /// An indicator showing whether it is possible to start receiving the current ticks of the timer counter.
     lock_for_now: AtomicBool,
+
     /// Methods for reading and writing a byte at a given address.
     accessibility: M,
 }
