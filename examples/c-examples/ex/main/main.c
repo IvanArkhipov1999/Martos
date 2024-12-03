@@ -1,9 +1,7 @@
 #include <stdio.h>
-//extern void init_system(void);
-//extern void start_task_manager();
+extern void example_init_system(void);
 
 void app_main(void) {
-    //init_system();
-    //start_task_manager();
+    example_init_system();
     printf("Hello world from C!\n");
 }
