@@ -45,7 +45,7 @@ set(CARGO_BUILD_DIR "${CMAKE_CURRENT_BINARY_DIR}")
 set(CARGO_TARGET_DIR "${CARGO_BUILD_DIR}/target")
 
 set(RUST_INCLUDE_DIR "${CARGO_TARGET_DIR}")
-set(RUST_STATIC_LIBRARY "${CARGO_TARGET_DIR}/${RUST_TARGET}/${CARGO_BUILD_TYPE}/librust_esp32.a")
+set(RUST_STATIC_LIBRARY "${CARGO_TARGET_DIR}/${RUST_TARGET}/${CARGO_BUILD_TYPE}/librust_ex.a")
 set(LIBRARY "${CMAKE_CURRENT_LIST_DIR}/libxtensa_esp32_static_lib.a")
 
 # if this component uses CBindGen to generate a C header, uncomment the lines below and adjust the header name accordingly
@@ -56,7 +56,7 @@ idf_build_get_property(sdkconfig SDKCONFIG)
 idf_build_get_property(idf_path IDF_PATH)
 
 ExternalProject_Add(
-    project_rust_esp32
+    project_rust_ex
     PREFIX "${CARGO_PROJECT_DIR}"
     DOWNLOAD_COMMAND ""
     CONFIGURE_COMMAND ${CMAKE_COMMAND} -E env
@@ -88,8 +88,8 @@ set_target_properties(libxtensa_esp32_static_lib PROPERTIES IMPORTED_LOCATION
 "${CMAKE_CURRENT_LIST_DIR}/libxtensa_esp32_static_lib.a")
 add_prebuilt_library(library_rust_esp32 "${RUST_STATIC_LIBRARY}" PRIV_REQUIRES "${RUST_DEPS}")
 
-add_dependencies(library_rust_esp32 project_rust_esp32)
+add_dependencies(library_rust_ex project_rust_esp32)
 add_dependencies(libxtensa_esp32_static_lib project_rust_esp32)
 
 target_include_directories(${COMPONENT_LIB} PUBLIC "${RUST_INCLUDE_DIR}")
-target_link_libraries(${COMPONENT_LIB} PRIVATE library_rust_esp32 libxtensa_esp32_static_lib)
+target_link_libraries(${COMPONENT_LIB} PRIVATE library_rust_ex libxtensa_esp32_static_lib)
