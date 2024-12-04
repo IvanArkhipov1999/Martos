@@ -1,13 +1,11 @@
 use crate::ports::xtensa_esp32::hardware_timer::*;
 use crate::task_manager::preemptive::Thread;
-use esp_hal::timer::timg::{Timer, Timer0, TimerGroup};
 use esp_hal::trapframe::TrapFrame;
-use esp_hal::xtensa_lx_rt;
 use esp_hal::{
     interrupt::{self, InterruptHandler, Priority},
+    peripherals::*,
     prelude::*,
 };
-use esp_hal::{peripherals::*, prelude::*, Cpu};
 
 const TIME_SLICE_MILLIS: u64 = 1000;
 

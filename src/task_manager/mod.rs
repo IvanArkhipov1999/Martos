@@ -1,7 +1,5 @@
 extern crate alloc;
 
-use core::future::Future;
-
 use crate::task_manager::task::{
     TaskLoopFunctionType, TaskSetupFunctionType, TaskStopConditionFunctionType,
 };

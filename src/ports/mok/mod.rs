@@ -33,4 +33,5 @@ impl PortTrait for Mok {
     fn load_ctx(thread_ctx: &crate::ports::TrapFrame, isr_ctx: &mut crate::ports::TrapFrame) {}
 }
 
+#[allow(dead_code)]
 pub type TrapFrame = ();
