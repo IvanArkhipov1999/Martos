@@ -216,6 +216,21 @@ jobs:
       - name: Fmt
         run: cd ./examples/rust-examples/risc-v-esp32-c6/wifi && cargo fmt --all -- --check
 
+  risc-v-esp32c6-rust-example-scheduler:
+    runs-on: ubuntu-latest
+    env:
+      CARGO_HOME: /root/.cargo
+      RUSTUP_HOME: /root/.rustup
+    container:
+      image: arkhipovivan1/xtensa-esp32-rust:latest
+      options: --user root
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build
+        run: cd ./examples/rust-examples/risc-v-esp32-c6/scheduler && . /root/export-esp.sh && cargo build
+      - name: Fmt
+        run: cd ./examples/rust-examples/risc-v-esp32-c6/scheduler && cargo fmt --all -- --check
+
   risc-v-esp32c6-static-library:
     runs-on: ubuntu-latest
     env:
