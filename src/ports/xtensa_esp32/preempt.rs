@@ -1,3 +1,4 @@
+use super::TrapFrame;
 use crate::ports::xtensa_esp32::hardware_timer::*;
 use crate::task_manager::preemptive::Thread;
 use esp_hal::{
@@ -5,7 +6,6 @@ use esp_hal::{
     peripherals::*,
     prelude::*,
 };
-use super::TrapFrame;
 
 const TIME_SLICE_MILLIS: u64 = 1000;
 
