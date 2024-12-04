@@ -1,11 +1,11 @@
 use crate::ports::xtensa_esp32::hardware_timer::*;
 use crate::task_manager::preemptive::Thread;
-use esp_hal::trapframe::TrapFrame;
 use esp_hal::{
     interrupt::{self, InterruptHandler, Priority},
     peripherals::*,
     prelude::*,
 };
+use super::TrapFrame;
 
 const TIME_SLICE_MILLIS: u64 = 1000;
 
@@ -39,31 +39,54 @@ extern "C" fn handler(ctx: &mut TrapFrame) {
     };
 }
 
-pub fn setup_stack(thread: &mut crate::task_manager::preemptive::Thread) {
-    // manual 8.1
-    thread.context.PC = Thread::run_task as u32;
-    thread.context.A0 = 0; // return address
+#[cfg(target_arch = "xtensa")]
+mod context_switch {
+    use super::TrapFrame;
+    pub fn setup_stack(thread: &mut crate::task_manager::preemptive::Thread) {
+        // manual 8.1
+        thread.context.PC = Thread::run_task as u32;
+        thread.context.A0 = 0; // return address
 
-    thread.context.A6 = thread.task.setup_fn as u32; // A2 after `entry` instruction
-    thread.context.A7 = thread.task.loop_fn as u32; // A3
-    thread.context.A8 = thread.task.stop_condition_fn as u32; // A4
+        // thread.context.A6 = (thread as *mut Thread) as u32; // A2 after `entry` instruction
+        thread.context.A6 = thread.task.setup_fn as u32; // A2 after `entry` instruction
+        thread.context.A7 = thread.task.loop_fn as u32; // A3
+        thread.context.A8 = thread.task.stop_condition_fn as u32; // A4
 
-    let stack_ptr = thread.stack as usize + crate::task_manager::preemptive::THREAD_STACK_SIZE;
-    thread.context.A1 = stack_ptr as u32;
+        let stack_ptr = thread.stack as usize + crate::task_manager::preemptive::THREAD_STACK_SIZE;
+        thread.context.A1 = stack_ptr as u32;
 
-    thread.context.PS = 0x00040000 | (1 & 3) << 16;
-    unsafe {
-        *((stack_ptr - 4) as *mut u32) = 0;
-        *((stack_ptr - 8) as *mut u32) = 0;
-        *((stack_ptr - 12) as *mut u32) = stack_ptr as u32;
-        *((stack_ptr - 16) as *mut u32) = 0;
+        thread.context.PS = 0x00040000 | (1 & 3) << 16;
+        unsafe {
+            *((stack_ptr - 4) as *mut u32) = 0;
+            *((stack_ptr - 8) as *mut u32) = 0;
+            *((stack_ptr - 12) as *mut u32) = stack_ptr as u32;
+            *((stack_ptr - 16) as *mut u32) = 0;
+        }
+    }
+
+    pub fn save_ctx(thread_ctx: &mut TrapFrame, isr_ctx: &TrapFrame) {
+        thread_ctx.clone_from(isr_ctx)
+    }
+
+    pub fn load_ctx(thread_ctx: &TrapFrame, isr_ctx: &mut TrapFrame) {
+        isr_ctx.clone_from(thread_ctx)
     }
 }
 
-pub fn save_ctx(thread_ctx: &mut TrapFrame, isr_ctx: &TrapFrame) {
-    thread_ctx.clone_from(isr_ctx)
+#[cfg(target_arch = "riscv32")]
+mod context_switch {
+    use super::TrapFrame;
+    pub fn setup_stack(thread: &mut crate::task_manager::preemptive::Thread) {
+        todo!()
+    }
+
+    pub fn save_ctx(thread_ctx: &mut TrapFrame, isr_ctx: &TrapFrame) {
+        todo!()
+    }
+
+    pub fn load_ctx(thread_ctx: &TrapFrame, isr_ctx: &mut TrapFrame) {
+        todo!()
+    }
 }
 
-pub fn load_ctx(thread_ctx: &TrapFrame, isr_ctx: &mut TrapFrame) {
-    isr_ctx.clone_from(thread_ctx)
-}
+pub use context_switch::*;
