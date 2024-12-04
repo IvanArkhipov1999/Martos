@@ -42,6 +42,8 @@ extern "C" fn handler(ctx: &mut TrapFrame) {
 #[cfg(target_arch = "xtensa")]
 mod context_switch {
     use super::TrapFrame;
+    use crate::task_manager::preemptive::Thread;
+
     pub fn setup_stack(thread: &mut crate::task_manager::preemptive::Thread) {
         // manual 8.1
         thread.context.PC = Thread::run_task as u32;
@@ -76,6 +78,7 @@ mod context_switch {
 #[cfg(target_arch = "riscv32")]
 mod context_switch {
     use super::TrapFrame;
+
     pub fn setup_stack(thread: &mut crate::task_manager::preemptive::Thread) {
         todo!()
     }
