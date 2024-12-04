@@ -30,7 +30,7 @@ pub fn setup_interrupt() {
 extern "C" fn handler(ctx: &mut TrapFrame) {
     crate::task_manager::preemptive::PreemptiveTaskManager::schedule(ctx);
 
-    let mut timer00 = unsafe { TIMER00.take().expect("Timer error") };
+    let timer00 = unsafe { TIMER00.take().expect("Timer error") };
     timer00.clear_interrupt();
     timer00.load_value(TIME_SLICE_MILLIS.millis()).unwrap();
     timer00.start();
