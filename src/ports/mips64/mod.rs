@@ -25,8 +25,8 @@ impl PortTrait for Mips64 {
         }
     }
 
-    fn timer_is_active(timer_index: u8) -> bool {
-        hardware_timer::timer_is_active(timer_index)
+    fn timer_in_use(timer_index: u8) -> bool {
+        hardware_timer::timer_in_use(timer_index)
     }
 
     fn start_hardware_timer(timer_index: u8) {
@@ -47,6 +47,10 @@ impl PortTrait for Mips64 {
 
     fn stop_hardware_timer(timer_index: u8) -> bool {
         hardware_timer::stop_hardware_timer(timer_index)
+    }
+
+    fn release_hardware_timer(timer_index: u8) {
+        hardware_timer::release_hardware_timer(timer_index)
     }
 
     #[cfg(feature = "network")]

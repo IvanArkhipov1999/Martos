@@ -1,3 +1,4 @@
+use core::sync::atomic::{AtomicBool, Ordering};
 use core::time::Duration;
 use esp_hal::timer::timg::{Timer, Timer0, TimerGroup};
 use esp_hal::{
@@ -10,6 +11,8 @@ pub static mut CLOCKS: Option<Clocks> = None;
 pub static mut PERIFERALS_RNG: Option<RNG> = None;
 pub static mut PERIFERALS_RADIO_CLK: Option<RADIO_CLK> = None;
 pub static mut PERIFERALS_WIFI: Option<WIFI> = None;
+
+static TIMER_BUSY: AtomicBool = AtomicBool::new(false);
 
 /// Esp32 hardware timer setup.
 pub fn setup_hardware_timer() {
@@ -32,6 +35,14 @@ pub fn setup_hardware_timer() {
     }
 }
 
+/// Esp32 check if timer is in use.
+pub fn timer_in_use() -> bool {
+    match TIMER_BUSY.compare_exchange(false, true, Ordering::Acquire, Ordering::Relaxed) {
+        Ok(_) => true,
+        Err(_) => false,
+    }
+}
+
 /// Esp32 start harware timer.
 pub fn start_hardware_timer() {}
 
@@ -49,4 +60,9 @@ pub fn get_time() -> Duration {
         TIMER00 = Some(timer00);
         Duration::from_micros(tick_counter.ticks())
     }
+}
+
+/// Esp32 release hardware timer.
+pub fn release_hardware_timer() {
+    TIMER_BUSY.store(false, Ordering::Release);
 }

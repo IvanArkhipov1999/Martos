@@ -25,8 +25,9 @@ fn setup_fn() {
 /// Loop function for task to execute.
 fn loop_fn() {
     COUNTER.fetch_add(1, Ordering::Relaxed);
-    let timer0 = Timer::get_timer(0).expect("A timer with this index does not exist.");
+    let timer0 = Timer::get_timer(0).expect("The timer is busy");
     let time = timer0.get_time();
+    timer0.release_timer();
     unsafe {
         VEC.push(time.as_secs() * 1_000_000 + time.subsec_micros() as u64);
     }

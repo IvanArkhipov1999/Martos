@@ -72,8 +72,8 @@ struct Timer<M: ByteAccess> {
     /// The count resolution mask for the timer.
     resolution_mask: u8,
 
-    /// An indicator showing whether the timer is running.
-    is_running: bool,
+    /// An indicator showing whether the timer is in use.
+    in_use: AtomicBool,
 
     /// An indicator showing whether the timer is in auto reload mode or in one shot mode.
     reload_mode: bool,
@@ -95,7 +95,7 @@ impl<M: ByteAccess> Timer<M> {
             address,
             duration: 0,
             resolution_mask: enable_mask,
-            is_running: false,
+            in_use: AtomicBool::new(false),
             reload_mode: false,
             lock_for_load: AtomicBool::new(false),
             lock_for_now: AtomicBool::new(false),
@@ -113,7 +113,6 @@ impl<M: ByteAccess> Timer<M> {
         configuration_value |= self.resolution_mask;
         self.accessibility
             .write_byte(CONFIGURATION_REGISTERS, configuration_value);
-        self.is_running = true;
     }
 
     /// Changes the timer's operating mode.
@@ -202,7 +201,6 @@ impl<M: ByteAccess> Timer<M> {
         configuration_value &= !self.resolution_mask;
         self.accessibility
             .write_byte(CONFIGURATION_REGISTERS, configuration_value);
-        self.is_running = false;
     }
 }
 
@@ -258,21 +256,35 @@ pub fn setup_hardware_timer() {
     }
 }
 
-/// Mips64 checks if timer is active.
-pub fn timer_is_active(timer_index: u8) -> bool {
-    unsafe {
-        let timer_block = TIMER_BLOCK.take().expect("Timer block error");
-        let return_value = match timer_index {
-            0 => timer_block.timer0.is_running,
-            1 => timer_block.timer1.is_running,
-            2 => timer_block.timer2.is_running,
-            3 => timer_block.timer3.is_running,
-            4 => timer_block.timer4.is_running,
-            _ => false,
-        };
-        TIMER_BLOCK = Some(timer_block);
+/// Mips64 check if timer is in use.
+pub fn timer_in_use(timer_index: u8) -> bool {
+    if timer_index <= 4 as u8 {
+        unsafe {
+            let timer_block = TIMER_BLOCK.take().expect("Timer block error");
 
-        return_value
+            let timers = [
+                &timer_block.timer0.in_use,
+                &timer_block.timer1.in_use,
+                &timer_block.timer2.in_use,
+                &timer_block.timer3.in_use,
+                &timer_block.timer4.in_use,
+            ];
+
+            let return_value = match timers[timer_index as usize].compare_exchange(
+                false,
+                true,
+                Ordering::Acquire,
+                Ordering::Relaxed,
+            ) {
+                Ok(_) => true,
+                Err(_) => false,
+            };
+            TIMER_BLOCK = Some(timer_block);
+
+            return_value
+        }
+    } else {
+        false
     }
 }
 
@@ -359,4 +371,20 @@ pub fn stop_hardware_timer(timer_index: u8) -> bool {
     }
 
     true
+}
+
+/// Mips64 release hardware timer.
+pub fn release_hardware_timer(timer_index: u8) {
+    unsafe {
+        let timer_block = TIMER_BLOCK.take().expect("Timer block error");
+        match timer_index {
+            0 => timer_block.timer0.in_use.store(false, Ordering::Release),
+            1 => timer_block.timer1.in_use.store(false, Ordering::Release),
+            2 => timer_block.timer2.in_use.store(false, Ordering::Release),
+            3 => timer_block.timer3.in_use.store(false, Ordering::Release),
+            4 => timer_block.timer4.in_use.store(false, Ordering::Release),
+            _ => (),
+        }
+        TIMER_BLOCK = Some(timer_block);
+    }
 }

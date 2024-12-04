@@ -22,8 +22,8 @@ impl PortTrait for XtensaEsp32 {
         true
     }
 
-    fn timer_is_active(_timer_index: u8) -> bool {
-        true
+    fn timer_in_use(_timer_index: u8) -> bool {
+        hardware_timer::timer_in_use()
     }
 
     fn start_hardware_timer(_timer_index: u8) {
@@ -44,6 +44,10 @@ impl PortTrait for XtensaEsp32 {
 
     fn stop_hardware_timer(_timer_index: u8) -> bool {
         false
+    }
+
+    fn release_hardware_timer(_timer_index: u8) {
+        hardware_timer::release_hardware_timer()
     }
 
     #[cfg(feature = "network")]

@@ -16,3 +16,6 @@ pub fn change_period_timer(_period: Duration) {}
 pub fn get_time() -> Duration {
     Duration::new(0, 0)
 }
+
+/// Mok release hardware timer.
+pub fn release_hardware_timer() {}

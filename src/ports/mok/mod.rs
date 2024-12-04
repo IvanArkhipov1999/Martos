@@ -19,7 +19,7 @@ impl PortTrait for Mok {
         true
     }
 
-    fn timer_is_active(_timer_index: u8) -> bool {
+    fn timer_in_use(_timer_index: u8) -> bool {
         false
     }
 
@@ -42,6 +42,11 @@ impl PortTrait for Mok {
     fn stop_hardware_timer(_timer_index: u8) -> bool {
         false
     }
+
+    fn release_hardware_timer(_timer_index: u8) {
+        hardware_timer::release_hardware_timer()
+    }
+
     #[cfg(feature = "network")]
     fn init_network() {
         network::init_network();

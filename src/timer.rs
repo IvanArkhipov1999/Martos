@@ -23,9 +23,9 @@ impl Timer {
 
     /// Gets the timer instance at the specified index.
     /// Returns Some timer instance on success.
-    /// Returns None if timer is active or the specified index is invalid.
+    /// Returns None if timer in use or the specified index is invalid.
     pub fn get_timer(timer_index: u8) -> Option<Self> {
-        if Port::valid_timer_index(timer_index) && !Port::timer_is_active(timer_index) {
+        if Port::valid_timer_index(timer_index) && !Port::timer_in_use(timer_index) {
             Some(Self {
                 timer_index,
                 tick_counter: 0,
@@ -66,5 +66,10 @@ impl Timer {
     /// Returns current counter value.
     pub fn get_time(&self) -> Duration {
         Port::get_time(self.timer_index)
+    }
+
+    /// Releases the hardware timer.
+    pub fn release_timer(&self) {
+        Port::release_hardware_timer(self.timer_index)
     }
 }

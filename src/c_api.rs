@@ -69,17 +69,22 @@ pub extern "C" fn loop_timer(timer: &mut Timer) {
 }
 
 #[no_mangle]
-pub extern "C" fn stop_condition_timer(timer: &Timer) -> bool {
-    Timer::stop_condition_timer(timer)
-}
-
-#[no_mangle]
 pub extern "C" fn get_time(timer: &Timer) -> DurationFFI {
     let time = Timer::get_time(timer);
     DurationFFI {
         secs: time.as_secs(),
         micros: time.subsec_micros(),
     }
+}
+
+#[no_mangle]
+pub extern "C" fn stop_condition_timer(timer: &Timer) -> bool {
+    Timer::stop_condition_timer(timer)
+}
+
+#[no_mangle]
+pub extern "C" fn release_timer(timer: &Timer) {
+    Timer::release_timer(timer)
 }
 
 #[no_mangle]

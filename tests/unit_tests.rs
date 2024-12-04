@@ -268,6 +268,7 @@ mod unit_tests {
         let timer = Timer::get_timer(0)
             .expect("The timer is already active or a timer with this index does not exist.");
         assert_eq!(timer.get_time().as_micros(), 0);
+        timer.release_timer();
     }
 
     #[test]
@@ -278,6 +279,7 @@ mod unit_tests {
             .expect("The timer is already active or a timer with this index does not exist.");
         timer.loop_timer();
         assert_eq!(timer.get_time().as_micros(), 0);
+        timer.release_timer();
     }
 
     #[test]
@@ -288,5 +290,6 @@ mod unit_tests {
         timer.change_period_timer(Duration::new(10, 0));
         timer.start_timer();
         assert!(!timer.stop_condition_timer());
+        timer.release_timer();
     }
 }

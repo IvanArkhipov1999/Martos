@@ -9,18 +9,20 @@ pub trait PortTrait {
     fn setup_hardware_timer();
     /// Function is used to check the correctness of index.
     fn valid_timer_index(timer_index: u8) -> bool;
-    /// Function is used to check if the timer is active.
-    fn timer_is_active(timer_index: u8) -> bool;
-    /// Function is called to start timer.
+    /// Function is used to check if the timer is in use.
+    fn timer_in_use(timer_index: u8) -> bool;
+    /// Function is called to start the timer.
     fn start_hardware_timer(timer_index: u8);
-    /// Function is used to change timer operating mode.
+    /// Function is called to change the timer operating mode.
     fn set_reload_mode(timer_index: u8, auto_reload: bool);
-    /// Function is used to change the period of a timer.
+    /// Function is called to change the period of the timer.
     fn change_period_timer(timer_index: u8, period: Duration);
-    /// Function is used to get amount of time from the start of a timer.
+    /// Function is called to get amount of time from the start of the timer.
     fn get_time(timer_index: u8) -> Duration;
-    /// Function is called to stop timer.
+    /// Function is called to stop the timer.
     fn stop_hardware_timer(timer_index: u8) -> bool;
+    /// Function is called to release the timer.
+    fn release_hardware_timer(timer_index: u8);
 
     /// Function is called when heap is created. Can be used to set configuration.
     fn init_heap();

@@ -47,7 +47,6 @@ mod timer_tests {
 
         for timer in timers {
             assert_eq!(timer.duration, 0);
-            assert_eq!(timer.is_running, false);
             assert_eq!(timer.reload_mode, false);
         }
     }
@@ -128,7 +127,6 @@ mod timer_tests {
         timer_block.timer0.duration = 1;
 
         timer_block.timer0.start();
-        assert_eq!(timer_block.timer0.is_running, true);
 
         checking_for_untouched_timers(&timer_block);
     }
@@ -245,7 +243,6 @@ mod timer_tests {
         let mut timer_block = TimerBlock::new(MockMemoryAccess);
 
         timer_block.timer0.stop();
-        assert_eq!(timer_block.timer0.is_running, false);
 
         checking_for_untouched_timers(&timer_block);
     }
