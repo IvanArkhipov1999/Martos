@@ -52,4 +52,6 @@ impl PortTrait for XtensaEsp32 {
         preempt::load_ctx(thread_ctx, isr_ctx)
     }
 }
+
+#[cfg(feature = "preemptive")]
 pub type TrapFrame = esp_hal::trapframe::TrapFrame;

@@ -38,9 +38,9 @@ pub mod xtensa_esp32;
 #[cfg(any(target_arch = "riscv32", target_arch = "xtensa"))]
 mod arch {
     use super::xtensa_esp32;
-    pub type Port = crate::ports::xtensa_esp32::XtensaEsp32;
+    pub type Port = xtensa_esp32::XtensaEsp32;
     #[cfg(feature = "preemptive")]
-    pub type TrapFrame = crate::ports::xtensa_esp32::TrapFrame;
+    pub type TrapFrame = xtensa_esp32::TrapFrame;
     #[cfg(feature = "preemptive")]
     pub const STACK_ALIGN: usize = 16;
 }
