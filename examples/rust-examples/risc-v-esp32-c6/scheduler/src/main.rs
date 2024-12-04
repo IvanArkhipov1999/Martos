@@ -3,7 +3,7 @@
 
 use core::sync::atomic::{AtomicU32, Ordering};
 use esp_backtrace as _;
-use esp_hal::{entry, prelude::*, delay::Delay};
+use esp_hal::{delay::Delay, entry, prelude::*};
 use esp_println::println;
 use martos::{
     init_system,
