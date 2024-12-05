@@ -252,6 +252,25 @@ jobs:
           path: c-library/risc-v-esp32-c6/target/riscv32imac-unknown-none-elf/release/librisc_v_esp32c6_static_lib.a
           retention-days: 7
 
+  risc-v-esp32c6-c-example:
+    needs: risc-v-esp32c6-static-library
+    runs-on: ubuntu-latest
+    env:
+      IDF_PATH: /root/esp/esp-idf
+      IDF_TOOLS_PATH: /root/.espressif
+    container:
+      image: arkhipovivan1/risc-v-esp32c6-c:latest
+      options: --user root
+    steps:
+      - uses: actions/checkout@v3
+      - name: Download static library
+        uses: actions/download-artifact@v4
+        with:
+          name: risc-v-esp32c6-static-library
+          path: c-library/risc-v-esp32-c6/target/riscv32imac-unknown-none-elf/release
+      - name: Build
+        run: cd ./examples/c-examples/risc-v-esp32c6 && . /root/esp/esp-idf/export.sh && make && esptool.py --chip esp32c6 elf2image --flash_mode="dio" --flash_freq "40m" --flash_size "4MB" -o main.bin main.elf
+
 
   mips64-rust-example-hello-world:
     runs-on: ubuntu-latest

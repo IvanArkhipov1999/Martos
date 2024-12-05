@@ -1,46 +1,37 @@
-# 'Bare metal' ESP32 application Makefile
-# Use the xtensa-esp32-elf toolchain.
-TOOLCHAIN = xtensa-esp32-elf-
+TOOLCHAIN = riscv32-esp-elf-
 
-CFLAGS_PLATFORM  = -mlongcalls -mtext-section-literals -fstrict-volatile-bitfields
+CFLAGS_PLATFORM = -march=rv32imac -mabi=ilp32
 ASFLAGS_PLATFORM = $(CFLAGS_PLATFORM)
 LDFLAGS_PLATFORM = $(CFLAGS_PLATFORM)
 
-###
-# General project build
-###
 CC = $(TOOLCHAIN)gcc
 LD = $(TOOLCHAIN)ld
 OC = $(TOOLCHAIN)objcopy
 OS = $(TOOLCHAIN)size
 
-# Set C/LD/AS flags.
+LDSCRIPT       = ./ld/esp32c6.ld
+
 CFLAGS += $(INC) -Wall -Werror -std=gnu11 -nostdlib $(CFLAGS_PLATFORM) $(COPT)
-# (Allow access to the same memory location w/ different data widths.)
 CFLAGS += -fno-strict-aliasing
 CFLAGS += -fdata-sections -ffunction-sections
 CFLAGS += -Os -g
-# Link with martos
-LDFLAGS += -L../../../c-library/xtensa-esp32/target/xtensa-esp32-none-elf/release/ -lxtensa_esp32_static_lib
-LDFLAGS += -nostdlib -Wl,-Map=$@.map -Wl,--cref -Wl,--gc-sections
+
+LDFLAGS += -L../../../c-library/risc-v-esp32-c6/target/riscv32imac-unknown-none-elf/release/ -lrisc_v_esp32c6_static_lib
+LDFLAGS += -nostdlib -T$(LDSCRIPT) -Wl,-Map=$@.map -Wl,--cref -Wl,--gc-sections
 LDFLAGS += $(LDFLAGS_PLATFORM)
 LDFLAGS += -lm -lc -lgcc -Wl,--allow-multiple-definition
 ASFLAGS += -c -O0 -Wall -fmessage-length=0
 ASFLAGS += $(ASFLAGS_PLATFORM)
 
-# Set C source files.
 C_SRC += \
 	./src/main.c \
 
 OBJS += $(C_SRC:.c=.o)
 
-# Set the first rule in the file to 'make all'
 .PHONY: all
 all: main.elf
 
 # Rules to build files.
-%.o: %.S
-	$(CC) -x assembler-with-cpp $(ASFLAGS) $< -o $@
 
 %.o: %.c
 	$(CC) -c $(CFLAGS) $< -o $@

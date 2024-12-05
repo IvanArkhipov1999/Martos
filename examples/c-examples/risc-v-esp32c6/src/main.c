@@ -1,7 +1,7 @@
 #include <string.h>
 #include <stdbool.h>
+extern unsigned int _bss_start, _bss_end, _sidata, _data_start, _data_end;
 
-extern unsigned int _sbss, _ebss, _sidata, _sdata, _edata;
 extern void add_task(void (*setup_fn)(), void (*loop_fn)(), bool (*stop_condition_fn)());
 extern void start_task_manager();
 extern void init_system();
@@ -35,9 +35,9 @@ int main( void ) {
 // Application entry point / startup logic.
 void __attribute__( ( noreturn ) ) call_start_cpu0() {
     // Clear BSS.
-    memset( &_sbss, 0, ( &_ebss - &_sbss ) * sizeof( _sbss ) );
+    memset( &_bss_start, 0, ( &_bss_end - &_bss_start ) * sizeof( _bss_start ) );
     // Copy initialized data.
-    memmove( &_sdata, &_sidata, ( &_edata - &_sdata ) * sizeof( _sdata ) );
+    memmove( &_data_start, &_sidata, ( &_data_end - &_data_start ) * sizeof( _data_start ) );
 
     // Done, branch to main
     main();
