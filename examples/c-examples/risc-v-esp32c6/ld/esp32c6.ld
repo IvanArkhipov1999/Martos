@@ -273,8 +273,9 @@ SECTIONS
 
 }
 
-ets_delay_us = 0x40000040;
-ets_update_cpu_frequency_rom = 0x40000048;
+
+INCLUDE "ld/esp32c6.rom.ld"
+PROVIDE (ets_update_cpu_frequency_rom = ets_update_cpu_frequency);
 
 /**
  *  Appendix: Memory Usage of ROM bootloader
