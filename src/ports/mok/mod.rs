@@ -19,8 +19,8 @@ impl PortTrait for Mok {
         true
     }
 
-    fn timer_in_use(_timer_index: u8) -> bool {
-        false
+    fn try_acquire_timer(_timer_index: u8) -> bool {
+        true
     }
 
     fn start_hardware_timer(_timer_index: u8) {

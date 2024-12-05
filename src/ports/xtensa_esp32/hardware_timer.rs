@@ -35,8 +35,8 @@ pub fn setup_hardware_timer() {
     }
 }
 
-/// Esp32 check if timer is in use.
-pub fn timer_in_use() -> bool {
+/// Esp32 attempt to acquire timer.
+pub fn try_acquire_timer() -> bool {
     match TIMER_BUSY.compare_exchange(false, true, Ordering::Acquire, Ordering::Relaxed) {
         Ok(_) => true,
         Err(_) => false,

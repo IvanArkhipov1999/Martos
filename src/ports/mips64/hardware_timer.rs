@@ -256,8 +256,8 @@ pub fn setup_hardware_timer() {
     }
 }
 
-/// Mips64 check if timer is in use.
-pub fn timer_in_use(timer_index: u8) -> bool {
+/// Mips64 attempt to acquire timer.
+pub fn try_acquire_timer(timer_index: u8) -> bool {
     if timer_index <= 4 as u8 {
         unsafe {
             let timer_block = TIMER_BLOCK.take().expect("Timer block error");

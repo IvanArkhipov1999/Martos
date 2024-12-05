@@ -9,8 +9,8 @@ pub trait PortTrait {
     fn setup_hardware_timer();
     /// Function is used to check the correctness of index.
     fn valid_timer_index(timer_index: u8) -> bool;
-    /// Function is used to check if the timer is in use.
-    fn timer_in_use(timer_index: u8) -> bool;
+    /// Function is called to attempt to acquire the timer.
+    fn try_acquire_timer(timer_index: u8) -> bool;
     /// Function is called to start the timer.
     fn start_hardware_timer(timer_index: u8);
     /// Function is called to change the timer operating mode.

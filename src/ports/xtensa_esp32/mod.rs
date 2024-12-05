@@ -22,8 +22,8 @@ impl PortTrait for XtensaEsp32 {
         true
     }
 
-    fn timer_in_use(_timer_index: u8) -> bool {
-        hardware_timer::timer_in_use()
+    fn try_acquire_timer(_timer_index: u8) -> bool {
+        hardware_timer::try_acquire_timer()
     }
 
     fn start_hardware_timer(_timer_index: u8) {

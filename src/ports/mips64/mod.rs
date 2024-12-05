@@ -25,8 +25,8 @@ impl PortTrait for Mips64 {
         }
     }
 
-    fn timer_in_use(timer_index: u8) -> bool {
-        hardware_timer::timer_in_use(timer_index)
+    fn try_acquire_timer(timer_index: u8) -> bool {
+        hardware_timer::try_acquire_timer(timer_index)
     }
 
     fn start_hardware_timer(timer_index: u8) {
