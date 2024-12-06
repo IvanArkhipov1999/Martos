@@ -1,16 +1,63 @@
 extern crate alloc;
 
-use alloc::vec::Vec;
-use core::{future::Future, pin::Pin, task::Context};
-
 use crate::task_manager::{
-    task,
     task::{
-        FutureTask, Task, TaskLoopFunctionType, TaskNumberType, TaskSetupFunctionType,
+        Task, TaskLoopFunctionType, TaskNumberType, TaskSetupFunctionType,
         TaskStopConditionFunctionType,
     },
     TaskManagerTrait, TASK_MANAGER,
 };
+use alloc::vec::Vec;
+use core::task::{Poll, RawWaker, RawWakerVTable, Waker};
+use core::{future::Future, pin::Pin, task::Context};
+
+#[repr(C)]
+/// Future shell for task for cooperative execution.
+pub struct FutureTask {
+    /// Task to execute in task manager.
+    pub(crate) task: Task,
+    /// Marker for setup function completion.
+    pub(crate) is_setup_completed: bool,
+}
+
+impl Future for FutureTask {
+    type Output = ();
+
+    fn poll(mut self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<Self::Output> {
+        let mut array: [usize; 8] = core::array::from_fn(|i| i);
+        array[0] = 5;
+        if (self.task.stop_condition_fn)() {
+            Poll::Ready(())
+        } else {
+            if !self.is_setup_completed {
+                (self.task.setup_fn)();
+                self.is_setup_completed = true;
+            } else {
+                (self.task.loop_fn)();
+            }
+            Poll::Pending
+        }
+    }
+}
+
+/// Creates simple task waker. May be more difficult in perspective.
+pub fn task_waker() -> Waker {
+    fn raw_clone(_: *const ()) -> RawWaker {
+        RawWaker::new(core::ptr::null::<()>(), &NOOP_WAKER_VTABLE)
+    }
+
+    fn raw_wake(_: *const ()) {}
+
+    fn raw_wake_by_ref(_: *const ()) {}
+
+    fn raw_drop(_: *const ()) {}
+
+    static NOOP_WAKER_VTABLE: RawWakerVTable =
+        RawWakerVTable::new(raw_clone, raw_wake, raw_wake_by_ref, raw_drop);
+
+    let raw_waker = RawWaker::new(core::ptr::null::<()>(), &NOOP_WAKER_VTABLE);
+    unsafe { Waker::from_raw(raw_waker) }
+}
 
 #[repr(C)]
 /// Task manager representation. Based on round-robin scheduling without priorities.
@@ -62,7 +109,7 @@ impl CooperativeTaskManager {
     // TODO: Delete tasks from task vector if they are pending?
     fn task_manager_step() {
         if unsafe { !TASK_MANAGER.tasks.is_empty() } {
-            let waker = task::task_waker();
+            let waker = task_waker();
 
             let task = unsafe { &mut TASK_MANAGER.tasks[TASK_MANAGER.task_to_execute_index] };
             let mut task_future_pin = Pin::new(task);
