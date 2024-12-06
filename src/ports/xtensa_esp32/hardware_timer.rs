@@ -1,5 +1,5 @@
+use esp_hal::peripherals::*;
 use esp_hal::timer::timg::{Timer, Timer0, Timer1, TimerGroup};
-use esp_hal::{peripherals::*, prelude::*};
 
 use crate::timer::TickType;
 
