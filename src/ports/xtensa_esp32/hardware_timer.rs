@@ -29,10 +29,5 @@ pub fn setup_hardware_timer() {
 
 /// Esp32 getting hardware tick counter.
 pub fn get_tick_counter() -> TickType {
-    unsafe {
-        let timer00 = TIMER00.take().expect("Timer error");
-        let tick_counter = timer00.now();
-        TIMER00 = Some(timer00);
-        tick_counter.ticks()
-    }
+    esp_hal::time::now().ticks()
 }
