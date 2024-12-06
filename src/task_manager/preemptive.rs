@@ -9,11 +9,7 @@ use core::sync::atomic::{AtomicUsize, Ordering};
 
 pub(crate) const THREAD_STACK_SIZE: usize = 1024; // TODO:
 
-static mut NEXT_THREAD_ID: AtomicUsize = AtomicUsize::new(0);
-
 pub(crate) struct Thread {
-    /// id of this thread
-    id: usize,
     /// Pointer to the memory allocated for stack
     pub(crate) stack: *mut u8,
     /// **Arch specific** state of the registers at the moment of context switch
@@ -29,9 +25,7 @@ impl Thread {
         loop_: TaskLoopFunctionType,
         stop: TaskStopConditionFunctionType,
     ) -> Self {
-        let id = unsafe { NEXT_THREAD_ID.fetch_add(1, Ordering::Relaxed) };
         Thread {
-            id,
             stack,
             context: TrapFrame::default(),
             task: Task {
