@@ -30,7 +30,7 @@ pub struct Task {
     priority: TaskPriorityType,
 }
 
-struct TaskManager {
+pub struct TaskManager {
     priority_array: [VecDeque<Task>; NUM_PRIORITIES],
     next_task_id: TaskIdType,
 }
@@ -88,32 +88,26 @@ impl TaskManager {
     }
 
     fn find_task(&mut self, id: TaskIdType) -> Option<Task> {
-        for queue in self.priority_array {
-            for task in queue {
-                if task.id == id {
-                    return Some(task);
-                }
-                continue;
+        for queue in self.priority_array.iter_mut() {
+            if let Some(pos) = queue.iter().position(|task| task.id == id) {
+                return Some(queue.remove(pos).unwrap());
             }
         }
         None
     }
 
     pub fn put_to_sleep(&mut self, id: TaskIdType) -> Result<(), &'static str> {
-        match self.find_task(id) {
-            None => {
-                Err("Error: put_to_sleep: No task with that id")
+        if let Some(mut task) = self.find_task(id) {
+            if task.status == TaskStatusType::Running {
+                return Err("Error: put_to_sleep: Task with this id is currently running")
             }
-            Some(mut task) => {
-                if task.status == TaskStatusType::Running {
-                    return Err("Error: put_to_sleep: Task with this id is currently running")
-                }
-                if task.status != TaskStatusType::Ready {
-                    return Err("Error: put_to_sleep: Task with this id can not go to sleep");
-                }
-                self.update_status(&mut task, TaskStatusType::Sleep);
-                Ok(())
+            if task.status != TaskStatusType::Ready {
+                return Err("Error: put_to_sleep: Task with this id can not go to sleep");
             }
+            task.status = TaskStatusType::Sleep;
+            Ok(())
+        } else {
+            Err("Error: put_to_sleep: No task with that id")
         }
     }
 
@@ -129,23 +123,21 @@ impl TaskManager {
                 if task.status != TaskStatusType::Ready {
                     return Err("Error: terminate_task: Task with this id can not go to sleep");
                 }
-                self.update_status(&mut task, TaskStatusType::Terminated);
+                TaskManager::update_status(&mut task, TaskStatusType::Terminated);
                 Ok(())
             }
         }
     }
 
-    pub fn start_task_manager(&mut self) {
+    pub fn start_task_manager(&mut self) -> ! {
         loop {
             // if task is None, array is empty, waiting for new tasks in system
-            let Some(mut task) = self.pop_next_task();
+            let Some(mut task) = self.pop_next_task() else { continue };
             match task.status {
                 TaskStatusType::Ready => {
                     task.status = TaskStatusType::Running;
                     (task.loop_fn)();
-                    if task.status != TaskStatusType::Sleep {
-                        self.push_to_queue(task);
-                    } // deleting task is not adding it back to the queue
+                    self.push_to_queue(task);
                 }
                 TaskStatusType::Sleep => {
                     self.push_to_queue(task);
@@ -156,3 +148,20 @@ impl TaskManager {
         }
     }
 }
+
+
+// data strictures:
+// - pub use binary_heap::BinaryHeap;
+// - pub use btree_map::BTreeMap;
+// - pub use btree_set::BTreeSet;
+// - pub use linked_list::LinkedList;
+// - pub use vec_deque::VecDeque;
+// - Module vec
+// - Module array
+
+
+// если я верно понимаю, один объект был сделан, чтобы это был не совсем трейт, ибо в системе может
+// быть только 1 экземпляр TaskManager, но всё равно мне кажется, что это не лучшее решение... уж
+// лучше посмотреть, можно ли сделать синглтон, читаю эту штуку
+// https://stackoverflow.com/questions/27791532/how-do-i-create-a-global-mutable-singleton
+// answers on question about unsafetyness of using 'static mut' in single-thread context https://users.rust-lang.org/t/is-static-mut-unsafe-in-a-single-threaded-context/94242/4
