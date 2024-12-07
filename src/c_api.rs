@@ -1,5 +1,5 @@
 use crate::{task_manager, timer};
-use task_manager::TaskManager;
+use task_manager::{TaskManager, TaskManagerTrait};
 use timer::{TickType, Timer};
 
 #[no_mangle]

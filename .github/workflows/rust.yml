@@ -100,6 +100,21 @@ jobs:
       - name: Fmt
         run: cd ./examples/rust-examples/xtensa-esp32/wifi && cargo fmt --all -- --check
 
+  xtensa-esp32-rust-example-scheduler:
+    runs-on: ubuntu-latest
+    env:
+      CARGO_HOME: /root/.cargo
+      RUSTUP_HOME: /root/.rustup
+    container:
+      image: arkhipovivan1/xtensa-esp32-rust:latest
+      options: --user root
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build
+        run: cd ./examples/rust-examples/xtensa-esp32/scheduler && . /root/export-esp.sh && cargo build
+      - name: Fmt
+        run: cd ./examples/rust-examples/xtensa-esp32/scheduler && cargo fmt --all -- --check
+
   xtensa-esp32-static-library:
     runs-on: ubuntu-latest
     env:
@@ -140,7 +155,7 @@ jobs:
       - name: Build
         run: cd ./examples/c-examples/xtensa-esp32 && . /root/esp/esp-idf/export.sh && make && esptool.py --chip esp32 elf2image --flash_mode="dio" --flash_freq "40m" --flash_size "4MB" -o main.bin main.elf
 
- 
+
   risc-v-esp32c6-rust-example-hello-world:
     runs-on: ubuntu-latest
     env:
@@ -201,6 +216,21 @@ jobs:
       - name: Fmt
         run: cd ./examples/rust-examples/risc-v-esp32-c6/wifi && cargo fmt --all -- --check
 
+  risc-v-esp32c6-rust-example-scheduler:
+    runs-on: ubuntu-latest
+    env:
+      CARGO_HOME: /root/.cargo
+      RUSTUP_HOME: /root/.rustup
+    container:
+      image: arkhipovivan1/xtensa-esp32-rust:latest
+      options: --user root
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build
+        run: cd ./examples/rust-examples/risc-v-esp32-c6/scheduler && . /root/export-esp.sh && cargo build
+      - name: Fmt
+        run: cd ./examples/rust-examples/risc-v-esp32-c6/scheduler && cargo fmt --all -- --check
+
   risc-v-esp32c6-static-library:
     runs-on: ubuntu-latest
     env:
@@ -221,6 +251,27 @@ jobs:
           name: risc-v-esp32c6-static-library
           path: c-library/risc-v-esp32-c6/target/riscv32imac-unknown-none-elf/release/librisc_v_esp32c6_static_lib.a
           retention-days: 7
+
+  risc-v-esp32c6-c-example:
+    needs: risc-v-esp32c6-static-library
+    runs-on: ubuntu-latest
+    env:
+      IDF_PATH: /root/esp/esp-idf
+      IDF_TOOLS_PATH: /root/.espressif
+    container:
+      image: arkhipovivan1/risc-v-esp32c6-c:latest
+      options: --user root
+    steps:
+      - uses: actions/checkout@v3
+      - name: Download static library
+        uses: actions/download-artifact@v4
+        with:
+          name: risc-v-esp32c6-static-library
+          path: c-library/risc-v-esp32-c6/target/riscv32imac-unknown-none-elf/release
+      - name: Build
+        run: |
+          sed -i 's/0x4086E610/0x4086E410/' "$IDF_PATH/components/esp_system/ld/esp32c6/memory.ld.in" &&
+          cd ./examples/c-examples/risc-v-esp32c6 && . /root/esp/esp-idf/export.sh && make && esptool.py --chip esp32c6 elf2image --flash_mode="dio" --flash_freq "40m" --flash_size "4MB" -o main.bin main.elf
 
 
   mips64-rust-example-hello-world:
