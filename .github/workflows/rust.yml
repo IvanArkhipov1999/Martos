@@ -2,7 +2,7 @@ name: Martos ci workflow
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "test-ci" ]
   pull_request:
     branches: [ "main" ]
 
