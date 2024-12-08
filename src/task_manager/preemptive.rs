@@ -5,7 +5,6 @@ use crate::task_manager::task::{
 use crate::task_manager::{TaskManagerTrait, TASK_MANAGER};
 use alloc::vec::Vec;
 use core::alloc::Layout;
-use core::sync::atomic::{AtomicUsize, Ordering};
 
 pub(crate) const THREAD_STACK_SIZE: usize = 1024; // TODO:
 

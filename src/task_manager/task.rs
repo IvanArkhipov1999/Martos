@@ -1,5 +1,3 @@
-/// The number of tasks can fit into a type usize.
-pub type TaskNumberType = usize;
 // TODO: rewrite with cfg!
 #[cfg(not(feature = "c-library"))]
 /// Type of setup function, that is called once at the beginning of task.

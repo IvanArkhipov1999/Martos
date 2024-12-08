@@ -1,16 +1,15 @@
 extern crate alloc;
 
 use crate::task_manager::{
-    task::{
-        Task, TaskLoopFunctionType, TaskNumberType, TaskSetupFunctionType,
-        TaskStopConditionFunctionType,
-    },
+    task::{Task, TaskLoopFunctionType, TaskSetupFunctionType, TaskStopConditionFunctionType},
     TaskManagerTrait, TASK_MANAGER,
 };
 use alloc::vec::Vec;
 use core::task::{Poll, RawWaker, RawWakerVTable, Waker};
 use core::{future::Future, pin::Pin, task::Context};
 
+/// The number of tasks can fit into a type usize.
+pub type TaskNumberType = usize;
 #[repr(C)]
 /// Future shell for task for cooperative execution.
 pub struct FutureTask {
