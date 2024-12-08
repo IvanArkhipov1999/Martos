@@ -1,6 +1,6 @@
 use crate::{task_manager, timer};
 use core::time::Duration;
-use task_manager::TaskManager;
+use task_manager::{TaskManager, TaskManagerTrait};
 use timer::Timer;
 
 /// The structure represents duration in seconds and microseconds.

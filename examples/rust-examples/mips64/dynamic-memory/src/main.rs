@@ -5,8 +5,10 @@ extern crate alloc;
 
 use alloc::vec::Vec;
 use core::sync::atomic::{AtomicU32, Ordering};
-use martos::init_system;
-use martos::task_manager::TaskManager;
+use martos::{
+    init_system,
+    task_manager::{TaskManager, TaskManagerTrait},
+};
 
 /// Counter to work with in loop.
 static COUNTER: AtomicU32 = AtomicU32::new(1);

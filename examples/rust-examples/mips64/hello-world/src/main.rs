@@ -2,8 +2,10 @@
 #![no_main]
 
 use core::sync::atomic::{AtomicU32, Ordering};
-use martos::init_system;
-use martos::task_manager::TaskManager;
+use martos::{
+    init_system,
+    task_manager::{TaskManager, TaskManagerTrait},
+};
 
 #[panic_handler]
 fn panic(_info: &core::panic::PanicInfo) -> ! {

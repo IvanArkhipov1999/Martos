@@ -1,6 +1,7 @@
 #[cfg(all(test, not(feature = "mips64_timer_tests")))]
 mod unit_tests {
     use martos::task_manager::TaskManager;
+    use martos::task_manager::TaskManagerTrait;
     use martos::timer::Timer;
     use sequential_test::sequential;
     use std::{
