@@ -5,10 +5,9 @@ use esp_backtrace as _;
 use esp_hal::{entry, time};
 use esp_println::println;
 use esp_wifi::esp_now::{EspNow, PeerInfo, BROADCAST_ADDRESS};
-use martos::{
-    get_esp_now, init_system,
-    task_manager::{TaskManager, TaskManagerTrait},
-};
+use martos::get_esp_now;
+use martos::init_system;
+use martos::task_manager::{TaskManager, TaskManagerTrait};
 
 /// Esp-now object for network
 static mut ESP_NOW: Option<EspNow> = None;

@@ -347,3 +347,10 @@ jobs:
           name: mips64-static-library
           path: c-library/mips64/target/mips64el-unknown-linux-gnuabi64/release/libmips64_static_lib.a
           retention-days: 7
+
+  mips64-timer-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Run tests
+        run: cargo test -F mips64_timer_tests
