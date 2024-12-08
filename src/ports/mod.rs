@@ -1,4 +1,4 @@
-use crate::timer::TickType;
+use core::time::Duration;
 #[cfg(any(target_arch = "riscv32", target_arch = "xtensa"))]
 #[cfg(feature = "network")]
 use esp_wifi::esp_now::EspNow;
@@ -7,8 +7,23 @@ use esp_wifi::esp_now::EspNow;
 pub trait PortTrait {
     /// Function is called when timer is created. Can be used to set configuration.
     fn setup_hardware_timer();
-    /// Function used to get amount of ticks from the start of a timer
-    fn get_tick_counter() -> TickType;
+    /// Function is used to check the correctness of index.
+    fn valid_timer_index(timer_index: u8) -> bool;
+    /// Function is called to attempt to acquire the timer.
+    fn try_acquire_timer(timer_index: u8) -> bool;
+    /// Function is called to start the timer.
+    fn start_hardware_timer(timer_index: u8);
+    /// Function is called to change the timer operating mode.
+    fn set_reload_mode(timer_index: u8, auto_reload: bool);
+    /// Function is called to change the period of the timer.
+    fn change_period_timer(timer_index: u8, period: Duration);
+    /// Function is called to get amount of time from the start of the timer.
+    fn get_time(timer_index: u8) -> Duration;
+    /// Function is called to stop the timer.
+    fn stop_hardware_timer(timer_index: u8) -> bool;
+    /// Function is called to release the timer.
+    fn release_hardware_timer(timer_index: u8);
+
     /// Function is called when heap is created. Can be used to set configuration.
     fn init_heap();
     #[cfg(feature = "network")]
@@ -38,7 +53,7 @@ pub mod mok;
 ))]
 pub type Port = mok::Mok;
 
-#[cfg(target_arch = "mips64")]
+#[cfg(any(target_arch = "mips64", feature = "mips64_timer_tests"))]
 pub mod mips64;
 #[cfg(target_arch = "mips64")]
 pub type Port = mips64::Mips64;

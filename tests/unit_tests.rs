@@ -1,9 +1,12 @@
-#[cfg(test)]
+#[cfg(all(test, not(feature = "mips64_timer_tests")))]
 mod unit_tests {
     use martos::task_manager::TaskManager;
     use martos::timer::Timer;
     use sequential_test::sequential;
-    use std::sync::atomic::{AtomicU32, Ordering};
+    use std::{
+        sync::atomic::{AtomicU32, Ordering},
+        time::Duration,
+    };
 
     // TODO: refactor unit tests. They should check less. Separate tests for setup, loop and stop functions.
     // TODO: refactor unit tests. Task manager and timer tests should be in different files in one directory.
@@ -259,23 +262,34 @@ mod unit_tests {
     }
 
     #[test]
-    /// Tests setup timer function and getting tick counter (bad unit test).
+    /// Tests setup timer function and getting counter value (bad unit test).
     fn test_setup_timer() {
         Timer::setup_timer();
-        assert_eq!(Timer::get_tick_counter(), 0);
+        let timer = Timer::get_timer(0)
+            .expect("The timer is already active or a timer with this index does not exist.");
+        assert_eq!(timer.get_time().as_micros(), 0);
+        timer.release_timer();
     }
 
     #[test]
     /// Tests loop timer function.
     fn test_loop_timer() {
         Timer::setup_timer();
-        Timer::loop_timer();
-        assert_eq!(Timer::get_tick_counter(), 0);
+        let mut timer = Timer::get_timer(0)
+            .expect("The timer is already active or a timer with this index does not exist.");
+        timer.loop_timer();
+        assert_eq!(timer.get_time().as_micros(), 0);
+        timer.release_timer();
     }
 
     #[test]
     /// Tests stop condition timer function.
     fn test_stop_condition_timer() {
-        assert!(!Timer::stop_condition_timer());
+        let timer = Timer::get_timer(0)
+            .expect("The timer is already active or a timer with this index does not exist.");
+        timer.change_period_timer(Duration::new(10, 0));
+        timer.start_timer();
+        assert!(!timer.stop_condition_timer());
+        timer.release_timer();
     }
 }
