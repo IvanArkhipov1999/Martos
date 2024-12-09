@@ -2,7 +2,7 @@ extern crate alloc;
 
 use crate::task_manager::{
     task::{Task, TaskLoopFunctionType, TaskSetupFunctionType, TaskStopConditionFunctionType},
-    TaskManager, TaskManagerTrait, TASK_MANAGER,
+    TaskManagerTrait, TASK_MANAGER,
 };
 use alloc::vec::Vec;
 use core::array;
@@ -97,9 +97,10 @@ impl CooperativeTaskManager {
         if priority >= 0 && priority <= NUM_PRIORITIES {
             Err("Error: add_task: Task's priority is invalid. It must be between 0 and 11.");
         }
-        let mut new_task = TaskManager::create_task(setup_fn, loop_fn, stop_condition_fn, priority);
-        TaskManager::setup_task(&mut new_task);
-        TaskManager::push_to_queue(new_task);
+        let mut new_task =
+            CooperativeTaskManager::create_task(setup_fn, loop_fn, stop_condition_fn, priority);
+        CooperativeTaskManager::setup_task(&mut new_task);
+        CooperativeTaskManager::push_to_queue(new_task);
     }
 
     pub unsafe fn find_task<'a>(id: TaskIdType) -> Result<&'a mut CooperativeTask, &'a str> {
@@ -114,7 +115,7 @@ impl CooperativeTaskManager {
     }
 
     pub fn put_to_sleep(id: TaskIdType) {
-        let res = unsafe { TaskManager::find_task(id) };
+        let res = unsafe { CooperativeTaskManager::find_task(id) };
         if let Ok(mut task) = res {
             match task.status {
                 TaskStatusType::Running => {
@@ -136,10 +137,10 @@ impl CooperativeTaskManager {
     }
 
     pub fn terminate_task(id: TaskIdType) {
-        let res = unsafe { TaskManager::find_task(id) };
+        let res = unsafe { CooperativeTaskManager::find_task(id) };
         if let Ok(mut task) = res {
             task.status = TaskStatusType::Terminated;
-            TaskManager::delete_task(task);
+            CooperativeTaskManager::delete_task(task);
         } else {
             Err(res.unwrap());
         }
@@ -178,11 +179,11 @@ impl CooperativeTaskManager {
 
     /// Starts task manager work. Returns after 1000 steps only for testing task_manager_step.
     pub fn schedule() {
-        if TaskManager::has_tasks() {
-            let Ok(mut task) = TaskManager::get_next_task();
+        if CooperativeTaskManager::has_tasks() {
+            let Ok(mut task) = CooperativeTaskManager::get_next_task() else {};
             match task.status {
                 TaskStatusType::Created => {
-                    TaskManager::setup_task(task);
+                    CooperativeTaskManager::setup_task(task);
                 }
                 TaskStatusType::Ready => {
                     task.status = TaskStatusType::Running;
@@ -192,7 +193,7 @@ impl CooperativeTaskManager {
                 TaskStatusType::Sleep => {}
                 TaskStatusType::Terminated => {
                     if (task.core.stop_condition_fn)() {
-                        TaskManager::delete_task(task);
+                        CooperativeTaskManager::delete_task(task);
                     } else {
                         task.status = TaskStatusType::Ready;
                     }
@@ -208,12 +209,12 @@ impl TaskManagerTrait for CooperativeTaskManager {
         loop_fn: TaskLoopFunctionType,
         stop_condition_fn: TaskStopConditionFunctionType,
     ) {
-        TaskManager::add_priority_task(setup_fn, loop_fn, stop_condition_fn, 0);
+        CooperativeTaskManager::add_priority_task(setup_fn, loop_fn, stop_condition_fn, 0);
     }
 
     fn start_task_manager() -> ! {
         loop {
-            TaskManager::schedule();
+            CooperativeTaskManager::schedule();
         }
     }
 }
