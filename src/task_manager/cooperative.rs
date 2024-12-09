@@ -94,7 +94,7 @@ impl CooperativeTaskManager {
         stop_condition_fn: TaskStopConditionFunctionType,
         priority: TaskPriorityType,
     ) {
-        if priority <= 0 && priority >= NUM_PRIORITIES {
+        if priority >= 0 && priority <= NUM_PRIORITIES {
             Err("Error: add_task: Task's priority is invalid. It must be between 0 and 11.");
         }
         let mut new_task = TaskManager::create_task(setup_fn, loop_fn, stop_condition_fn, priority);
