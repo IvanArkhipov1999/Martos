@@ -191,7 +191,11 @@ impl CooperativeTaskManager {
                 TaskStatusType::Running => {}
                 TaskStatusType::Sleep => {}
                 TaskStatusType::Terminated => {
-                    TaskManager::delete_task(task);
+                    if (task.core.stop_condition_fn)() {
+                        TaskManager::delete_task(task);
+                    } else {
+                        task.status = TaskStatusType::Ready;
+                    }
                 }
             }
         }
