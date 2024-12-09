@@ -87,7 +87,8 @@ impl CooperativeTaskManager {
         }
         Err("Error: setup_task: setup_fn is invalid.");
     }
-    pub fn add_task(
+
+    pub fn add_priority_task(
         setup_fn: TaskSetupFunctionType,
         loop_fn: TaskLoopFunctionType,
         stop_condition_fn: TaskStopConditionFunctionType,
@@ -203,7 +204,7 @@ impl TaskManagerTrait for CooperativeTaskManager {
         loop_fn: TaskLoopFunctionType,
         stop_condition_fn: TaskStopConditionFunctionType,
     ) {
-        TaskManager::add_task(setup_fn, loop_fn, stop_condition_fn, 0);
+        TaskManager::add_priority_task(setup_fn, loop_fn, stop_condition_fn, 0);
     }
 
     fn start_task_manager() -> ! {
