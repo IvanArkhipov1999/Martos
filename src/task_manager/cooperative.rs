@@ -25,7 +25,7 @@ enum TaskStatusType {
 /// Future shell for a task for cooperative execution.
 pub struct CooperativeTask {
     /// Task to execute in task manager.
-    pub(crate) task_core: Task,
+    pub(crate) core: Task,
     id: TaskIdType,
     status: TaskStatusType,
     priority: TaskPriorityType,
@@ -65,7 +65,7 @@ impl CooperativeTaskManager {
             TASK_MANAGER.next_task_id += 1;
             let task_id = TASK_MANAGER.next_task_id;
             CooperativeTask {
-                task_core: task,
+                core: task,
                 id: task_id,
                 status: TaskStatusType::Created,
                 priority,
@@ -81,7 +81,7 @@ impl CooperativeTaskManager {
     }
 
     fn setup_task(task: &mut CooperativeTask) {
-        let res = (task.task_core.setup_fn)();
+        let res = (task.core.setup_fn)();
         if res == () {
             task.status = TaskStatusType::Ready
         }
@@ -186,7 +186,7 @@ impl CooperativeTaskManager {
                 }
                 TaskStatusType::Ready => {
                     task.status = TaskStatusType::Running;
-                    (task.task_core.loop_fn)();
+                    (task.core.loop_fn)();
                 }
                 TaskStatusType::Running => {}
                 TaskStatusType::Sleep => {}
