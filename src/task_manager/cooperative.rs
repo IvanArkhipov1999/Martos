@@ -1,51 +1,22 @@
 extern crate alloc;
 
+use crate::task_manager::{
+    task::{Task, TaskLoopFunctionType, TaskSetupFunctionType, TaskStopConditionFunctionType},
+    TaskManagerTrait, TASK_MANAGER,
+};
 use alloc::vec::Vec;
-use core::future::Future;
-use core::pin::Pin;
-use core::task::{Context, Poll, RawWaker, RawWakerVTable, Waker};
+use core::task::{Poll, RawWaker, RawWakerVTable, Waker};
+use core::{future::Future, pin::Pin, task::Context};
 
 /// The number of tasks can fit into a type usize.
 pub type TaskNumberType = usize;
-
-// TODO: rewrite with cfg!
-#[cfg(not(feature = "c-library"))]
-/// Type of setup function, that is called once at the beginning of task.
-type TaskSetupFunctionType = fn() -> ();
-#[cfg(feature = "c-library")]
-/// Type of setup function, that is called once at the beginning of task.
-type TaskSetupFunctionType = extern "C" fn() -> ();
-#[cfg(not(feature = "c-library"))]
-/// Type of loop function, that is called in loop.
-type TaskLoopFunctionType = fn() -> ();
-#[cfg(feature = "c-library")]
-/// Type of loop function, that is called in loop.
-type TaskLoopFunctionType = extern "C" fn() -> ();
-#[cfg(not(feature = "c-library"))]
-/// Type of condition function for stopping loop function execution.
-type TaskStopConditionFunctionType = fn() -> bool;
-#[cfg(feature = "c-library")]
-/// Type of condition function for stopping loop function execution.
-type TaskStopConditionFunctionType = extern "C" fn() -> bool;
-
 #[repr(C)]
-/// Task representation for task manager.
-struct Task {
-    /// Setup function, that is called once at the beginning of task.
-    setup_fn: TaskSetupFunctionType,
-    /// Loop function, that is called in loop.
-    loop_fn: TaskLoopFunctionType,
-    /// Condition function for stopping loop function execution.
-    stop_condition_fn: TaskStopConditionFunctionType,
-}
-
-#[repr(C)]
-/// Future shell for task for execution.
-struct FutureTask {
+/// Future shell for task for cooperative execution.
+pub struct FutureTask {
     /// Task to execute in task manager.
-    task: Task,
+    pub(crate) task: Task,
     /// Marker for setup function completion.
-    is_setup_completed: bool,
+    pub(crate) is_setup_completed: bool,
 }
 
 impl Future for FutureTask {
@@ -69,7 +40,7 @@ impl Future for FutureTask {
 }
 
 /// Creates simple task waker. May be more difficult in perspective.
-fn task_waker() -> Waker {
+pub fn task_waker() -> Waker {
     fn raw_clone(_: *const ()) -> RawWaker {
         RawWaker::new(core::ptr::null::<()>(), &NOOP_WAKER_VTABLE)
     }
@@ -89,27 +60,15 @@ fn task_waker() -> Waker {
 
 #[repr(C)]
 /// Task manager representation. Based on round-robin scheduling without priorities.
-pub struct TaskManager {
+pub struct CooperativeTaskManager {
     /// Vector of tasks to execute.
-    tasks: Vec<FutureTask>,
+    pub(crate) tasks: Vec<FutureTask>,
     /// Index of task, that should be executed.
-    task_to_execute_index: TaskNumberType,
+    pub(crate) task_to_execute_index: TaskNumberType,
 }
 
-/// Operating system task manager.
-static mut TASK_MANAGER: TaskManager = TaskManager::new();
-
-impl TaskManager {
-    /// Creates new task manager.
-    const fn new() -> TaskManager {
-        TaskManager {
-            tasks: Vec::new(),
-            task_to_execute_index: 0,
-        }
-    }
-
-    /// Add task to task manager. You should pass setup, loop and condition functions.
-    pub fn add_task(
+impl TaskManagerTrait for CooperativeTaskManager {
+    fn add_task(
         setup_fn: TaskSetupFunctionType,
         loop_fn: TaskLoopFunctionType,
         stop_condition_fn: TaskStopConditionFunctionType,
@@ -125,6 +84,22 @@ impl TaskManager {
         };
         unsafe {
             TASK_MANAGER.tasks.push(future_task);
+        }
+    }
+
+    fn start_task_manager() -> ! {
+        loop {
+            Self::task_manager_step();
+        }
+    }
+}
+
+impl CooperativeTaskManager {
+    /// Creates new task manager.
+    pub(crate) const fn new() -> CooperativeTaskManager {
+        CooperativeTaskManager {
+            tasks: Vec::new(),
+            task_to_execute_index: 0,
         }
     }
 
@@ -151,17 +126,10 @@ impl TaskManager {
         }
     }
 
-    /// Starts task manager work.
-    pub fn start_task_manager() -> ! {
-        loop {
-            TaskManager::task_manager_step();
-        }
-    }
-
     /// Starts task manager work. Returns after 1000 steps only for testing task_manager_step.
     pub fn test_start_task_manager() {
         for _n in 1..=1000 {
-            TaskManager::task_manager_step();
+            Self::task_manager_step();
         }
     }
 }
