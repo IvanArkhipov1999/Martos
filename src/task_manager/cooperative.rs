@@ -197,30 +197,18 @@ impl CooperativeTaskManager {
     }
 }
 
-// impl TaskManagerTrait for CooperativeTaskManager {
-//     fn add_task(
-//         setup_fn: TaskSetupFunctionType,
-//         loop_fn: TaskLoopFunctionType,
-//         stop_condition_fn: TaskStopConditionFunctionType,
-//         priority: TaskPriorityType,
-//     ) {
-//         let task = Task {
-//             setup_fn,
-//             loop_fn,
-//             stop_condition_fn,
-//         };
-//         let future_task = FutureTask {
-//             task,
-//             is_setup_completed: false,
-//         };
-//         unsafe {
-//             TASK_MANAGER.tasks.push(future_task);
-//         }
-//     }
-//
-//     fn start_task_manager() -> ! {
-//         loop {
-//             Self::task_manager_step();
-//         }
-//     }
-// }
+impl TaskManagerTrait for CooperativeTaskManager {
+    fn add_task(
+        setup_fn: TaskSetupFunctionType,
+        loop_fn: TaskLoopFunctionType,
+        stop_condition_fn: TaskStopConditionFunctionType,
+    ) {
+        TaskManager::add_task(setup_fn, loop_fn, stop_condition_fn, 0);
+    }
+
+    fn start_task_manager() -> ! {
+        loop {
+            TaskManager::schedule();
+        }
+    }
+}
