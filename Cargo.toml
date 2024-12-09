@@ -15,6 +15,7 @@ c-library = []
 cooperative = []
 preemptive = []
 network = ["esp-wifi"]
+mips64_timer_tests = []
 
 [dependencies]
 cfg-if = "1.0.0"

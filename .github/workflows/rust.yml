@@ -270,7 +270,7 @@ jobs:
           path: c-library/risc-v-esp32-c6/target/riscv32imac-unknown-none-elf/release
       - name: Build
         run: |
-          sed -i 's/0x4086E610/0x4086E410/' "$IDF_PATH/components/esp_system/ld/esp32c6/memory.ld.in" &&
+          sed -i 's/0x4086E610/0x408663A0/' "$IDF_PATH/components/esp_system/ld/esp32c6/memory.ld.in" &&
           cd ./examples/c-examples/risc-v-esp32c6 && . /root/esp/esp-idf/export.sh && make && esptool.py --chip esp32c6 elf2image --flash_mode="dio" --flash_freq "40m" --flash_size "4MB" -o main.bin main.elf
 
 
@@ -347,3 +347,10 @@ jobs:
           name: mips64-static-library
           path: c-library/mips64/target/mips64el-unknown-linux-gnuabi64/release/libmips64_static_lib.a
           retention-days: 7
+
+  mips64-timer-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Run tests
+        run: cargo test -F mips64_timer_tests
