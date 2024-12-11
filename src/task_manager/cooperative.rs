@@ -71,6 +71,7 @@ impl TaskManagerTrait for CooperativeTaskManager {
     }
 }
 
+// TODO: errors handling
 impl CooperativeTaskManager {
     /// Creates new task manager.
     pub(crate) const fn new() -> CooperativeTaskManager {
