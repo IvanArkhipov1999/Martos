@@ -6,13 +6,18 @@ use crate::task_manager::{
 };
 use alloc::vec::Vec;
 
+/// The number of tasks id can fit into a type usize.
 type TaskIdType = usize;
+/// Type of priority number of a task.
 type TaskPriorityType = usize;
 
+/// Number of existing priorities.
 const NUM_PRIORITIES: usize = 11;
 
+/// The status of the task changes during execution. ```enum TaskStatusType``` contains possible states.
 #[derive(PartialEq)]
 enum TaskStatusType {
+    // add description of each status
     Created,
     Ready,
     Running,
@@ -21,22 +26,49 @@ enum TaskStatusType {
 }
 
 #[repr(C)]
-/// Future shell for a task for cooperative execution.
+/// The main structure for a cooperative task. Shell for ```Task```, the same
+/// for both cooperative and preemptive task managers.
 pub struct CooperativeTask {
-    /// Task to execute in task manager.
+    ///  Contains 3 functions for task execution inherited from the ```Task```: ```setup_fn```,
+    /// ```loop_fn``` and ```stop_condition_fn```.
     pub(crate) core: Task,
+    /// Each task has a unique ```id```. The First ```id``` number is 0.
     id: TaskIdType,
+    /// Status of existing ```CooperativeTask```. It may change during the task executing.
     status: TaskStatusType,
+    /// Each ```CooperativeTask``` has a ```priority```.
+    /// It is taken into account when selecting the next task to execute.
     priority: TaskPriorityType,
 }
 
+/// Cooperative task manager representation. Based on round-robin scheduling with priorities.
 #[repr(C)]
-/// Task manager representation. Based on round-robin scheduling without priorities.
 pub struct CooperativeTaskManager {
-    /// Vector of tasks to execute.
+    /// Array of vectors with ```CooperativeTask``` to execute.
     pub(crate) tasks: [Vec<CooperativeTask>; NUM_PRIORITIES],
-    /// Index of a task, that should be executed.
+    /// ```id``` of a task that will be created the next.
     pub(crate) next_task_id: TaskIdType,
+}
+
+/// Cooperative implementation of ```TaskManagerTrait```.
+impl TaskManagerTrait for CooperativeTaskManager {
+    /// Add a task to task manager.
+    /// It should pass setup, loop, and condition functions.
+    /// Task added with this function has ```priority``` 0.
+    fn add_task(
+        setup_fn: TaskSetupFunctionType,
+        loop_fn: TaskLoopFunctionType,
+        stop_condition_fn: TaskStopConditionFunctionType,
+    ) {
+        CooperativeTaskManager::add_priority_task(setup_fn, loop_fn, stop_condition_fn, 0);
+    }
+
+    /// Starts task manager work.
+    fn start_task_manager() -> ! {
+        loop {
+            CooperativeTaskManager::schedule();
+        }
+    }
 }
 
 impl CooperativeTaskManager {
@@ -58,6 +90,95 @@ impl CooperativeTaskManager {
         CooperativeTaskManager {
             tasks,
             next_task_id: 0,
+        }
+    }
+
+    /// Add a task to task manager.
+    /// It should pass setup, loop, and condition functions.
+    /// Task added with this function has given priority.
+    pub fn add_priority_task(
+        setup_fn: TaskSetupFunctionType,
+        loop_fn: TaskLoopFunctionType,
+        stop_condition_fn: TaskStopConditionFunctionType,
+        priority: TaskPriorityType,
+    ) {
+        // if priority >= 0 && priority <= NUM_PRIORITIES {
+        // "Error: add_task: Task's priority is invalid. It must be between 0 and 11."
+        // }
+        let mut new_task =
+            CooperativeTaskManager::create_task(setup_fn, loop_fn, stop_condition_fn, priority);
+        CooperativeTaskManager::setup_task(&mut new_task);
+        CooperativeTaskManager::push_to_queue(new_task);
+    }
+
+    /// Find a task by ```id``` and return it.
+    pub unsafe fn find_task<'a>(id: TaskIdType) -> Option<&'a mut CooperativeTask> {
+        for vec in TASK_MANAGER.tasks.iter_mut() {
+            for task in vec.iter_mut() {
+                if task.id == id {
+                    return Some(task);
+                }
+            }
+        }
+        None // ("Error: find_task: Task with this id not found.")
+    }
+
+    /// Task can put to sleep another task by ```id```.
+    pub fn put_to_sleep(id: TaskIdType) {
+        let res = unsafe { CooperativeTaskManager::find_task(id) };
+        if let Some(task) = res {
+            match task.status {
+                TaskStatusType::Running => {
+                    // "Error: put_to_sleep: Task with this id is currently running."
+                }
+                TaskStatusType::Sleep => {
+                    // "Error: put_to_sleep: Task with this id is currently sleeping."
+                }
+                TaskStatusType::Terminated => {
+                    // "Error: put_to_sleep:
+                    // Task with this id is terminated
+                    // and recently will be removed."
+                }
+                _ => {
+                    task.status = TaskStatusType::Sleep;
+                }
+            }
+        }
+    }
+
+    /// Task can terminate and delete another task by ```id``` even if it executes.
+    pub fn terminate_task(id: TaskIdType) {
+        let res = unsafe { CooperativeTaskManager::find_task(id) };
+        if let Some(task) = res {
+            task.status = TaskStatusType::Terminated;
+            CooperativeTaskManager::delete_task(task);
+        }
+    }
+
+    /// One task manager iteration.
+    pub fn schedule() {
+        if CooperativeTaskManager::has_tasks() {
+            let Some(task) = CooperativeTaskManager::get_next_task() else {
+                todo!() // Err
+            };
+            match task.status {
+                TaskStatusType::Created => {
+                    CooperativeTaskManager::setup_task(task);
+                }
+                TaskStatusType::Ready => {
+                    task.status = TaskStatusType::Running;
+                    (task.core.loop_fn)();
+                }
+                TaskStatusType::Running => {}
+                TaskStatusType::Sleep => {}
+                TaskStatusType::Terminated => {
+                    if (task.core.stop_condition_fn)() {
+                        CooperativeTaskManager::delete_task(task);
+                    } else {
+                        task.status = TaskStatusType::Ready;
+                    }
+                }
+            }
         }
     }
 
@@ -100,62 +221,6 @@ impl CooperativeTaskManager {
         // else "Error: setup_task: setup_fn is invalid."
     }
 
-    pub fn add_priority_task(
-        setup_fn: TaskSetupFunctionType,
-        loop_fn: TaskLoopFunctionType,
-        stop_condition_fn: TaskStopConditionFunctionType,
-        priority: TaskPriorityType,
-    ) {
-        // if priority >= 0 && priority <= NUM_PRIORITIES {
-        // "Error: add_task: Task's priority is invalid. It must be between 0 and 11."
-        // }
-        let mut new_task =
-            CooperativeTaskManager::create_task(setup_fn, loop_fn, stop_condition_fn, priority);
-        CooperativeTaskManager::setup_task(&mut new_task);
-        CooperativeTaskManager::push_to_queue(new_task);
-    }
-
-    pub unsafe fn find_task<'a>(id: TaskIdType) -> Option<&'a mut CooperativeTask> {
-        for vec in TASK_MANAGER.tasks.iter_mut() {
-            for task in vec.iter_mut() {
-                if task.id == id {
-                    return Some(task);
-                }
-            }
-        }
-        None // ("Error: find_task: Task with this id not found.")
-    }
-
-    pub fn put_to_sleep(id: TaskIdType) {
-        let res = unsafe { CooperativeTaskManager::find_task(id) };
-        if let Some(task) = res {
-            match task.status {
-                TaskStatusType::Running => {
-                    // "Error: put_to_sleep: Task with this id is currently running."
-                }
-                TaskStatusType::Sleep => {
-                    // "Error: put_to_sleep: Task with this id is currently sleeping."
-                }
-                TaskStatusType::Terminated => {
-                    // "Error: put_to_sleep:
-                    // Task with this id is terminated
-                    // and recently will be removed."
-                }
-                _ => {
-                    task.status = TaskStatusType::Sleep;
-                }
-            }
-        }
-    }
-
-    pub fn terminate_task(id: TaskIdType) {
-        let res = unsafe { CooperativeTaskManager::find_task(id) };
-        if let Some(task) = res {
-            task.status = TaskStatusType::Terminated;
-            CooperativeTaskManager::delete_task(task);
-        }
-    }
-
     fn delete_task(task: &mut CooperativeTask) {
         unsafe {
             let vec = &mut TASK_MANAGER.tasks[task.priority];
@@ -185,47 +250,5 @@ impl CooperativeTaskManager {
             }
         }
         None // ("Error: get_next_task: No tasks currently, waiting for new tasks.")
-    }
-
-    pub fn schedule() {
-        if CooperativeTaskManager::has_tasks() {
-            let Some(task) = CooperativeTaskManager::get_next_task() else {
-                todo!()
-            };
-            match task.status {
-                TaskStatusType::Created => {
-                    CooperativeTaskManager::setup_task(task);
-                }
-                TaskStatusType::Ready => {
-                    task.status = TaskStatusType::Running;
-                    (task.core.loop_fn)();
-                }
-                TaskStatusType::Running => {}
-                TaskStatusType::Sleep => {}
-                TaskStatusType::Terminated => {
-                    if (task.core.stop_condition_fn)() {
-                        CooperativeTaskManager::delete_task(task);
-                    } else {
-                        task.status = TaskStatusType::Ready;
-                    }
-                }
-            }
-        }
-    }
-}
-
-impl TaskManagerTrait for CooperativeTaskManager {
-    fn add_task(
-        setup_fn: TaskSetupFunctionType,
-        loop_fn: TaskLoopFunctionType,
-        stop_condition_fn: TaskStopConditionFunctionType,
-    ) {
-        CooperativeTaskManager::add_priority_task(setup_fn, loop_fn, stop_condition_fn, 0);
-    }
-
-    fn start_task_manager() -> ! {
-        loop {
-            CooperativeTaskManager::schedule();
-        }
     }
 }
