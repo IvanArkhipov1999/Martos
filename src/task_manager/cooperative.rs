@@ -17,11 +17,18 @@ const NUM_PRIORITIES: usize = 11;
 /// The status of the task changes during execution. ```enum TaskStatusType``` contains possible states.
 #[derive(PartialEq)]
 enum TaskStatusType {
-    // add description of each status
+    /// Task status after it is created.
     Created,
+    /// Task status after setup function. It is ready to be executed.
     Ready,
+    /// Task status when loop function is running.
     Running,
-    Sleep,
+    /// Task status when it is sleeping.
+    Sleeping,
+    /// Task status when it terminated.
+    /// It can be in both cases
+    /// when a task is finished and when the other task called ```terminate_task``` function
+    /// with id of a task that will be terminated.
     Terminated,
 }
 
@@ -132,7 +139,7 @@ impl CooperativeTaskManager {
                 TaskStatusType::Running => {
                     // "Error: put_to_sleep: Task with this id is currently running."
                 }
-                TaskStatusType::Sleep => {
+                TaskStatusType::Sleeping => {
                     // "Error: put_to_sleep: Task with this id is currently sleeping."
                 }
                 TaskStatusType::Terminated => {
@@ -141,7 +148,7 @@ impl CooperativeTaskManager {
                     // and recently will be removed."
                 }
                 _ => {
-                    task.status = TaskStatusType::Sleep;
+                    task.status = TaskStatusType::Sleeping;
                 }
             }
         }
@@ -171,7 +178,7 @@ impl CooperativeTaskManager {
                     (task.core.loop_fn)();
                 }
                 TaskStatusType::Running => {}
-                TaskStatusType::Sleep => {}
+                TaskStatusType::Sleeping => {}
                 TaskStatusType::Terminated => {
                     if (task.core.stop_condition_fn)() {
                         CooperativeTaskManager::delete_task(task);
