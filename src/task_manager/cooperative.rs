@@ -109,7 +109,7 @@ impl CooperativeTaskManager {
         stop_condition_fn: TaskStopConditionFunctionType,
         priority: TaskPriorityType,
     ) {
-        if priority >= 0 && priority <= NUM_PRIORITIES {
+        if priority >= NUM_PRIORITIES {
             panic!("Error: add_task: Task's priority is invalid. It must be between 0 and 11.");
         }
         let mut new_task =
@@ -133,22 +133,21 @@ impl CooperativeTaskManager {
     /// Task can put to sleep another task by ```id```.
     pub fn put_to_sleep(id: TaskIdType) {
         let res = unsafe { CooperativeTaskManager::find_task(id) };
-        if let task = res {
-            match task.status {
-                TaskStatusType::Running => {
-                    panic!("Error: put_to_sleep: Task with this id is currently running.");
-                }
-                TaskStatusType::Sleeping => {
-                    panic!("Error: put_to_sleep: Task with this id is currently sleeping.");
-                }
-                TaskStatusType::Terminated => {
-                    panic!(
-                        "Error: put_to_sleep: Task with this id is terminated and recently will be removed."
-                    );
-                }
-                _ => {
-                    task.status = TaskStatusType::Sleeping;
-                }
+        let task = res;
+        match task.status {
+            TaskStatusType::Running => {
+                panic!("Error: put_to_sleep: Task with this id is currently running.");
+            }
+            TaskStatusType::Sleeping => {
+                panic!("Error: put_to_sleep: Task with this id is currently sleeping.");
+            }
+            TaskStatusType::Terminated => {
+                panic!(
+                    "Error: put_to_sleep: Task with this id is terminated and recently will be removed."
+                );
+            }
+            _ => {
+                task.status = TaskStatusType::Sleeping;
             }
         }
     }
@@ -156,10 +155,9 @@ impl CooperativeTaskManager {
     /// Task can terminate and delete another task by ```id``` even if it executes.
     pub fn terminate_task(id: TaskIdType) {
         let res = unsafe { CooperativeTaskManager::find_task(id) };
-        if let task = res {
-            task.status = TaskStatusType::Terminated;
-            CooperativeTaskManager::delete_task(task);
-        }
+        let task = res;
+        task.status = TaskStatusType::Terminated;
+        CooperativeTaskManager::delete_task(task);
     }
 
     /// One task manager iteration.
