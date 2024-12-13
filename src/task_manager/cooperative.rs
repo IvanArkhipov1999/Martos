@@ -251,4 +251,11 @@ impl CooperativeTaskManager {
         }
         panic!("Error: get_next_task: No tasks currently, waiting for new tasks.");
     }
+
+    /// Starts task manager work. Returns after 1000 steps only for testing task_manager_step.
+    pub fn test_start_task_manager() {
+        for _n in 1..=1000 {
+            CooperativeTaskManager::schedule();
+        }
+    }
 }
