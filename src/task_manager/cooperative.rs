@@ -55,6 +55,7 @@ pub struct CooperativeTaskManager {
     pub(crate) tasks: [Vec<CooperativeTask>; NUM_PRIORITIES],
     /// ```id``` of a task that will be created the next.
     pub(crate) next_task_id: TaskIdType,
+    // pub(crate) current_task_id: TaskIdType,
 }
 
 /// Cooperative implementation of ```TaskManagerTrait```.
@@ -152,6 +153,14 @@ impl CooperativeTaskManager {
         }
     }
 
+    // pub fn get_curr_task_id() -> TaskIdType {
+    //     TASK_MANAGER.current_task_id
+    // }
+    //
+    // pub fn terminate_curr_task() {
+    //     terminate_task(get_curr_task_id());
+    // }
+
     /// Task can terminate and delete another task by ```id``` even if it executes.
     pub fn terminate_task(id: TaskIdType) {
         let res = unsafe { CooperativeTaskManager::find_task(id) };
@@ -171,6 +180,7 @@ impl CooperativeTaskManager {
                 TaskStatusType::Ready => {
                     task.status = TaskStatusType::Running;
                     (task.core.loop_fn)();
+                    task.status = TaskStatusType::Terminated;
                 }
                 TaskStatusType::Running => {}
                 TaskStatusType::Sleeping => {}
@@ -244,7 +254,7 @@ impl CooperativeTaskManager {
     fn get_next_task<'a>() -> &'a mut CooperativeTask {
         unsafe {
             for vec in TASK_MANAGER.tasks.iter_mut() {
-                if let Some(task) = vec.last_mut() {
+                if let Some(task) = vec.first_mut() {
                     return task;
                 }
             }

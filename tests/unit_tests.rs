@@ -30,7 +30,7 @@ mod unit_tests {
     /// Stop function for task for test_one_finite_task_task_manager.
     fn test_one_finite_task_task_manager_stop_condition_fn() -> bool {
         let value = unsafe { TEST_ONE_FINITE_TASK_TASK_MANAGER_COUNTER.as_ptr().read() };
-        if value % 50 == 0 {
+        if value == 1000 {
             return true;
         }
         false
