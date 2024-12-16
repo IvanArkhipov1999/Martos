@@ -3,7 +3,7 @@
  */
 
 rom_i2c_writeReg = 0x400041a4;
-ets_delay_us = 0x40000040;
+ets_delay_us = 0x40008534;
 
 /* Default entry point */
 ENTRY( call_start_cpu0 );
