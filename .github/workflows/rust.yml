@@ -100,6 +100,21 @@ jobs:
       - name: Fmt
         run: cd ./examples/rust-examples/xtensa-esp32/wifi && cargo fmt --all -- --check
 
+  xtensa-esp32-rust-example-scheduler:
+    runs-on: ubuntu-latest
+    env:
+      CARGO_HOME: /root/.cargo
+      RUSTUP_HOME: /root/.rustup
+    container:
+      image: arkhipovivan1/xtensa-esp32-rust:latest
+      options: --user root
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build
+        run: cd ./examples/rust-examples/xtensa-esp32/scheduler && . /root/export-esp.sh && cargo build
+      - name: Fmt
+        run: cd ./examples/rust-examples/xtensa-esp32/scheduler && cargo fmt --all -- --check
+
   xtensa-esp32-static-library:
     runs-on: ubuntu-latest
     env:
@@ -140,7 +155,7 @@ jobs:
       - name: Build
         run: cd ./examples/c-examples/xtensa-esp32 && . /root/esp/esp-idf/export.sh && make && esptool.py --chip esp32 elf2image --flash_mode="dio" --flash_freq "40m" --flash_size "4MB" -o main.bin main.elf
 
- 
+
   risc-v-esp32c6-rust-example-hello-world:
     runs-on: ubuntu-latest
     env:
