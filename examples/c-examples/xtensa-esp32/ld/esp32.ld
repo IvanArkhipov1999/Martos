@@ -3,7 +3,7 @@
  */
 
 rom_i2c_writeReg = 0x400041a4;
-ets_delay_us = 0x40000040;
+ets_delay_us = 0x40008534;
 
 /* Default entry point */
 ENTRY( call_start_cpu0 );
@@ -14,8 +14,8 @@ MEMORY
   /* Use values from the ESP-IDF 'bootloader' component.
   /* TODO: Use human-readable lengths */
   /* TODO: Use the full memory map - this is just a test */
-  iram_seg ( RX )       : ORIGIN = 0x40080400, len = 0xF0000
-  dram_seg ( RW )       : ORIGIN = 0x3FFF0000, len = 0xA0000
+  iram_seg ( RX )       : ORIGIN = 0x40080400, len = 0xFC00
+  dram_seg ( RW )       : ORIGIN = 0x3FFF0000, len = 0x100A8
 }
 
 /* Define output sections */
