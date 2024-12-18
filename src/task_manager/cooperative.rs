@@ -17,8 +17,6 @@ const NUM_PRIORITIES: usize = 11;
 /// The status of the task changes during execution. ```enum TaskStatusType``` contains possible states.
 #[derive(PartialEq)]
 enum TaskStatusType {
-    /// Task status after it is created.
-    Created,
     /// Task status after setup function. It is ready to be executed.
     Ready,
     /// Task status when loop function is running.
@@ -113,10 +111,34 @@ impl CooperativeTaskManager {
         if priority >= NUM_PRIORITIES {
             panic!("Error: add_task: Task's priority is invalid. It must be between 0 and 11.");
         }
-        let mut new_task =
+        let new_task =
             CooperativeTaskManager::create_task(setup_fn, loop_fn, stop_condition_fn, priority);
-        CooperativeTaskManager::setup_task(&mut new_task);
+        (new_task.core.setup_fn)();
         CooperativeTaskManager::push_to_queue(new_task);
+    }
+
+    fn create_task(
+        setup_fn: TaskSetupFunctionType,
+        loop_fn: TaskLoopFunctionType,
+        stop_condition_fn: TaskStopConditionFunctionType,
+        priority: TaskPriorityType,
+    ) -> CooperativeTask {
+        let task = Task {
+            setup_fn,
+            loop_fn,
+            stop_condition_fn,
+        };
+
+        unsafe {
+            TASK_MANAGER.next_task_id += 1;
+            let task_id = TASK_MANAGER.next_task_id;
+            CooperativeTask {
+                core: task,
+                id: task_id,
+                status: TaskStatusType::Ready,
+                priority,
+            }
+        }
     }
 
     /// Find a task by ```id``` and return it.
@@ -174,9 +196,6 @@ impl CooperativeTaskManager {
         if CooperativeTaskManager::has_tasks() {
             let task = CooperativeTaskManager::get_next_task();
             match task.status {
-                TaskStatusType::Created => {
-                    CooperativeTaskManager::setup_task(task);
-                }
                 TaskStatusType::Ready => {
                     task.status = TaskStatusType::Running;
                     (task.core.loop_fn)();
@@ -195,40 +214,11 @@ impl CooperativeTaskManager {
         }
     }
 
-    fn create_task(
-        setup_fn: TaskSetupFunctionType,
-        loop_fn: TaskLoopFunctionType,
-        stop_condition_fn: TaskStopConditionFunctionType,
-        priority: TaskPriorityType,
-    ) -> CooperativeTask {
-        let task = Task {
-            setup_fn,
-            loop_fn,
-            stop_condition_fn,
-        };
-
-        unsafe {
-            TASK_MANAGER.next_task_id += 1;
-            let task_id = TASK_MANAGER.next_task_id;
-            CooperativeTask {
-                core: task,
-                id: task_id,
-                status: TaskStatusType::Created,
-                priority,
-            }
-        }
-    }
-
     fn push_to_queue(task: CooperativeTask) {
         unsafe {
             let task_vector = &mut TASK_MANAGER.tasks[task.priority];
             task_vector.push(task);
         }
-    }
-
-    fn setup_task(task: &mut CooperativeTask) {
-        (task.core.setup_fn)();
-        task.status = TaskStatusType::Ready;
     }
 
     fn delete_task(task: &mut CooperativeTask) {
