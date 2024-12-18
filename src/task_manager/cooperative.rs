@@ -53,7 +53,7 @@ pub struct CooperativeTask {
 pub struct CooperativeTaskManager {
     /// Array of vectors with ```CooperativeTask``` to execute.
     pub(crate) tasks: [Vec<CooperativeTask>; NUM_PRIORITIES],
-    /// ```id``` of a task that will be created the next.
+    /// ```id``` of a task that will be created the next. The First task has id 1.
     pub(crate) next_task_id: TaskIdType,
     // pub(crate) current_task_id: TaskIdType,
 }
@@ -267,5 +267,34 @@ impl CooperativeTaskManager {
         for _n in 1..=1000 {
             CooperativeTaskManager::schedule();
         }
+    }
+
+    pub fn count_tasks_with_priority(priority: TaskPriorityType) -> usize {
+        unsafe { TASK_MANAGER.tasks[priority].len() }
+    }
+
+    pub fn has_no_tasks() -> bool {
+        unsafe { TASK_MANAGER.tasks.iter().all(|vec| vec.is_empty()) }
+    }
+
+    pub fn count_all_tasks() -> usize {
+        unsafe { TASK_MANAGER.tasks.iter().map(|vec| vec.len()).sum() }
+    }
+
+    pub fn reset_task_manager() {
+        unsafe {
+            for vec in TASK_MANAGER.tasks.iter_mut() {
+                vec.clear();
+            }
+            TASK_MANAGER.next_task_id = 0;
+        }
+    }
+
+    pub fn get_task_id_from_position(priority: TaskPriorityType, position: usize) -> TaskIdType {
+        unsafe { TASK_MANAGER.tasks[priority][position].id }
+    }
+
+    pub fn get_task_id_from_task(task: &mut CooperativeTask) -> TaskIdType {
+        task.id
     }
 }

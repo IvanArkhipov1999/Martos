@@ -1,4 +1,4 @@
-#[cfg(all(test, not(feature = "mips64_timer_tests")))]
+// #[cfg(all(test, not(feature = "mips64_timer_tests")))]
 mod unit_tests {
     use martos::task_manager::TaskManager;
     use martos::task_manager::TaskManagerTrait;
@@ -12,11 +12,87 @@ mod unit_tests {
     // TODO: refactor unit tests. They should check less. Separate tests for setup, loop and stop functions.
     // TODO: refactor unit tests. Task manager and timer tests should be in different files in one directory.
 
+    fn dummy_setup_fn() {}
+    fn dummy_loop_fn() {}
+    fn dummy_condition_true() -> bool {
+        true
+    }
+    fn dummy_condition_false() -> bool {
+        false
+    }
+
+    #[test]
+    #[sequential]
+    #[should_panic(
+        expected = "Error: add_task: Task's priority is invalid. It must be between 0 and 11."
+    )]
+    /// Test add a task with nonexistent priority
+    fn test_add_task_invalid_priority() {
+        TaskManager::add_priority_task(dummy_setup_fn, dummy_loop_fn, dummy_condition_true, 100);
+        TaskManager::test_start_task_manager();
+    }
+
+    #[test]
+    #[sequential]
+    fn test_add_two_priority_tasks_and_check_vectors() {
+        TaskManager::add_priority_task(dummy_setup_fn, dummy_loop_fn, dummy_condition_true, 0);
+        TaskManager::add_priority_task(dummy_setup_fn, dummy_loop_fn, dummy_condition_true, 1);
+        TaskManager::add_priority_task(dummy_setup_fn, dummy_loop_fn, dummy_condition_true, 0);
+
+        assert_eq!(TaskManager::count_tasks_with_priority(0), 2);
+        assert_eq!(TaskManager::count_tasks_with_priority(1), 1);
+        assert_eq!(TaskManager::count_all_tasks(), 3);
+        TaskManager::reset_task_manager();
+    }
+
+    #[test]
+    #[sequential]
+    fn test_add_task_and_check_if_priority_zero() {
+        TaskManager::add_task(dummy_setup_fn, dummy_loop_fn, dummy_condition_true);
+        assert_eq!(TaskManager::count_tasks_with_priority(0), 1);
+        assert_eq!(TaskManager::count_all_tasks(), 1);
+        TaskManager::reset_task_manager();
+    }
+
+    #[test]
+    #[sequential]
+    fn test_find_task_by_id() {
+        TaskManager::add_priority_task(dummy_setup_fn, dummy_loop_fn, dummy_condition_true, 10);
+        let id_from_position = TaskManager::get_task_id_from_position(10, 0);
+
+        let found_task = unsafe { TaskManager::find_task(id_from_position) };
+
+        assert_eq!(
+            id_from_position,
+            TaskManager::get_task_id_from_task(found_task)
+        );
+        TaskManager::reset_task_manager();
+    }
+
+    #[test]
+    #[sequential]
+    #[should_panic(expected = "Error: find_task: Task with this id not found.")]
+    fn test_find_task_by_invalid_id() {
+        TaskManager::add_priority_task(dummy_setup_fn, dummy_loop_fn, dummy_condition_true, 10);
+        let found_task = unsafe { TaskManager::find_task(2) };
+        TaskManager::reset_task_manager();
+    }
+
+    #[test]
+    #[sequential]
+    fn test_put_to_sleep_other_task() {
+        TaskManager::add_priority_task(dummy_setup_fn, dummy_loop_fn, dummy_condition_true, 10);
+        let found_task = unsafe { TaskManager::find_task(2) };
+        TaskManager::reset_task_manager();
+    }
+
     #[test]
     #[sequential]
     /// Tests if task manager without tasks works during some time.
     fn test_empty_task_manager() {
         TaskManager::test_start_task_manager();
+        assert!(TaskManager::has_no_tasks());
+        TaskManager::reset_task_manager();
     }
 
     /// Counter for task for test_one_finite_task_task_manager.
@@ -26,11 +102,13 @@ mod unit_tests {
     /// Loop function for task for test_one_finite_task_task_manager.
     fn test_one_finite_task_task_manager_loop_fn() {
         TEST_ONE_FINITE_TASK_TASK_MANAGER_COUNTER.fetch_add(1, Ordering::Relaxed);
+        // То есть состояния помогают только контролировать flow????
+        // А по факту вся суть в состояниях... или наоборот, состояния формируют работу, а эти все функции для проверки чисто рудименты...
     }
     /// Stop function for task for test_one_finite_task_task_manager.
     fn test_one_finite_task_task_manager_stop_condition_fn() -> bool {
         let value = unsafe { TEST_ONE_FINITE_TASK_TASK_MANAGER_COUNTER.as_ptr().read() };
-        if value == 1000 {
+        if value % 50 == 0 {
             return true;
         }
         false
@@ -50,6 +128,7 @@ mod unit_tests {
             unsafe { TEST_ONE_FINITE_TASK_TASK_MANAGER_COUNTER.as_ptr().read() },
             50
         );
+        TaskManager::reset_task_manager();
     }
 
     /// Counter for task for test_one_infinite_task_task_manager.
@@ -74,6 +153,7 @@ mod unit_tests {
             test_one_infinite_task_task_manager_stop_condition_fn,
         );
         TaskManager::test_start_task_manager();
+        TaskManager::reset_task_manager();
     }
 
     /// Counter for task for test_two_finite_tasks_task_manager.
@@ -132,6 +212,7 @@ mod unit_tests {
             unsafe { TEST_TWO_FINITE_TASK_TASK_MANAGER_COUNTER2.as_ptr().read() },
             25
         );
+        TaskManager::reset_task_manager();
     }
 
     /// Counter for task for test_two_different_tasks_task_manager.
@@ -190,6 +271,7 @@ mod unit_tests {
             },
             50
         );
+        TaskManager::reset_task_manager();
     }
 
     /// Counter for task for test_two_infinite_tasks_task_manager.
@@ -231,6 +313,7 @@ mod unit_tests {
             test_two_infinite_tasks_task_manager_stop_condition_fn2,
         );
         TaskManager::test_start_task_manager();
+        TaskManager::reset_task_manager();
     }
 
     /// Counter for task for test_setup_task_manager.
@@ -260,6 +343,7 @@ mod unit_tests {
             unsafe { TEST_SETUP_TASK_MANAGER_COUNTER.as_ptr().read() },
             42
         );
+        TaskManager::reset_task_manager();
     }
 
     #[test]
