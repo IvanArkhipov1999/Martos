@@ -1,14 +1,13 @@
 // #[cfg(all(test, not(feature = "mips64_timer_tests")))]
 mod unit_tests {
-    use martos::task_manager::TaskManager;
-    use martos::task_manager::TaskManagerTrait;
+    use martos::task_manager::{TaskManager, TaskManagerTrait};
     use martos::timer::Timer;
     use sequential_test::sequential;
+    use std::cell::RefCell;
     use std::{
         sync::atomic::{AtomicU32, Ordering},
         time::Duration,
     };
-
     // TODO: refactor unit tests. They should check less. Separate tests for setup, loop and stop functions.
     // TODO: refactor unit tests. Task manager and timer tests should be in different files in one directory.
 
@@ -16,9 +15,6 @@ mod unit_tests {
     fn dummy_loop_fn() {}
     fn dummy_condition_true() -> bool {
         true
-    }
-    fn dummy_condition_false() -> bool {
-        false
     }
 
     #[test]
@@ -56,33 +52,87 @@ mod unit_tests {
 
     #[test]
     #[sequential]
-    fn test_find_task_by_id() {
+    fn test_get_task_by_id() {
         TaskManager::add_priority_task(dummy_setup_fn, dummy_loop_fn, dummy_condition_true, 10);
-        let id_from_position = TaskManager::get_task_id_from_position(10, 0);
+        let id = TaskManager::get_id_from_position(10, 0);
 
-        let found_task = unsafe { TaskManager::find_task(id_from_position) };
+        let found_task = TaskManager::get_task_from_id(id);
 
-        assert_eq!(
-            id_from_position,
-            TaskManager::get_task_id_from_task(found_task)
-        );
+        assert_eq!(id, TaskManager::get_id_from_task(found_task));
         TaskManager::reset_task_manager();
     }
 
     #[test]
     #[sequential]
-    #[should_panic(expected = "Error: find_task: Task with this id not found.")]
+    #[should_panic(expected = "Error: get_task_from_id: Task with this id not found.")]
     fn test_find_task_by_invalid_id() {
         TaskManager::add_priority_task(dummy_setup_fn, dummy_loop_fn, dummy_condition_true, 10);
-        let found_task = unsafe { TaskManager::find_task(2) };
+        let found_task = TaskManager::get_task_from_id(2);
         TaskManager::reset_task_manager();
     }
 
+    fn test_put_to_sleep_other_task_loop_fn() {
+        TaskManager::put_to_sleep(1);
+    }
     #[test]
     #[sequential]
-    fn test_put_to_sleep_other_task() {
-        TaskManager::add_priority_task(dummy_setup_fn, dummy_loop_fn, dummy_condition_true, 10);
-        let found_task = unsafe { TaskManager::find_task(2) };
+    fn test_put_to_sleep_task_from_task() {
+        TaskManager::add_task(dummy_setup_fn, dummy_loop_fn, dummy_condition_true);
+        assert_eq!(TaskManager::get_id_from_position(0, 0), 1);
+
+        TaskManager::add_task(
+            dummy_setup_fn,
+            test_put_to_sleep_other_task_loop_fn,
+            dummy_condition_true,
+        );
+        assert_eq!(TaskManager::get_id_from_position(0, 1), 2);
+
+        let task = TaskManager::get_task_from_id(1);
+
+        assert_eq!(TaskManager::get_status(task), TaskManager::ready_status());
+
+        TaskManager::test_start_task_manager();
+
+        assert_eq!(
+            TaskManager::get_status(task),
+            TaskManager::sleeping_status()
+        );
+
+        TaskManager::reset_task_manager();
+    }
+
+    thread_local! {
+        static EXEC_ORDER: RefCell<Vec<&'static str>> = RefCell::new(Vec::new());
+    }
+    #[test]
+    #[sequential]
+    fn test_get_next_task_same_priority() {
+        fn first_task_loop_fn() {
+            EXEC_ORDER.with(|order| {
+                order.borrow_mut().push("first");
+            });
+        }
+
+        fn second_task_loop_fn() {
+            EXEC_ORDER.with(|order| {
+                order.borrow_mut().push("second");
+            });
+        }
+
+        fn third_task_loop_fn() {
+            EXEC_ORDER.with(|order| {
+                order.borrow_mut().push("third");
+            });
+        }
+        TaskManager::add_task(dummy_setup_fn, first_task_loop_fn, dummy_condition_true);
+        TaskManager::add_task(dummy_setup_fn, second_task_loop_fn, dummy_condition_true);
+        TaskManager::add_task(dummy_setup_fn, third_task_loop_fn, dummy_condition_true);
+
+        TaskManager::test_start_task_manager();
+
+        EXEC_ORDER.with(|order| {
+            assert_eq!(*order.borrow(), ["third", "second", "first"]);
+        });
         TaskManager::reset_task_manager();
     }
 
@@ -95,7 +145,7 @@ mod unit_tests {
         TaskManager::reset_task_manager();
     }
 
-    /// Counter for task for test_one_finite_task_task_manager.
+    /// Counter for a task for test_one_finite_task_task_manager.
     static TEST_ONE_FINITE_TASK_TASK_MANAGER_COUNTER: AtomicU32 = AtomicU32::new(1);
     /// Setup function for task for test_one_finite_task_task_manager.
     fn test_one_finite_task_task_manager_setup_fn() {}
@@ -131,7 +181,7 @@ mod unit_tests {
         TaskManager::reset_task_manager();
     }
 
-    /// Counter for task for test_one_infinite_task_task_manager.
+    /// Counter for a task for test_one_infinite_task_task_manager.
     static TEST_ONE_INFINITE_TASK_TASK_MANAGER_COUNTER: AtomicU32 = AtomicU32::new(1);
     /// Setup function for task for test_one_infinite_task_task_manager.
     fn test_one_infinite_task_task_manager_setup_fn() {}
@@ -156,7 +206,7 @@ mod unit_tests {
         TaskManager::reset_task_manager();
     }
 
-    /// Counter for task for test_two_finite_tasks_task_manager.
+    /// Counter for a task for test_two_finite_tasks_task_manager.
     static TEST_TWO_FINITE_TASK_TASK_MANAGER_COUNTER1: AtomicU32 = AtomicU32::new(1);
     /// Setup function for task for test_two_finite_tasks_task_manager.
     fn test_two_finite_tasks_task_manager_setup_fn1() {}
@@ -172,7 +222,7 @@ mod unit_tests {
         }
         false
     }
-    /// Counter for task for test_two_finite_tasks_task_manager.
+    /// Counter for a task for test_two_finite_tasks_task_manager.
     static TEST_TWO_FINITE_TASK_TASK_MANAGER_COUNTER2: AtomicU32 = AtomicU32::new(1);
     /// Setup function for task for test_two_finite_tasks_task_manager.
     fn test_two_finite_tasks_task_manager_setup_fn2() {}
@@ -215,7 +265,7 @@ mod unit_tests {
         TaskManager::reset_task_manager();
     }
 
-    /// Counter for task for test_two_different_tasks_task_manager.
+    /// Counter for a task for test_two_different_tasks_task_manager.
     static TEST_TWO_DIFFERENT_TASK_TASK_MANAGER_COUNTER1: AtomicU32 = AtomicU32::new(1);
     /// Setup function for task for test_two_different_tasks_task_manager.
     fn test_two_different_tasks_task_manager_setup_fn1() {}
@@ -223,7 +273,7 @@ mod unit_tests {
     fn test_two_different_tasks_task_manager_loop_fn1() {
         TEST_TWO_DIFFERENT_TASK_TASK_MANAGER_COUNTER1.fetch_add(1, Ordering::Relaxed);
     }
-    /// Stop function for task for test_two_different_tasks_task_manager.
+    /// Stop function for a task for test_two_different_tasks_task_manager.
     fn test_two_different_tasks_task_manager_stop_condition_fn1() -> bool {
         let value = unsafe {
             TEST_TWO_DIFFERENT_TASK_TASK_MANAGER_COUNTER1
@@ -235,7 +285,7 @@ mod unit_tests {
         }
         false
     }
-    /// Counter for task for test_two_different_tasks_task_manager.
+    /// Counter for a task for test_two_different_tasks_task_manager.
     static TEST_TWO_DIFFERENT_TASK_TASK_MANAGER_COUNTER2: AtomicU32 = AtomicU32::new(1);
     /// Setup function for task for test_two_different_tasks_task_manager.
     fn test_two_different_tasks_task_manager_setup_fn2() {}
@@ -243,7 +293,7 @@ mod unit_tests {
     fn test_two_different_tasks_task_manager_loop_fn2() {
         TEST_TWO_DIFFERENT_TASK_TASK_MANAGER_COUNTER2.fetch_add(1, Ordering::Relaxed);
     }
-    /// Stop function for task for test_two_different_tasks_task_manager.
+    /// Stop function for a task for test_two_different_tasks_task_manager.
     fn test_two_different_tasks_task_manager_stop_condition_fn2() -> bool {
         false
     }
@@ -274,7 +324,7 @@ mod unit_tests {
         TaskManager::reset_task_manager();
     }
 
-    /// Counter for task for test_two_infinite_tasks_task_manager.
+    /// Counter for a task for test_two_infinite_tasks_task_manager.
     static TEST_TWO_INFINITE_TASK_TASK_MANAGER_COUNTER1: AtomicU32 = AtomicU32::new(1);
     /// Setup function for task for test_two_infinite_tasks_task_manager.
     fn test_two_infinite_tasks_task_manager_setup_fn1() {}
@@ -282,11 +332,11 @@ mod unit_tests {
     fn test_two_infinite_tasks_task_manager_loop_fn1() {
         TEST_TWO_INFINITE_TASK_TASK_MANAGER_COUNTER1.fetch_add(1, Ordering::Relaxed);
     }
-    /// Stop function for task for test_two_infinite_tasks_task_manager.
+    /// Stop function for a task for test_two_infinite_tasks_task_manager.
     fn test_two_infinite_tasks_task_manager_stop_condition_fn1() -> bool {
         false
     }
-    /// Counter for task for test_two_infinite_tasks_task_manager.
+    /// Counter for a task for test_two_infinite_tasks_task_manager.
     static TEST_TWO_INFINITE_TASK_TASK_MANAGER_COUNTER2: AtomicU32 = AtomicU32::new(1);
     /// Setup function for task for test_two_infinite_tasks_task_manager.
     fn test_two_infinite_tasks_task_manager_setup_fn2() {}
@@ -294,7 +344,7 @@ mod unit_tests {
     fn test_two_infinite_tasks_task_manager_loop_fn2() {
         TEST_TWO_INFINITE_TASK_TASK_MANAGER_COUNTER2.fetch_add(1, Ordering::Relaxed);
     }
-    /// Stop function for task for test_two_infinite_tasks_task_manager.
+    /// Stop function for a task for test_two_infinite_tasks_task_manager.
     fn test_two_infinite_tasks_task_manager_stop_condition_fn2() -> bool {
         false
     }
@@ -316,7 +366,7 @@ mod unit_tests {
         TaskManager::reset_task_manager();
     }
 
-    /// Counter for task for test_setup_task_manager.
+    /// Counter for a task for test_setup_task_manager.
     static TEST_SETUP_TASK_MANAGER_COUNTER: AtomicU32 = AtomicU32::new(1);
     /// Setup function for task for test_setup_task_manager.
     fn test_setup_task_manager_setup_fn() {
