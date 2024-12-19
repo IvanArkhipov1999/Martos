@@ -203,6 +203,8 @@ mod unit_tests {
             TaskManager::get_status(task_1),
             TaskManager::sleeping_status()
         );
+
+        assert_eq!(TaskManager::count_all_tasks(), 1);
     }
 
     fn test_wake_up_task_1_loop_fn() {
@@ -261,6 +263,61 @@ mod unit_tests {
         TaskManager::schedule();
 
         assert_eq!(TaskManager::get_status(task_1), TaskManager::ready_status());
+    }
+
+    fn test_terminate_task_1_loop_fn() {
+        TaskManager::terminate_task(1);
+    }
+
+    #[test]
+    #[sequential]
+    #[should_panic(expected = "Error: terminate_task: Task with this id is currently terminated.")]
+    fn test_terminate_terminated_task() {
+        TaskManager::reset_task_manager();
+        TaskManager::add_task(dummy_setup_fn, dummy_loop_fn, dummy_condition_true);
+
+        let task_1 = TaskManager::get_task_from_id(1);
+
+        assert_eq!(TaskManager::get_status(task_1), TaskManager::ready_status());
+
+        TaskManager::schedule();
+
+        assert_eq!(
+            TaskManager::get_status(task_1),
+            TaskManager::terminated_status()
+        );
+
+        TaskManager::add_task(
+            dummy_setup_fn,
+            test_terminate_task_1_loop_fn,
+            dummy_condition_true,
+        );
+
+        TaskManager::test_start_task_manager();
+    }
+
+    fn infinite_loop_fn() {
+        loop {}
+    }
+    #[test]
+    #[sequential]
+    fn test_terminate_non_terminated_task() {
+        TaskManager::reset_task_manager();
+        TaskManager::add_task(dummy_setup_fn, infinite_loop_fn, dummy_condition_true);
+
+        let task_1 = TaskManager::get_task_from_id(1);
+
+        assert_eq!(TaskManager::get_status(task_1), TaskManager::ready_status());
+
+        TaskManager::add_task(
+            dummy_setup_fn,
+            test_terminate_task_1_loop_fn,
+            dummy_condition_true,
+        );
+
+        TaskManager::test_start_task_manager();
+
+        assert_eq!(TaskManager::count_all_tasks(), 0);
     }
 
     thread_local! {
