@@ -21,7 +21,7 @@ pub enum TaskStatusType {
     Ready,
     /// Task status when loop function is running.
     Running,
-    /// Task status when it is sleeping.
+    /// Task status when it is sleeping. After waking up, a task again starts loop_fn.
     Sleeping,
     /// Task status when it terminated.
     /// It can be in both cases
@@ -158,7 +158,12 @@ impl CooperativeTaskManager {
     }
 
     pub fn get_id_from_position(priority: TaskPriorityType, position: usize) -> TaskIdType {
-        unsafe { TASK_MANAGER.tasks[priority][position].id }
+        unsafe {
+            TASK_MANAGER.tasks[priority]
+                .get(position)
+                .unwrap_or_else(|| panic!("Error: get_id_from_position: Position out of bounds."))
+                .id
+        }
     }
 
     pub fn get_id_from_task(task: &mut CooperativeTask) -> TaskIdType {
