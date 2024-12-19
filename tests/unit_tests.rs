@@ -103,9 +103,82 @@ mod unit_tests {
         assert_eq!(TaskManager::get_id_from_task(task), 1);
     }
 
-    fn test_put_to_sleep_task_from_task_loop_fn() {
+    fn test_put_to_sleep_loop_fn() {
         TaskManager::put_to_sleep(1);
     }
+
+    #[test]
+    #[sequential]
+    #[should_panic(expected = "Error: put_to_sleep: Task with this id is currently running.")]
+    fn test_put_to_sleep_running_task() {
+        TaskManager::reset_task_manager();
+        TaskManager::add_task(
+            dummy_setup_fn,
+            test_put_to_sleep_loop_fn,
+            dummy_condition_true,
+        );
+        TaskManager::test_start_task_manager();
+    }
+
+    #[test]
+    #[sequential]
+    #[should_panic(expected = "Error: put_to_sleep: Task with this id is currently sleeping.")]
+    fn test_put_to_sleep_sleeping_task() {
+        TaskManager::reset_task_manager();
+        TaskManager::add_task(dummy_setup_fn, dummy_loop_fn, dummy_condition_true);
+
+        let task_1 = TaskManager::get_task_from_id(1);
+
+        assert_eq!(TaskManager::get_status(task_1), TaskManager::ready_status());
+
+        TaskManager::add_task(
+            dummy_setup_fn,
+            test_put_to_sleep_loop_fn,
+            dummy_condition_true,
+        );
+        TaskManager::schedule();
+        assert_eq!(
+            TaskManager::get_status(task_1),
+            TaskManager::sleeping_status()
+        );
+
+        TaskManager::add_task(
+            dummy_setup_fn,
+            test_put_to_sleep_loop_fn,
+            dummy_condition_true,
+        );
+        TaskManager::test_start_task_manager();
+    }
+
+    #[test]
+    #[sequential]
+    #[should_panic(
+        expected = "Error: put_to_sleep: Task with this id is terminated and soon will be removed."
+    )]
+    fn test_put_to_sleep_terminated_task() {
+        TaskManager::reset_task_manager();
+        TaskManager::add_task(dummy_setup_fn, dummy_loop_fn, dummy_condition_true);
+
+        let task_1 = TaskManager::get_task_from_id(1);
+
+        assert_eq!(TaskManager::get_status(task_1), TaskManager::ready_status());
+
+        TaskManager::schedule();
+
+        assert_eq!(
+            TaskManager::get_status(task_1),
+            TaskManager::terminated_status()
+        );
+
+        TaskManager::add_task(
+            dummy_setup_fn,
+            test_put_to_sleep_loop_fn,
+            dummy_condition_true,
+        );
+
+        TaskManager::test_start_task_manager();
+    }
+
     #[test]
     #[sequential]
     fn test_put_to_sleep_task_from_task() {
@@ -115,7 +188,7 @@ mod unit_tests {
 
         TaskManager::add_task(
             dummy_setup_fn,
-            test_put_to_sleep_task_from_task_loop_fn,
+            test_put_to_sleep_loop_fn,
             dummy_condition_true,
         );
         assert_eq!(TaskManager::get_id_from_position(0, 1), 2);
