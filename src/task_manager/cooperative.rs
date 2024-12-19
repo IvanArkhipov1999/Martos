@@ -2,7 +2,7 @@ extern crate alloc;
 
 use crate::task_manager::{
     task::{Task, TaskLoopFunctionType, TaskSetupFunctionType, TaskStopConditionFunctionType},
-    TaskManagerTrait, TASK_MANAGER,
+    TaskManager, TaskManagerTrait, TASK_MANAGER,
 };
 use alloc::vec::Vec;
 
@@ -53,7 +53,7 @@ pub struct CooperativeTaskManager {
     pub(crate) tasks: [Vec<CooperativeTask>; NUM_PRIORITIES],
     /// ```id``` of a task that will be created the next. The First task has id 1.
     pub(crate) next_task_id: TaskIdType,
-    pub(crate) current_task_id: TaskIdType,
+    pub(crate) exec_task_id: TaskIdType,
 }
 
 /// Cooperative implementation of ```TaskManagerTrait```.
@@ -96,7 +96,7 @@ impl CooperativeTaskManager {
         CooperativeTaskManager {
             tasks,
             next_task_id: 0,
-            current_task_id: 0,
+            exec_task_id: 0,
         }
     }
 
@@ -116,6 +116,12 @@ impl CooperativeTaskManager {
             CooperativeTaskManager::create_task(setup_fn, loop_fn, stop_condition_fn, priority);
         (new_task.core.setup_fn)();
         CooperativeTaskManager::push_to_queue(new_task);
+
+        unsafe {
+            if TASK_MANAGER.exec_task_id == 0 {
+                TASK_MANAGER.exec_task_id = TASK_MANAGER.next_task_id;
+            }
+        }
     }
 
     fn create_task(
@@ -132,7 +138,7 @@ impl CooperativeTaskManager {
 
         // TODO: Handling of tasks' id overflow.
         unsafe {
-            TASK_MANAGER.next_task_id += 1;
+            TASK_MANAGER.next_task_id = TASK_MANAGER.next_task_id.wrapping_add(1);
             let task_id = TASK_MANAGER.next_task_id;
             CooperativeTask {
                 core: task,
@@ -153,7 +159,7 @@ impl CooperativeTaskManager {
                     }
                 }
             }
-            panic!("Error: get_task_from_id: Task with this id not found.");
+            panic!("Error: get_task_from_id: Task with id {} not found.", id);
         }
     }
 
@@ -202,10 +208,6 @@ impl CooperativeTaskManager {
     /// Task can terminate and delete another task by ```id``` even if it executes.
     pub fn terminate_task(id: TaskIdType) {
         let task = CooperativeTaskManager::get_task_from_id(id);
-        if task.status == TaskStatusType::Terminated {
-            panic!("Error: terminate_task: Task with this id is currently terminated.");
-        }
-        task.status = TaskStatusType::Terminated;
         CooperativeTaskManager::delete_task(task);
     }
 
@@ -220,28 +222,30 @@ impl CooperativeTaskManager {
     /// One task manager iteration.
     pub fn schedule() {
         if CooperativeTaskManager::has_tasks() {
-            let task = CooperativeTaskManager::get_next_task();
+            let task_id = unsafe { TASK_MANAGER.exec_task_id };
+            let task = CooperativeTaskManager::get_task_from_id(task_id);
             match task.status {
                 TaskStatusType::Ready => {
                     task.status = TaskStatusType::Running;
+                }
+                TaskStatusType::Running => {
                     (task.core.loop_fn)();
                     if (task.core.stop_condition_fn)() {
                         task.status = TaskStatusType::Terminated;
-                    } else {
-                        task.status = TaskStatusType::Ready;
-                    }
-                }
-                TaskStatusType::Running => {
-                    if (task.core.stop_condition_fn)() {
-                        task.status = TaskStatusType::Terminated;
-                    } else {
-                        task.status = TaskStatusType::Running;
                     }
                 }
                 TaskStatusType::Sleeping => {}
                 TaskStatusType::Terminated => {
-                    CooperativeTaskManager::delete_task(task);
+                    CooperativeTaskManager::terminate_task(task_id);
                 }
+            }
+            if task.status != TaskStatusType::Running {
+                unsafe {
+                    let Some(next_exec_id) = CooperativeTaskManager::get_next_task_id() else {
+                        return;
+                    };
+                    unsafe { TASK_MANAGER.exec_task_id = next_exec_id }
+                };
             }
         }
     }
@@ -258,6 +262,8 @@ impl CooperativeTaskManager {
             let vec = &mut TASK_MANAGER.tasks[task.priority];
             if let Some(pos) = vec.iter().position(|vec_task| vec_task.id == task.id) {
                 vec.remove(pos);
+            } else {
+                panic!("Error: delete_task: Task with this id not found in the task list.");
             }
         }
     }
@@ -273,16 +279,15 @@ impl CooperativeTaskManager {
         false
     }
 
-    fn get_next_task<'a>() -> &'a mut CooperativeTask {
+    fn get_next_task_id() -> Option<TaskIdType> {
         unsafe {
-            for vec in TASK_MANAGER.tasks.iter_mut() {
+            for vec in TASK_MANAGER.tasks.iter_mut().rev() {
                 if let Some(task) = vec.last_mut() {
-                    TASK_MANAGER.current_task_id = task.id;
-                    return task;
+                    return Some(task.id);
                 }
             }
         }
-        panic!("Error: get_next_task: No tasks currently, waiting for new tasks.");
+        None
     }
 
     /// Starts task manager work. Returns after 1000 steps only for testing task_manager_step.
@@ -293,6 +298,9 @@ impl CooperativeTaskManager {
     }
 
     pub fn count_tasks_with_priority(priority: TaskPriorityType) -> usize {
+        if priority >= NUM_PRIORITIES {
+            panic!("Error: count_tasks_with_priority: Task's priority is invalid. It must be between 0 and 11.");
+        }
         unsafe { TASK_MANAGER.tasks[priority].len() }
     }
 
@@ -310,6 +318,7 @@ impl CooperativeTaskManager {
                 vec.clear();
             }
             TASK_MANAGER.next_task_id = 0;
+            TASK_MANAGER.exec_task_id = 0;
         }
     }
 
