@@ -206,12 +206,10 @@ impl CooperativeTaskManager {
         CooperativeTaskManager::delete_task(task);
     }
 
-    pub fn get_curr_task_id() -> TaskIdType {
-        unsafe { TASK_MANAGER.current_task_id }
-    }
-
     pub fn terminate_curr_task() {
-        CooperativeTaskManager::terminate_task(CooperativeTaskManager::get_curr_task_id());
+        unsafe {
+            CooperativeTaskManager::terminate_task(TASK_MANAGER.current_task_id);
+        }
     }
 
     pub fn wake_up_task(id: TaskIdType) {
