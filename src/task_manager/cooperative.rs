@@ -209,12 +209,6 @@ impl CooperativeTaskManager {
         CooperativeTaskManager::delete_task(task);
     }
 
-    pub fn terminate_curr_task() {
-        unsafe {
-            CooperativeTaskManager::terminate_task(TASK_MANAGER.current_task_id);
-        }
-    }
-
     pub fn wake_up_task(id: TaskIdType) {
         let task = CooperativeTaskManager::get_task_from_id(id);
         if task.status != TaskStatusType::Sleeping {
