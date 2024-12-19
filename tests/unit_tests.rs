@@ -24,6 +24,7 @@ mod unit_tests {
     )]
     /// Test add a task with nonexistent priority
     fn test_add_task_invalid_priority() {
+        TaskManager::reset_task_manager();
         TaskManager::add_priority_task(dummy_setup_fn, dummy_loop_fn, dummy_condition_true, 100);
         TaskManager::test_start_task_manager();
     }
@@ -31,6 +32,7 @@ mod unit_tests {
     #[test]
     #[sequential]
     fn test_add_two_priority_tasks_and_check_vectors() {
+        TaskManager::reset_task_manager();
         TaskManager::add_priority_task(dummy_setup_fn, dummy_loop_fn, dummy_condition_true, 0);
         TaskManager::add_priority_task(dummy_setup_fn, dummy_loop_fn, dummy_condition_true, 1);
         TaskManager::add_priority_task(dummy_setup_fn, dummy_loop_fn, dummy_condition_true, 0);
@@ -38,67 +40,96 @@ mod unit_tests {
         assert_eq!(TaskManager::count_tasks_with_priority(0), 2);
         assert_eq!(TaskManager::count_tasks_with_priority(1), 1);
         assert_eq!(TaskManager::count_all_tasks(), 3);
-        TaskManager::reset_task_manager();
     }
 
     #[test]
     #[sequential]
     fn test_add_task_and_check_if_priority_zero() {
+        TaskManager::reset_task_manager();
         TaskManager::add_task(dummy_setup_fn, dummy_loop_fn, dummy_condition_true);
         assert_eq!(TaskManager::count_tasks_with_priority(0), 1);
         assert_eq!(TaskManager::count_all_tasks(), 1);
-        TaskManager::reset_task_manager();
     }
 
     #[test]
     #[sequential]
     fn test_get_task_by_id() {
+        TaskManager::reset_task_manager();
         TaskManager::add_priority_task(dummy_setup_fn, dummy_loop_fn, dummy_condition_true, 10);
         let id = TaskManager::get_id_from_position(10, 0);
 
         let found_task = TaskManager::get_task_from_id(id);
 
         assert_eq!(id, TaskManager::get_id_from_task(found_task));
-        TaskManager::reset_task_manager();
     }
 
     #[test]
     #[sequential]
     #[should_panic(expected = "Error: get_task_from_id: Task with this id not found.")]
-    fn test_find_task_by_invalid_id() {
+    fn test_get_task_by_invalid_id() {
+        TaskManager::reset_task_manager();
         TaskManager::add_priority_task(dummy_setup_fn, dummy_loop_fn, dummy_condition_true, 10);
         let found_task = TaskManager::get_task_from_id(2);
-        TaskManager::reset_task_manager();
     }
 
-    fn test_put_to_sleep_other_task_loop_fn() {
+    #[test]
+    #[sequential]
+    fn test_get_id_from_position() {
+        TaskManager::reset_task_manager();
+        // ID of a first added task is 1.
+        TaskManager::add_priority_task(dummy_setup_fn, dummy_loop_fn, dummy_condition_true, 10);
+
+        let task_id = TaskManager::get_id_from_position(10, 0);
+        assert_eq!(task_id, 1);
+    }
+
+    #[test]
+    #[sequential]
+    #[should_panic(expected = "Error: get_id_from_position: Position out of bounds.")]
+    fn test_get_id_from_invalid_position() {
+        TaskManager::reset_task_manager();
+        // ID of a first added task is 1.
+        TaskManager::add_priority_task(dummy_setup_fn, dummy_loop_fn, dummy_condition_true, 10);
+        let task_id = TaskManager::get_id_from_position(10, 1);
+    }
+
+    #[test]
+    #[sequential]
+    fn test_get_id_from_task() {
+        TaskManager::reset_task_manager();
+        TaskManager::add_task(dummy_setup_fn, dummy_loop_fn, dummy_condition_true);
+
+        let task = TaskManager::get_task_from_id(1);
+        assert_eq!(TaskManager::get_id_from_task(task), 1);
+    }
+
+    fn test_put_to_sleep_task_from_task_loop_fn() {
         TaskManager::put_to_sleep(1);
     }
     #[test]
     #[sequential]
     fn test_put_to_sleep_task_from_task() {
+        TaskManager::reset_task_manager();
         TaskManager::add_task(dummy_setup_fn, dummy_loop_fn, dummy_condition_true);
         assert_eq!(TaskManager::get_id_from_position(0, 0), 1);
 
         TaskManager::add_task(
             dummy_setup_fn,
-            test_put_to_sleep_other_task_loop_fn,
+            test_put_to_sleep_task_from_task_loop_fn,
             dummy_condition_true,
         );
         assert_eq!(TaskManager::get_id_from_position(0, 1), 2);
 
-        let task = TaskManager::get_task_from_id(1);
+        let task_1 = TaskManager::get_task_from_id(1);
 
-        assert_eq!(TaskManager::get_status(task), TaskManager::ready_status());
+        assert_eq!(TaskManager::get_status(task_1), TaskManager::ready_status());
 
         TaskManager::test_start_task_manager();
 
         assert_eq!(
-            TaskManager::get_status(task),
+            TaskManager::get_status(task_1),
             TaskManager::sleeping_status()
         );
-
-        TaskManager::reset_task_manager();
     }
 
     thread_local! {
@@ -107,6 +138,7 @@ mod unit_tests {
     #[test]
     #[sequential]
     fn test_get_next_task_same_priority() {
+        TaskManager::reset_task_manager();
         fn first_task_loop_fn() {
             EXEC_ORDER.with(|order| {
                 order.borrow_mut().push("first");
@@ -133,16 +165,15 @@ mod unit_tests {
         EXEC_ORDER.with(|order| {
             assert_eq!(*order.borrow(), ["third", "second", "first"]);
         });
-        TaskManager::reset_task_manager();
     }
 
     #[test]
     #[sequential]
     /// Tests if task manager without tasks works during some time.
     fn test_empty_task_manager() {
+        TaskManager::reset_task_manager();
         TaskManager::test_start_task_manager();
         assert!(TaskManager::has_no_tasks());
-        TaskManager::reset_task_manager();
     }
 
     /// Counter for a task for test_one_finite_task_task_manager.
@@ -167,6 +198,7 @@ mod unit_tests {
     #[sequential]
     /// Tests if task manager with one finite task works correctly during some time without panic.
     fn test_one_finite_task_task_manager() {
+        TaskManager::reset_task_manager();
         TaskManager::add_task(
             test_one_finite_task_task_manager_setup_fn,
             test_one_finite_task_task_manager_loop_fn,
@@ -178,7 +210,6 @@ mod unit_tests {
             unsafe { TEST_ONE_FINITE_TASK_TASK_MANAGER_COUNTER.as_ptr().read() },
             50
         );
-        TaskManager::reset_task_manager();
     }
 
     /// Counter for a task for test_one_infinite_task_task_manager.
@@ -242,6 +273,7 @@ mod unit_tests {
     #[sequential]
     /// Tests if task manager with two finite tasks works correctly during some time without panic.
     fn test_two_finite_tasks_task_manager() {
+        TaskManager::reset_task_manager();
         TaskManager::add_task(
             test_two_finite_tasks_task_manager_setup_fn1,
             test_two_finite_tasks_task_manager_loop_fn1,
@@ -262,7 +294,6 @@ mod unit_tests {
             unsafe { TEST_TWO_FINITE_TASK_TASK_MANAGER_COUNTER2.as_ptr().read() },
             25
         );
-        TaskManager::reset_task_manager();
     }
 
     /// Counter for a task for test_two_different_tasks_task_manager.
@@ -301,6 +332,7 @@ mod unit_tests {
     #[sequential]
     /// Tests if task manager with two different (finite and infinite) tasks works correctly during some time without panic.
     fn test_two_different_tasks_task_manager() {
+        TaskManager::reset_task_manager();
         TaskManager::add_task(
             test_two_different_tasks_task_manager_setup_fn1,
             test_two_different_tasks_task_manager_loop_fn1,
@@ -321,7 +353,6 @@ mod unit_tests {
             },
             50
         );
-        TaskManager::reset_task_manager();
     }
 
     /// Counter for a task for test_two_infinite_tasks_task_manager.
@@ -352,6 +383,7 @@ mod unit_tests {
     #[sequential]
     /// Tests if task manager with two infinite tasks works correctly during some without panic.
     fn test_two_infinite_tasks_task_manager() {
+        TaskManager::reset_task_manager();
         TaskManager::add_task(
             test_two_infinite_tasks_task_manager_setup_fn1,
             test_two_infinite_tasks_task_manager_loop_fn1,
@@ -363,7 +395,6 @@ mod unit_tests {
             test_two_infinite_tasks_task_manager_stop_condition_fn2,
         );
         TaskManager::test_start_task_manager();
-        TaskManager::reset_task_manager();
     }
 
     /// Counter for a task for test_setup_task_manager.
@@ -382,6 +413,7 @@ mod unit_tests {
     #[sequential]
     /// Tests if task manager works correctly with setup function during some time without panic.
     fn test_setup_task_manager() {
+        TaskManager::reset_task_manager();
         TaskManager::add_task(
             test_setup_task_manager_setup_fn,
             test_setup_task_manager_loop_fn,
@@ -393,7 +425,6 @@ mod unit_tests {
             unsafe { TEST_SETUP_TASK_MANAGER_COUNTER.as_ptr().read() },
             42
         );
-        TaskManager::reset_task_manager();
     }
 
     #[test]
