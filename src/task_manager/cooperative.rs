@@ -191,6 +191,14 @@ impl CooperativeTaskManager {
         }
     }
 
+    pub fn wake_up(id: TaskIdType) {
+        let task = CooperativeTaskManager::get_task_from_id(id);
+        if task.status != TaskStatusType::Sleeping {
+            panic!("Error: wake_up_task: Task with this id is currently not sleeping.");
+        }
+        task.status = TaskStatusType::Ready;
+    }
+
     /// Task can terminate and delete another task by ```id``` even if it executes.
     pub fn terminate_task(id: TaskIdType) {
         let task = CooperativeTaskManager::get_task_from_id(id);
