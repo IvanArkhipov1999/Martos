@@ -202,6 +202,9 @@ impl CooperativeTaskManager {
     /// Task can terminate and delete another task by ```id``` even if it executes.
     pub fn terminate_task(id: TaskIdType) {
         let task = CooperativeTaskManager::get_task_from_id(id);
+        if task.status == TaskStatusType::Terminated {
+            panic!("Error: terminate_task: Task with this id is currently terminated.");
+        }
         task.status = TaskStatusType::Terminated;
         CooperativeTaskManager::delete_task(task);
     }
@@ -234,7 +237,13 @@ impl CooperativeTaskManager {
                         task.status = TaskStatusType::Ready;
                     }
                 }
-                TaskStatusType::Running => {}
+                TaskStatusType::Running => {
+                    if (task.core.stop_condition_fn)() {
+                        task.status = TaskStatusType::Terminated;
+                    } else {
+                        task.status = TaskStatusType::Running;
+                    }
+                }
                 TaskStatusType::Sleeping => {}
                 TaskStatusType::Terminated => {
                     CooperativeTaskManager::delete_task(task);
