@@ -215,18 +215,16 @@ impl CooperativeTaskManager {
     /// Get a task by ```id``` and return it.
     pub fn get_task_by_id<'a>(id: TaskIdType) -> Option<&'a mut CooperativeTask> {
         unsafe {
-            for vec_opt in TASK_MANAGER.tasks.iter_mut() {
-                if let Some(vec) = vec_opt {
-                    for task in vec.iter_mut() {
-                        if task.id == id {
-                            return Some(task);
-                        }
+            for vec in TASK_MANAGER.tasks.iter_mut().flatten() {
+                for task in vec.iter_mut() {
+                    if task.id == id {
+                        return Some(task);
                     }
                 }
             }
-            None
-            // panic!("Error: get_task_by_id: Task with id {} not found.", id);
         }
+        None
+        // panic!("Error: get_task_by_id: Task with id {} not found.", id);
     }
 
     /// Get task ```id``` by its position in ```tasks``` vector.
@@ -272,11 +270,9 @@ impl CooperativeTaskManager {
     /// Get id of task to be executed next.
     fn get_next_task_id() -> Option<TaskIdType> {
         unsafe {
-            for vec_opt in TASK_MANAGER.tasks.iter_mut().rev() {
-                if let Some(vec) = vec_opt {
-                    for task in vec {
-                        return Some(task.id);
-                    }
+            for vec in TASK_MANAGER.tasks.iter_mut().rev().flatten() {
+                if let Some(task) = vec.iter().next() {
+                    return Some(task.id);
                 }
             }
         }
@@ -348,7 +344,7 @@ impl CooperativeTaskManager {
     pub fn is_empty() -> bool {
         unsafe {
             for vec_opt in TASK_MANAGER.tasks.iter() {
-                if let Some(_) = vec_opt {
+                if vec_opt.is_some() {
                     return false;
                 }
             }
