@@ -14,6 +14,8 @@ LD = $(TOOLCHAIN)ld
 OC = $(TOOLCHAIN)objcopy
 OS = $(TOOLCHAIN)size
 
+# Linker script location.
+LDSCRIPT       = ./ld/esp32.ld
 # Set C/LD/AS flags.
 CFLAGS += $(INC) -Wall -Werror -std=gnu11 -nostdlib $(CFLAGS_PLATFORM) $(COPT)
 # (Allow access to the same memory location w/ different data widths.)
@@ -22,9 +24,9 @@ CFLAGS += -fdata-sections -ffunction-sections
 CFLAGS += -Os -g
 # Link with martos
 LDFLAGS += -L../../../c-library/xtensa-esp32/target/xtensa-esp32-none-elf/release/ -lxtensa_esp32_static_lib
-LDFLAGS += -nostdlib -Wl,-Map=$@.map -Wl,--cref -Wl,--gc-sections
+LDFLAGS += -nostdlib -T$(LDSCRIPT) -Wl,-Map=$@.map -Wl,--cref -Wl,--gc-sections
 LDFLAGS += $(LDFLAGS_PLATFORM)
-LDFLAGS += -lm -lc -lgcc -Wl,--allow-multiple-definition
+LDFLAGS += -lm -lgcc -Wl,--allow-multiple-definition -z noexecstack
 ASFLAGS += -c -O0 -Wall -fmessage-length=0
 ASFLAGS += $(ASFLAGS_PLATFORM)
 
