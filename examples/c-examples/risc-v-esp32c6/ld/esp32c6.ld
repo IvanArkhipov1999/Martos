@@ -45,7 +45,7 @@ MEMORY
  * 2. Update the value in this assert.
  * 3. Update SRAM_DRAM_END in components/esp_system/ld/esp32c6/memory.ld.in to the same value.
  */
-ASSERT(bootloader_iram_loader_seg_start == 0x408663A0, "bootloader_iram_loader_seg_start inconsistent with SRAM_DRAM_END");
+ASSERT(bootloader_iram_loader_seg_start == 0x408662D8, "bootloader_iram_loader_seg_start inconsistent with SRAM_DRAM_END");
 
 /* Default entry point: */
 ENTRY(call_start_cpu0);
