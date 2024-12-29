@@ -212,10 +212,10 @@ mod task_manager_unit_tests {
 
     /// Loop functions for task for test_wake_up_sleeping_task.
     fn test_wake_up_sleeping_task_loop_fn() {
-        TaskManager::wake_up_task(2);
+        TaskManager::wake_up_task(3);
     }
     fn test_put_to_sleep_task_loop_fn() {
-        TaskManager::put_to_sleep(2);
+        TaskManager::put_to_sleep(3);
     }
     #[test]
     #[sequential]
@@ -226,31 +226,39 @@ mod task_manager_unit_tests {
             test_put_to_sleep_task_loop_fn,
             dummy_condition_true,
         );
-        TaskManager::add_task(dummy_setup_fn, dummy_loop_fn, dummy_condition_true);
-        let task_2 =
-            TaskManager::get_task_by_id(2).unwrap_or_else(|| panic!("Task not found for id 2"));
-
-        assert_eq!(TaskManager::get_status(task_2), TaskManager::ready_status());
-
-        TaskManager::schedule();
-        TaskManager::schedule();
-
-        assert_eq!(
-            TaskManager::get_status(task_2),
-            TaskManager::sleeping_status()
-        );
-
         TaskManager::add_task(
             dummy_setup_fn,
             test_wake_up_sleeping_task_loop_fn,
             dummy_condition_true,
         );
-        TaskManager::schedule();
-        TaskManager::schedule();
+        TaskManager::add_task(dummy_setup_fn, dummy_loop_fn, dummy_condition_true);
+
+        let mut task_3 =
+            TaskManager::get_task_by_id(3).unwrap_or_else(|| panic!("Task not found for id 3"));
+
+        assert_eq!(TaskManager::get_status(task_3), TaskManager::ready_status());
+
         TaskManager::schedule();
         TaskManager::schedule();
 
-        assert_eq!(TaskManager::get_status(task_2), TaskManager::ready_status());
+        task_3 =
+            TaskManager::get_task_by_id(3).unwrap_or_else(|| panic!("Task not found for id 3"));
+
+        assert_eq!(
+            TaskManager::get_status(task_3),
+            TaskManager::sleeping_status()
+        );
+
+        TaskManager::schedule();
+        TaskManager::schedule();
+        TaskManager::schedule();
+        task_3 =
+            TaskManager::get_task_by_id(3).unwrap_or_else(|| panic!("Task not found for id 3"));
+
+        assert_eq!(TaskManager::get_status(task_3), TaskManager::ready_status());
+
+        TaskManager::test_start_task_manager();
+        assert_eq!(TaskManager::count_all_tasks(), 0);
     }
 
     /// Loop functions for task for test_wake_up_non_sleeping_task_loop_fn.
