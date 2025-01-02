@@ -1,13 +1,9 @@
 TOOLCHAIN = riscv32-esp-elf-
 
 CFLAGS_PLATFORM = -march=rv32imac -mabi=ilp32
-ASFLAGS_PLATFORM = $(CFLAGS_PLATFORM)
 LDFLAGS_PLATFORM = $(CFLAGS_PLATFORM)
 
 CC = $(TOOLCHAIN)gcc
-LD = $(TOOLCHAIN)ld
-OC = $(TOOLCHAIN)objcopy
-OS = $(TOOLCHAIN)size
 
 LDSCRIPT       = ./ld/esp32c6.ld
 
@@ -19,9 +15,7 @@ CFLAGS += -Os -g
 LDFLAGS += -L../../../c-library/risc-v-esp32-c6/target/riscv32imac-unknown-none-elf/release/ -lrisc_v_esp32c6_static_lib
 LDFLAGS += -nostdlib -T $(LDSCRIPT) -Wl,-Map=$@.map -Wl,--cref -Wl,--gc-sections
 LDFLAGS += $(LDFLAGS_PLATFORM)
-LDFLAGS += -lm -lgcc
-ASFLAGS += -c -O0 -Wall -fmessage-length=0
-ASFLAGS += $(ASFLAGS_PLATFORM)
+LDFLAGS += -lgcc
 
 C_SRC += ./src/main.c
 

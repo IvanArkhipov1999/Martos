@@ -131,7 +131,6 @@ SECTIONS
   } > iram_seg
 
   .riscv.attributes 0: { *(.riscv.attributes) }
-
 }
 
 INCLUDE "ld/esp32c6.rom.ld"
