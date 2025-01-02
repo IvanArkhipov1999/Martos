@@ -22,7 +22,7 @@
 /* These lengths can be adjusted, if necessary: */
 bootloader_usable_dram_end = 0x4087c610;
 bootloader_stack_overhead = 0x2000; /* For safety margin between bootloader data section and startup stacks */
-bootloader_dram_seg_len = 0xD270;
+bootloader_dram_seg_len = 0x10C40;
 bootloader_iram_loader_seg_len = 0x7000;
 bootloader_iram_seg_len = 0x4000;
 
@@ -36,7 +36,7 @@ MEMORY
 {
   iram_seg (RWX) :                  org = bootloader_iram_seg_start, len = bootloader_iram_seg_len
   iram_loader_seg (RWX) :           org = bootloader_iram_loader_seg_start, len = bootloader_iram_loader_seg_len
-  dram_seg (RW) :                   org = bootloader_dram_seg_start, len = bootloader_dram_seg_len + 0x38AC
+  dram_seg (RW) :                   org = bootloader_dram_seg_start, len = bootloader_dram_seg_len
 }
 
 /* The app may use RAM for static allocations up to the start of iram_loader_seg.
@@ -45,7 +45,7 @@ MEMORY
  * 2. Update the value in this assert.
  * 3. Update SRAM_DRAM_END in components/esp_system/ld/esp32c6/memory.ld.in to the same value.
  */
-ASSERT(bootloader_iram_loader_seg_start == 0x408663A0, "bootloader_iram_loader_seg_start inconsistent with SRAM_DRAM_END");
+ASSERT(bootloader_iram_loader_seg_start == 0x408629d0, "bootloader_iram_loader_seg_start inconsistent with SRAM_DRAM_END");
 
 /* Default entry point: */
 ENTRY(call_start_cpu0);
