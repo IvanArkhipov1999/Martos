@@ -255,7 +255,7 @@ jobs:
           path: c-library/risc-v-esp32-c6/target/riscv32imac-unknown-none-elf/release
       - name: Build
         run: |
-          sed -i 's/0x4086E610/0x408663A0/' "$IDF_PATH/components/esp_system/ld/esp32c6/memory.ld.in" &&
+          sed -i 's/0x4086E610/0x408629D0/' $IDF_PATH/components/esp_system/ld/esp32c6/memory.ld.in &&
           cd ./examples/c-examples/risc-v-esp32c6 && . /root/esp/esp-idf/export.sh && make && esptool.py --chip esp32c6 elf2image --flash_mode="dio" --flash_freq "40m" --flash_size "4MB" -o main.bin main.elf
 
 
