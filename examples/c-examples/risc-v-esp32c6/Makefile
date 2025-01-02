@@ -19,7 +19,7 @@ CFLAGS += -Os -g
 LDFLAGS += -L../../../c-library/risc-v-esp32-c6/target/riscv32imac-unknown-none-elf/release/ -lrisc_v_esp32c6_static_lib
 LDFLAGS += -nostdlib -T$(LDSCRIPT) -Wl,-Map=$@.map -Wl,--cref -Wl,--gc-sections
 LDFLAGS += $(LDFLAGS_PLATFORM)
-LDFLAGS += -lm -lc -lgcc -Wl,--allow-multiple-definition
+LDFLAGS += -lm -lgcc
 ASFLAGS += -c -O0 -Wall -fmessage-length=0
 ASFLAGS += $(ASFLAGS_PLATFORM)
 
