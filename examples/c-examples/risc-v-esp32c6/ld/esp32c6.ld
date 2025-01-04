@@ -37,6 +37,7 @@ MEMORY
   iram_seg (RWX) :                  org = bootloader_iram_seg_start, len = bootloader_iram_seg_len
   iram_loader_seg (RWX) :           org = bootloader_iram_loader_seg_start, len = bootloader_iram_loader_seg_len
   dram_seg (RW) :                   org = bootloader_dram_seg_start, len = bootloader_dram_seg_len
+  lp_ram_seg (RW)  :                org = 0x50000000, len = 0x4000
 }
 
 /* The app may use RAM for static allocations up to the start of iram_loader_seg.
@@ -52,6 +53,72 @@ ENTRY(call_start_cpu0);
 
 SECTIONS
 {
+  .rtc.text :
+  {
+    . = ALIGN(4);
+    _rtc_fast_start = ABSOLUTE(.);
+    _rtc_text_start = ABSOLUTE(.);
+    *(.rtc.entry.text)
+
+    *rtc_wake_stub*.*(.literal .text .literal.* .text.*)
+    *(.rtc_text_end_test)
+
+    . = ALIGN(4);
+
+    _rtc_text_end = ABSOLUTE(.);
+  } > lp_ram_seg
+
+  .rtc.force_fast :
+  {
+    . = ALIGN(4);
+    _rtc_force_fast_start = ABSOLUTE(.);
+
+    mapping[rtc_force_fast]
+
+    *(.rtc.force_fast .rtc.force_fast.*)
+    . = ALIGN(4) ;
+    _rtc_force_fast_end = ABSOLUTE(.);
+  } > lp_ram_seg
+
+  .rtc.data :
+  {
+    _rtc_data_start = ABSOLUTE(.);
+
+    mapping[rtc_data]
+
+    *rtc_wake_stub*.*(.data .rodata .data.* .rodata.* .srodata.*)
+    _rtc_data_end = ABSOLUTE(.);
+  } > lp_ram_seg
+
+  .rtc.bss (NOLOAD) :
+  {
+    _rtc_bss_start = ABSOLUTE(.);
+    *rtc_wake_stub*.*(.bss .bss.* .sbss .sbss.*)
+    *rtc_wake_stub*.*(COMMON)
+
+    mapping[rtc_bss]
+
+    _rtc_bss_end = ABSOLUTE(.);
+  } > lp_ram_seg
+
+  .rtc_noinit (NOLOAD):
+  {
+    . = ALIGN(4);
+    _rtc_noinit_start = ABSOLUTE(.);
+    *(.rtc_noinit .rtc_noinit.*)
+    . = ALIGN(4) ;
+    _rtc_noinit_end = ABSOLUTE(.);
+  } > lp_ram_seg
+
+  .rtc.force_slow :
+  {
+    . = ALIGN(4);
+    _rtc_force_slow_start = ABSOLUTE(.);
+    *(.rtc.force_slow .rtc.force_slow.*)
+    . = ALIGN(4) ;
+    _rtc_force_slow_end = ABSOLUTE(.);
+  } > lp_ram_seg
+
   .iram.text :
   {
     . = ALIGN (16);
@@ -65,6 +132,7 @@ SECTIONS
   .dram0.bss (NOLOAD) :
   {
     . = ALIGN (8);
+    _bss_start = ABSOLUTE(.);
     _dram_start = ABSOLUTE(.);
     *(.dynsbss)
     *(.sbss)
@@ -80,6 +148,7 @@ SECTIONS
     *(.gnu.linkonce.b.*)
     *(COMMON)
     . = ALIGN (8);
+    _bss_end = ABSOLUTE(.);
   } > dram_seg
 
   .dram0.data :
