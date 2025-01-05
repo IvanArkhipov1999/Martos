@@ -53,6 +53,18 @@ ENTRY(call_start_cpu0);
 
 SECTIONS
 {
+    .iram_loader.text :
+  {
+    . = ALIGN (16);
+    _loader_text_start = ABSOLUTE(.);
+    *(.stub .gnu.warning .gnu.linkonce.literal.* .gnu.linkonce.t.*.literal .gnu.linkonce.t.*)
+    *(.iram1 .iram1.*)
+    *(.fini.literal)
+    *(.fini)
+    *(.gnu.version)
+    _loader_text_end = ABSOLUTE(.);
+  } > iram_loader_seg
+
   .rtc.text :
   {
     . = ALIGN(4);
