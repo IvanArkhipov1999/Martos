@@ -26,7 +26,7 @@ CFLAGS += -Os -g
 LDFLAGS += -L../../../c-library/xtensa-esp32/target/xtensa-esp32-none-elf/release/ -lxtensa_esp32_static_lib
 LDFLAGS += -nostdlib -T$(LDSCRIPT) -Wl,-Map=$@.map -Wl,--cref -Wl,--gc-sections
 LDFLAGS += $(LDFLAGS_PLATFORM)
-LDFLAGS += -lm -lgcc -Wl,--allow-multiple-definition -z noexecstack
+LDFLAGS += -lm -lc -lgcc -Wl,--allow-multiple-definition -z noexecstack
 ASFLAGS += -c -O0 -Wall -fmessage-length=0
 ASFLAGS += $(ASFLAGS_PLATFORM)
 
