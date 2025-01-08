@@ -25,11 +25,11 @@ bool stop_condition_fn() {
 }
 
 int main( void ) {
-    print("Start");
+    printf("Start");
     init_system();
     add_task(setup_fn, loop_fn, stop_condition_fn);
     start_task_manager();
-    print("Success");
+    printf("Success");
 
     // (Should never be reached)
     return 0;
