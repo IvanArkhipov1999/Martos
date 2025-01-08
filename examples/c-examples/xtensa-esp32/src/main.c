@@ -5,6 +5,7 @@ extern unsigned int _sbss, _ebss, _sidata, _sdata, _edata;
 extern void add_task(void (*setup_fn)(), void (*loop_fn)(), bool (*stop_condition_fn)());
 extern void start_task_manager();
 extern void init_system();
+extern void print_function();
 
 int counter = 0;
 
@@ -24,9 +25,11 @@ bool stop_condition_fn() {
 }
 
 int main( void ) {
+    print_function();
     init_system();
     add_task(setup_fn, loop_fn, stop_condition_fn);
     start_task_manager();
+    print_function();
 
     // (Should never be reached)
     return 0;
