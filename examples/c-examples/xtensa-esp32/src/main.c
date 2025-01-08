@@ -1,5 +1,6 @@
 #include <string.h>
 #include <stdbool.h>
+#include <stdio.h>
 
 extern unsigned int _sbss, _ebss, _sidata, _sdata, _edata;
 extern void add_task(void (*setup_fn)(), void (*loop_fn)(), bool (*stop_condition_fn)());
@@ -24,9 +25,11 @@ bool stop_condition_fn() {
 }
 
 int main( void ) {
+    print("Start");
     init_system();
     add_task(setup_fn, loop_fn, stop_condition_fn);
     start_task_manager();
+    print("Success");
 
     // (Should never be reached)
     return 0;
