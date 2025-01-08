@@ -7,3 +7,7 @@ use martos::c_api::*;
 fn panic(_info: &core::panic::PanicInfo) -> ! {
     loop {}
 }
+
+fn print_function(){
+    println!("Print");
+}
