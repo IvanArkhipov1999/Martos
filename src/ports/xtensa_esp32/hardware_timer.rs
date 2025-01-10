@@ -1,7 +1,7 @@
 use core::sync::atomic::{AtomicBool, Ordering};
 use core::time::Duration;
 use esp_hal::timer::timg::{Timer, Timer0, TimerGroup};
-use esp_hal::{peripherals::*, prelude::*, gpio::*};
+use esp_hal::{gpio::*, peripherals::*, prelude::*};
 
 // TODO: initialize peripherals in separate mod
 pub static mut TIMER00: Option<Timer<Timer0<TIMG0>, esp_hal::Blocking>> = None;

@@ -1,9 +1,9 @@
 use core::time::Duration;
+#[cfg(target_arch = "xtensa")]
+use esp_hal::{gpio::*, peripherals::*};
 #[cfg(any(target_arch = "riscv32", target_arch = "xtensa"))]
 #[cfg(feature = "network")]
 use esp_wifi::esp_now::EspNow;
-#[cfg(target_arch = "xtensa")]
-use esp_hal::{peripherals::*, gpio::*};
 
 /// PortTrait contains all the platform specific functions.
 pub trait PortTrait {

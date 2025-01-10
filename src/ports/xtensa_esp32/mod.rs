@@ -6,10 +6,10 @@ pub mod network;
 mod preempt;
 
 use crate::ports::PortTrait;
-#[cfg(feature = "network")]
-use esp_wifi::esp_now::EspNow;
 use esp_hal::gpio::Io;
 use esp_hal::peripherals::UART2;
+#[cfg(feature = "network")]
+use esp_wifi::esp_now::EspNow;
 
 // TODO: make it port just for esp32, not only for XtensaEsp32
 /// PortTrait implementation for XtensaEsp32 platform
