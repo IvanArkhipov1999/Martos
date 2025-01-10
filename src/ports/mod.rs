@@ -2,6 +2,8 @@ use core::time::Duration;
 #[cfg(any(target_arch = "riscv32", target_arch = "xtensa"))]
 #[cfg(feature = "network")]
 use esp_wifi::esp_now::EspNow;
+#[cfg(target_arch = "xtensa")]
+use esp_hal::{peripherals::*, gpio::*};
 
 /// PortTrait contains all the platform specific functions.
 pub trait PortTrait {
@@ -29,6 +31,12 @@ pub trait PortTrait {
     #[cfg(feature = "network")]
     /// Function for initializing network settings.
     fn init_network();
+    #[cfg(target_arch = "xtensa")]
+    /// Esp32 uart2.
+    fn get_uart2() -> UART2;
+    #[cfg(target_arch = "xtensa")]
+    /// Esp32 io.
+    fn get_io() -> Io;
     #[cfg(any(target_arch = "riscv32", target_arch = "xtensa"))]
     #[cfg(feature = "network")]
     /// Function for getting esp-now object for network.
