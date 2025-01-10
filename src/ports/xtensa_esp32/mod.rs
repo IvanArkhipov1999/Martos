@@ -55,10 +55,12 @@ impl PortTrait for XtensaEsp32 {
         memory_manager::init_heap();
     }
 
+    #[cfg(target_arch = "xtensa")]
     fn get_uart2() -> UART2 {
         hardware_timer::get_uart2()
     }
 
+    #[cfg(target_arch = "xtensa")]
     fn get_io() -> Io {
         hardware_timer::get_io()
     }
