@@ -83,7 +83,6 @@ mod context_switch {
         thread.context.pc = Thread::run_task as usize;
         thread.context.ra = 0;
 
-
         thread.context.a5 = thread.task.setup_fn as usize;
         thread.context.a6 = thread.task.loop_fn as usize;
         thread.context.a7 = thread.task.stop_condition_fn as usize;
