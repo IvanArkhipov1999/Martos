@@ -80,12 +80,12 @@ mod context_switch {
 
     pub fn setup_stack(thread: &mut crate::task_manager::preemptive::Thread) {
         thread.context.PC = Thread::run_task as u32;
-        thread.context.RA = 0; // return address
+        thread.context.RA = 0;
 
-        // thread.context.A6 = (thread as *mut Thread) as u32; // A2 after `entry` instruction
-        thread.context.A5 = thread.task.setup_fn as u32; // A2 after `entry` instruction
-        thread.context.A6 = thread.task.loop_fn as u32; // A3
-        thread.context.A7 = thread.task.stop_condition_fn as u32; // A4
+        // thread.context.A6 = (thread as *mut Thread) as u32;
+        thread.context.A5 = thread.task.setup_fn as u32;
+        thread.context.A6 = thread.task.loop_fn as u32;
+        thread.context.A7 = thread.task.stop_condition_fn as u32;
 
         let stack_ptr = thread.stack as usize + crate::task_manager::preemptive::THREAD_STACK_SIZE;
         thread.context.SP = stack_ptr as u32;
