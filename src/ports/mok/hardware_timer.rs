@@ -1,8 +1,5 @@
 use core::time::Duration;
 
-/// Mok hardware timer setup.
-pub fn setup_hardware_timer() {}
-
 /// Mok start harware timer.
 pub fn start_hardware_timer() {}
 
