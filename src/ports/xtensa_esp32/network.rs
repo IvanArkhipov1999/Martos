@@ -1,4 +1,4 @@
-use crate::ports::xtensa_esp32::hardware_timer::{
+use crate::ports::xtensa_esp32::peripherals::{
     PERIFERALS_RADIO_CLK, PERIFERALS_RNG, PERIFERALS_WIFI, TIMER10,
 };
 use esp_hal::rng::Rng;

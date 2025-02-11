@@ -1,5 +1,6 @@
 pub mod hardware_timer;
 pub mod memory_manager;
+pub mod peripherals;
 #[cfg(feature = "network")]
 pub mod network;
 #[cfg(feature = "preemptive")]
@@ -13,8 +14,8 @@ use esp_wifi::esp_now::EspNow;
 /// PortTrait implementation for XtensaEsp32 platform
 pub struct XtensaEsp32;
 impl PortTrait for XtensaEsp32 {
-    fn setup_hardware_timer() {
-        hardware_timer::setup_hardware_timer();
+    fn init_peripherals() {
+        peripherals::init_peripherals();
     }
 
     fn valid_timer_index(_timer_index: u8) -> bool {
