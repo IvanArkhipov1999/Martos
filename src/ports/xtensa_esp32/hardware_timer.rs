@@ -1,5 +1,5 @@
 use crate::ports::xtensa_esp32::peripherals::{
-    PERIFERALS_RADIO_CLK, PERIFERALS_RNG, PERIFERALS_WIFI, TIMER00, TIMER10, init_peripherals
+    init_peripherals, PERIFERALS_RADIO_CLK, PERIFERALS_RNG, PERIFERALS_WIFI, TIMER00, TIMER10
 };
 use core::sync::atomic::{AtomicBool, Ordering};
 use core::time::Duration;
