@@ -7,7 +7,7 @@ use esp_hal::timer::timg::{Timer, Timer0, TimerGroup};
 use esp_hal::{peripherals::*, prelude::*};
 
 static TIMER_BUSY: AtomicBool = AtomicBool::new(false);
-fn setup_hardware_timer() {
+pub fn setup_hardware_timer() {
     init_peripherals();
 }
 

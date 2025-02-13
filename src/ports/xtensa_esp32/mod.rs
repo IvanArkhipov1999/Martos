@@ -9,14 +9,13 @@ mod preempt;
 use crate::ports::PortTrait;
 #[cfg(feature = "network")]
 use esp_wifi::esp_now::EspNow;
-use crate::ports::mips64::hardware_timer;
 
 // TODO: make it port just for esp32, not only for XtensaEsp32
 /// PortTrait implementation for XtensaEsp32 platform
 pub struct XtensaEsp32;
 impl PortTrait for XtensaEsp32 {
     fn setup_hardware_timer() {
-        hardware_timer::init_peripherals();
+        hardware_timer::setup_hardware_timer()
     }
 
     fn valid_timer_index(_timer_index: u8) -> bool {
