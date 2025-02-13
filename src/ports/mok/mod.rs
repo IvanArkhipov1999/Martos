@@ -10,7 +10,11 @@ use crate::ports::PortTrait;
 pub struct Mok;
 impl PortTrait for Mok {
     fn init_peripherals() {
-        peripherals::init_peripherals()
+        peripherals::init_peripherals();
+    }
+
+    fn setup_hardware_timer() {
+        hardware_timer::setup_hardware_timer();
     }
 
     fn init_heap() {

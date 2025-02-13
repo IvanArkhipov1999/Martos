@@ -1,9 +1,12 @@
 use core::time::Duration;
 
+/// Mok hardware timer setup.
+pub fn setup_hardware_timer() {}
+
 /// Mok start harware timer.
 pub fn start_hardware_timer() {}
 
-/// Mok change operating mode of hardware timer.
+/// Mok change operating mode of hardware timer.z
 pub fn set_reload_mode(_auto_reload: bool) {}
 
 /// Mok change the period of hardware timer.
