@@ -5,8 +5,6 @@ use esp_wifi::esp_now::EspNow;
 
 /// PortTrait contains all the platform specific functions.
 pub trait PortTrait {
-    /// Function is called to init peripherals.
-    fn init_peripherals();
     /// Function is called when timer is created. Can be used to set configuration.
     fn setup_hardware_timer();
     /// Function is used to check the correctness of index.

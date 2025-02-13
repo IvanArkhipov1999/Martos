@@ -2,17 +2,12 @@ pub mod hardware_timer;
 pub mod memory_manager;
 #[cfg(feature = "network")]
 pub mod network;
-pub mod peripherals;
 
 use crate::ports::PortTrait;
 
 /// PortTrait implementation for Mok platform
 pub struct Mok;
 impl PortTrait for Mok {
-    fn init_peripherals() {
-        peripherals::init_peripherals();
-    }
-
     fn setup_hardware_timer() {
         hardware_timer::setup_hardware_timer();
     }
