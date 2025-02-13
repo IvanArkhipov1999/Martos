@@ -8,12 +8,12 @@ use crate::ports::PortTrait;
 /// PortTrait implementation for Mok platform
 pub struct Mok;
 impl PortTrait for Mok {
-    fn setup_hardware_timer() {
-        hardware_timer::setup_hardware_timer();
-    }
-
     fn init_heap() {
         memory_manager::init_heap();
+    }
+
+    fn setup_hardware_timer() {
+        hardware_timer::setup_hardware_timer();
     }
 
     fn valid_timer_index(_timer_index: u8) -> bool {

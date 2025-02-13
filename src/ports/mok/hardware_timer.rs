@@ -6,7 +6,7 @@ pub fn setup_hardware_timer() {}
 /// Mok start harware timer.
 pub fn start_hardware_timer() {}
 
-/// Mok change operating mode of hardware timer.z
+/// Mok change operating mode of hardware timer.
 pub fn set_reload_mode(_auto_reload: bool) {}
 
 /// Mok change the period of hardware timer.
