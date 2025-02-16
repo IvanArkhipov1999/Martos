@@ -320,6 +320,7 @@ impl CooperativeTaskManager {
     }
 
     /// Starts task manager work. Returns after 1000 steps only for testing task_manager_step.
+    #[cfg(feature = "cooperative_tests")]
     pub fn test_start_task_manager() {
         for _n in 1..=1000 {
             CooperativeTaskManager::schedule();
@@ -327,6 +328,7 @@ impl CooperativeTaskManager {
     }
 
     /// Reset task manager to default state.
+    #[cfg(feature = "cooperative_tests")]
     pub fn reset_task_manager() {
         unsafe {
             for priority in 0..NUM_PRIORITIES {
@@ -353,6 +355,7 @@ impl CooperativeTaskManager {
     }
 
     /// Count tasks of the specified priority.
+    #[cfg(feature = "cooperative_tests")]
     pub fn count_tasks_with_priority(priority: TaskPriorityType) -> usize {
         if priority >= NUM_PRIORITIES {
             panic!("Error: count_tasks_with_priority: Task's priority {} is invalid. It must be between 0 and {}.", priority, NUM_PRIORITIES);
@@ -367,6 +370,7 @@ impl CooperativeTaskManager {
     }
 
     /// Count all tasks in task manager.
+    #[cfg(feature = "cooperative_tests")]
     pub fn count_all_tasks() -> usize {
         unsafe {
             TASK_MANAGER
@@ -379,31 +383,37 @@ impl CooperativeTaskManager {
     }
 
     /// Get task ```id```.
+    #[cfg(feature = "cooperative_tests")]
     pub fn get_id_from_task(task: &mut CooperativeTask) -> TaskIdType {
         task.id
     }
 
     /// Get task's state.
+    #[cfg(feature = "cooperative_tests")]
     pub fn get_status(task: &mut CooperativeTask) -> TaskStatusType {
         task.status
     }
 
     /// Get state ```Ready```.
+    #[cfg(feature = "cooperative_tests")]
     pub fn ready_status() -> TaskStatusType {
         TaskStatusType::Ready
     }
 
     /// Get state ```Sleeping```.
+    #[cfg(feature = "cooperative_tests")]
     pub fn sleeping_status() -> TaskStatusType {
         TaskStatusType::Sleeping
     }
 
     /// Get state ```Terminate```.
+    #[cfg(feature = "cooperative_tests")]
     pub fn terminated_status() -> TaskStatusType {
         TaskStatusType::Terminated
     }
 
     /// Get state ```Running```.
+    #[cfg(feature = "cooperative_tests")]
     pub fn running_status() -> TaskStatusType {
         TaskStatusType::Running
     }
