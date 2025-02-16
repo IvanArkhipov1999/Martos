@@ -320,7 +320,6 @@ impl CooperativeTaskManager {
     }
 
     /// Starts task manager work. Returns after 1000 steps only for testing task_manager_step.
-    #[cfg(feature = "cooperative_tests")]
     pub fn test_start_task_manager() {
         for _n in 1..=1000 {
             CooperativeTaskManager::schedule();
@@ -328,7 +327,6 @@ impl CooperativeTaskManager {
     }
 
     /// Reset task manager to default state.
-    #[cfg(feature = "cooperative_tests")]
     pub fn reset_task_manager() {
         unsafe {
             for priority in 0..NUM_PRIORITIES {

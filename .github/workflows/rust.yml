@@ -100,7 +100,7 @@ jobs:
       - name: Fmt
         run: cd ./examples/rust-examples/xtensa-esp32/wifi && cargo fmt --all -- --check
 
-  xtensa-esp32-rust-example-scheduler:
+  xtensa-esp32-rust-example-preemptive-scheduler:
     runs-on: ubuntu-latest
     env:
       CARGO_HOME: /root/.cargo
@@ -111,9 +111,24 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Build
-        run: cd ./examples/rust-examples/xtensa-esp32/scheduler && . /root/export-esp.sh && cargo build
+        run: cd ./examples/rust-examples/xtensa-esp32/scheduler/preemptive && . /root/export-esp.sh && cargo build
       - name: Fmt
-        run: cd ./examples/rust-examples/xtensa-esp32/scheduler && cargo fmt --all -- --check
+        run: cd ./examples/rust-examples/xtensa-esp32/scheduler/preemptive && cargo fmt --all -- --check
+
+  xtensa-esp32-rust-example-cooperative-scheduler:
+    runs-on: ubuntu-latest
+    env:
+      CARGO_HOME: /root/.cargo
+      RUSTUP_HOME: /root/.rustup
+    container:
+      image: arkhipovivan1/xtensa-esp32-rust:latest
+      options: --user root
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build
+        run: cd ./examples/rust-examples/xtensa-esp32/scheduler/cooperative && . /root/export-esp.sh && cargo build
+      - name: Fmt
+        run: cd ./examples/rust-examples/xtensa-esp32/scheduler/cooperative && cargo fmt --all -- --check
 
   xtensa-esp32-static-library:
     runs-on: ubuntu-latest
@@ -216,6 +231,21 @@ jobs:
       - name: Fmt
         run: cd ./examples/rust-examples/risc-v-esp32-c6/wifi && cargo fmt --all -- --check
 
+  risc-v-esp32c6-rust-example-scheduler:
+    runs-on: ubuntu-latest
+    env:
+      CARGO_HOME: /root/.cargo
+      RUSTUP_HOME: /root/.rustup
+    container:
+      image: arkhipovivan1/xtensa-esp32-rust:latest
+      options: --user root
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build
+        run: cd ./examples/rust-examples/risc-v-esp32-c6/scheduler && . /root/export-esp.sh && cargo build
+      - name: Fmt
+        run: cd ./examples/rust-examples/risc-v-esp32-c6/scheduler && cargo fmt --all -- --check
+
   risc-v-esp32c6-static-library:
     runs-on: ubuntu-latest
     env:
@@ -309,6 +339,23 @@ jobs:
         run: cd ./examples/rust-examples/mips64/timer && cargo +nightly build --release
       - name: Fmt
         run: cd ./examples/rust-examples/mips64/timer && cargo +nightly fmt --all -- --check
+
+  mips64-rust-example-scheduler:
+    runs-on: ubuntu-latest
+    env:
+      CARGO_HOME: /root/.cargo
+      RUSTUP_HOME: /root/.rustup
+    container:
+      image: ubuntu:latest
+      options: --user root
+    steps:
+      - uses: actions/checkout@v3
+      - name: Dependencies
+        run: apt update && apt install curl build-essential lld -y && curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && echo 'PATH="${PATH}:/root/.cargo/bin"' >> $GITHUB_PATH && . "/root/.cargo/env" && rustup toolchain install nightly && rustup default 1.71 && rustup target add mips64el-unknown-linux-gnuabi64 && rustup component add rust-src --toolchain nightly-x86_64-unknown-linux-gnu
+      - name: Build
+        run: cd ./examples/rust-examples/mips64/scheduler && cargo +nightly build --release
+      - name: Fmt
+        run: cd ./examples/rust-examples/mips64/scheduler && cargo +nightly fmt --all -- --check
 
   mips64-static-library:
     runs-on: ubuntu-latest

@@ -15,10 +15,7 @@ mod unit_tests {
     #[sequential]
     /// Tests if task manager without tasks works during some time.
     fn test_empty_task_manager() {
-        #[cfg(all(feature = "cooperative_tests"))]
-        {
-            TaskManager::reset_task_manager()
-        }
+        TaskManager::reset_task_manager();
 
         TaskManager::test_start_task_manager();
     }
@@ -43,10 +40,7 @@ mod unit_tests {
     #[sequential]
     /// Tests if task manager with one finite task works correctly during some time without panic.
     fn test_one_finite_task_task_manager() {
-        #[cfg(all(feature = "cooperative_tests"))]
-        {
-            TaskManager::reset_task_manager()
-        }
+        TaskManager::reset_task_manager();
         TaskManager::add_task(
             test_one_finite_task_task_manager_setup_fn,
             test_one_finite_task_task_manager_loop_fn,
@@ -76,10 +70,7 @@ mod unit_tests {
     #[sequential]
     /// Tests if task manager with one infinite task works correctly during some time without panic.
     fn test_one_infinite_task_task_manager() {
-        #[cfg(all(feature = "cooperative_tests"))]
-        {
-            TaskManager::reset_task_manager()
-        }
+        TaskManager::reset_task_manager();
         TaskManager::add_task(
             test_one_infinite_task_task_manager_setup_fn,
             test_one_infinite_task_task_manager_loop_fn,
@@ -124,10 +115,7 @@ mod unit_tests {
     #[sequential]
     /// Tests if task manager with two finite tasks works correctly during some time without panic.
     fn test_two_finite_tasks_task_manager() {
-        #[cfg(all(feature = "cooperative_tests"))]
-        {
-            TaskManager::reset_task_manager()
-        }
+        TaskManager::reset_task_manager();
         TaskManager::add_task(
             test_two_finite_tasks_task_manager_setup_fn1,
             test_two_finite_tasks_task_manager_loop_fn1,
@@ -186,10 +174,7 @@ mod unit_tests {
     #[sequential]
     /// Tests if task manager with two different (finite and infinite) tasks works correctly during some time without panic.
     fn test_two_different_tasks_task_manager() {
-        #[cfg(all(feature = "cooperative_tests"))]
-        {
-            TaskManager::reset_task_manager()
-        }
+        TaskManager::reset_task_manager();
         TaskManager::add_task(
             test_two_different_tasks_task_manager_setup_fn1,
             test_two_different_tasks_task_manager_loop_fn1,
@@ -269,10 +254,7 @@ mod unit_tests {
     #[sequential]
     /// Tests if task manager works correctly with setup function during some time without panic.
     fn test_setup_task_manager() {
-        #[cfg(all(feature = "cooperative_tests"))]
-        {
-            TaskManager::reset_task_manager();
-        }
+        TaskManager::reset_task_manager();
         TaskManager::add_task(
             test_setup_task_manager_setup_fn,
             test_setup_task_manager_loop_fn,
