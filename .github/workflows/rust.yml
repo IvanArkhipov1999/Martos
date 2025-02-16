@@ -242,9 +242,9 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Build
-        run: cd ./examples/rust-examples/risc-v-esp32-c6/scheduler && . /root/export-esp.sh && cargo build
+        run: cd ./examples/rust-examples/risc-v-esp32-c6/scheduler/cooperative && . /root/export-esp.sh && cargo build
       - name: Fmt
-        run: cd ./examples/rust-examples/risc-v-esp32-c6/scheduler && cargo fmt --all -- --check
+        run: cd ./examples/rust-examples/risc-v-esp32-c6/scheduler/cooperative && cargo fmt --all -- --check
 
   risc-v-esp32c6-static-library:
     runs-on: ubuntu-latest
@@ -353,9 +353,9 @@ jobs:
       - name: Dependencies
         run: apt update && apt install curl build-essential lld -y && curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && echo 'PATH="${PATH}:/root/.cargo/bin"' >> $GITHUB_PATH && . "/root/.cargo/env" && rustup toolchain install nightly && rustup default 1.71 && rustup target add mips64el-unknown-linux-gnuabi64 && rustup component add rust-src --toolchain nightly-x86_64-unknown-linux-gnu
       - name: Build
-        run: cd ./examples/rust-examples/mips64/scheduler && cargo +nightly build --release
+        run: cd ./examples/rust-examples/mips64/scheduler/cooperative && cargo +nightly build --release
       - name: Fmt
-        run: cd ./examples/rust-examples/mips64/scheduler && cargo +nightly fmt --all -- --check
+        run: cd ./examples/rust-examples/mips64/scheduler/cooperative && cargo +nightly fmt --all -- --check
 
   mips64-static-library:
     runs-on: ubuntu-latest
@@ -386,3 +386,10 @@ jobs:
       - uses: actions/checkout@v3
       - name: Run tests
         run: cargo test -F mips64_timer_tests
+
+  cooperative-scheduler-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Run tests
+        run: cargo test -F cooperative_tests
