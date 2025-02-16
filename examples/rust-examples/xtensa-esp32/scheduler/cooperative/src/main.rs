@@ -1,6 +1,14 @@
 #![no_std]
 #![no_main]
 
+use core::panic::PanicInfo;
+
+#[panic_handler]
+fn panic(info: &PanicInfo) -> ! {
+    println!("Panic: {:?}", info);
+    loop {}
+}
+
 use core::sync::atomic::{AtomicU32, Ordering};
 use esp_hal::entry;
 use esp_println::println;
