@@ -1,15 +1,10 @@
-use crate::ports::xtensa_esp32::peripherals::{
-    init_peripherals, PERIFERALS_RADIO_CLK, PERIFERALS_RNG, PERIFERALS_WIFI, TIMER00, TIMER10,
-};
+use crate::ports::xtensa_esp32::peripherals::*;
 use core::sync::atomic::{AtomicBool, Ordering};
 use core::time::Duration;
 use esp_hal::timer::timg::{Timer, Timer0, TimerGroup};
 use esp_hal::{peripherals::*, prelude::*};
 
 static TIMER_BUSY: AtomicBool = AtomicBool::new(false);
-pub fn setup_hardware_timer() {
-    init_peripherals();
-}
 
 /// Esp32 attempt to acquire timer.
 pub fn try_acquire_timer() -> bool {
