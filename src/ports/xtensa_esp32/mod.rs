@@ -14,8 +14,7 @@ use esp_wifi::esp_now::EspNow;
 /// PortTrait implementation for XtensaEsp32 platform
 pub struct XtensaEsp32;
 impl PortTrait for XtensaEsp32 {
-    fn setup_hardware_timer() {
-    }
+    fn setup_hardware_timer() {}
 
     fn valid_timer_index(_timer_index: u8) -> bool {
         true
