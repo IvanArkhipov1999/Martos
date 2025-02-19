@@ -11,6 +11,7 @@ static TIMER_BUSY: AtomicBool = AtomicBool::new(false);
 
 /// Esp32 hardware timer setup.
 pub fn setup_hardware_timer() {
+    let peripherals = esp_hal::init(esp_hal::Config::default());
     let timer_group0 = TimerGroup::new(peripherals.TIMG0);
     let timer_group1 = TimerGroup::new(peripherals.TIMG1);
 
