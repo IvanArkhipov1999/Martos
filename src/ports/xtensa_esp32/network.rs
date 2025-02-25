@@ -9,10 +9,14 @@ pub static mut ESP_NOW: Option<EspNow> = None;
 pub fn init_network() {
     unsafe {
         let peripherals = PERIPHERALS_VARIABLE;
-        let peripherals_rng = peripherals.rng.take().expect("RNG peripherals error");
-        let peripherals_radio_clk = peripherals.radio_clk.unwrap().radio_clk.take().expect("RADIO_CLK peripherals error");
+        let peripherals_rng = peripherals.unwrap().rng.take().expect("RNG peripherals error");
+        let peripherals_radio_clk = peripherals
+            .unwrap()
+            .radio_clk
+            .take()
+            .expect("RADIO_CLK peripherals error");
         let timer10 = TIMER10.take().expect("Network timer error");
-        let periferals_wifi = peripherals.wifi.take().expect("WIFI peripherals error");
+        let periferals_wifi = peripherals.unwrap().wifi.take().expect("WIFI peripherals error");
 
         let init = init(
             EspWifiInitFor::Wifi,

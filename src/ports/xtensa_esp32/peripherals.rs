@@ -54,5 +54,5 @@ impl Peripherals {
 }
 
 pub fn init_peripherals() {
-    unsafe { PERIPHERALS_VARIABLE = Peripherals::new() }
+    unsafe { PERIPHERALS_VARIABLE = Some(Peripherals::new()) }
 }
