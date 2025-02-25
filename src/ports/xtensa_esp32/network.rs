@@ -24,7 +24,8 @@ pub fn init_network() {
                 Rng::new(peripherals_rng),
                 peripherals_radio_clk,
             )
-                .unwrap();
+
+            .unwrap();
 
             ESP_NOW = Some(esp_wifi::esp_now::EspNow::new(&init, peripherals_wifi).unwrap());
         }
