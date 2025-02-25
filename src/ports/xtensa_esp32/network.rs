@@ -1,7 +1,5 @@
 use crate::ports::xtensa_esp32::hardware_timer::TIMER10;
-use crate::ports::xtensa_esp32::peripherals::{
-    PERIFERALS_RADIO_CLK, PERIFERALS_RNG, PERIFERALS_WIFI,
-};
+use crate::ports::xtensa_esp32::peripherals::PERIPHERALS_VARIABLE;
 use esp_hal::rng::Rng;
 use esp_wifi::{esp_now::EspNow, init, EspWifiInitFor};
 
@@ -10,12 +8,16 @@ pub static mut ESP_NOW: Option<EspNow> = None;
 /// Network initialization.
 pub fn init_network() {
     unsafe {
-        let peripherals_rng = PERIFERALS_RNG.take().expect("RNG peripherals error");
-        let peripherals_radio_clk = PERIFERALS_RADIO_CLK
+        let Some(peripherals) = &PERIPHERALS_VARIABLE;
+        let Some(rng) = &peripherals.rng;
+        let Some(radio_clk) = &peripherals.radio_clk;
+        let Some(wifi) = &peripherals.wifi;
+        let peripherals_rng = rng.take().expect("RNG peripherals error");
+        let peripherals_radio_clk = radio_clk
             .take()
             .expect("RADIO_CLK peripherals error");
         let timer10 = TIMER10.take().expect("Network timer error");
-        let periferals_wifi = PERIFERALS_WIFI.take().expect("WIFI peripherals error");
+        let periferals_wifi = wifi.take().expect("WIFI peripherals error");
 
         let init = init(
             EspWifiInitFor::Wifi,

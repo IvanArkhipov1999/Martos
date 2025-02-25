@@ -1,6 +1,5 @@
 use super::TrapFrame;
 use crate::ports::xtensa_esp32::hardware_timer::*;
-use crate::ports::xtensa_esp32::peripherals::*;
 use esp_hal::{
     interrupt::{self, InterruptHandler, Priority},
     peripherals::*,
