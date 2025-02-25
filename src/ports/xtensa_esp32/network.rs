@@ -8,16 +8,13 @@ pub static mut ESP_NOW: Option<EspNow> = None;
 /// Network initialization.
 pub fn init_network() {
     unsafe {
-        let peripherals = PERIPHERALS_VARIABLE.as_mut();
-        let peripherals_rng = peripherals
-            .clone()
+        let peripherals_rng = PERIPHERALS_VARIABLE
             .unwrap()
             .rng
             .take()
             .expect("RNG peripherals error");
 
-        let peripherals_radio_clk = peripherals
-            .clone()
+        let peripherals_radio_clk = PERIPHERALS_VARIABLE
             .unwrap()
             .radio_clk
             .take()
@@ -25,8 +22,7 @@ pub fn init_network() {
 
         let timer10 = TIMER10.take().expect("Network timer error");
 
-        let peripherals_wifi = peripherals
-            .clone()
+        let peripherals_wifi = PERIPHERALS_VARIABLE
             .unwrap()
             .wifi
             .take()
