@@ -36,7 +36,7 @@ MEMORY
 {
   iram_seg (RWX) :                  org = bootloader_iram_seg_start, len = bootloader_iram_seg_len
   iram_loader_seg (RWX) :           org = bootloader_iram_loader_seg_start, len = bootloader_iram_loader_seg_len
-  dram_seg (RW) :                   org = bootloader_dram_seg_start, len = bootloader_dram_seg_len
+  dram_seg (RW) :                   org = bootloader_dram_seg_start, len = bootloader_dram_seg_len + 0x38AC
   lp_ram_seg (RW)  :                org = 0x50000000, len = 0x4000
 }
 
