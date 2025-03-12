@@ -74,5 +74,5 @@ jobs:
       - name: Build espflash Docker image
         run: |
           cd ~/Martos
-          sudo docker build -t vladimir-kiselev/espflash -f Dockerfile .
+          sudo docker build -t vladimir-kiselev/espflash -f Dockerfile2 .
           sudo docker-compose up

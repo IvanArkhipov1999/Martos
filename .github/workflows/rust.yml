@@ -55,6 +55,28 @@ jobs:
       - name: Fmt
         run: cd ./examples/rust-examples/xtensa-esp32/hello-world && cargo fmt --all -- --check
 
+  qemu-xtensa-esp32-rust-example-hello-world:
+    runs-on: ubuntu-latest
+    env:
+      CARGO_HOME: /root/.cargo
+      RUSTUP_HOME: /root/.rustup
+    container:
+      image: vladimir-kiselev/espflash:latest
+      options: --user root
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build firmware
+        run: |
+          cd ./examples/rust-examples/xtensa-esp32/hello-world 
+          . /root/export-esp.sh 
+          cargo espflash save-image --chip esp32 --merge firmware --release
+      - name: Run in QEMU
+        run: |
+          cd ./examples/rust-examples/xtensa-esp32/hello-world
+          timeout 30s qemu-system-xtensa -nographic -machine esp32 \
+            -drive file=./firmware,if=mtd,format=raw -m 4M | grep "Hello, world!"
+        timeout-minutes: 2
+
   xtensa-esp32-rust-example-dynamic-memory:
     runs-on: ubuntu-latest
     env:
@@ -69,47 +91,6 @@ jobs:
         run: cd ./examples/rust-examples/xtensa-esp32/dynamic-memory && . /root/export-esp.sh && cargo build
       - name: Fmt
         run: cd ./examples/rust-examples/xtensa-esp32/dynamic-memory && cargo fmt --all -- --check
-
-  run-qemu-test:
-    runs-on: ubuntu-latest
-    needs: [ xtensa-esp32-rust-example-hello-world ]
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Install QEMU dependencies
-        run: |
-          sudo apt install -y \
-            meson ninja-build \
-            libglib2.0-dev libpixman-1-dev libsdl2-dev \
-            libslirp-dev libfdt-dev libvirglrenderer-dev
-
-      - name: Install Python
-        run: |
-          sudo apt update
-          sudo apt install -y software-properties-common
-          sudo add-apt-repository -y ppa:deadsnakes/ppa
-          sudo apt install -y python3.11 python3.11-venv
-
-      - name: Install and build QEMU
-        run: git clone -b esp-develop-9.2.2-20250228 https://github.com/espressif/qemu.git --depth 1 --single-branch
-          cd qemu
-          python3.11 -m venv .venv
-          source .venv/bin/activate
-          pip install sphinx==5.3.0 sphinx_rtd_theme==1.1.1
-          ./configure --target-list=xtensa-softmmu
-          make -j$(nproc)
-          sudo make install
-
-      - name: Build espflash Docker image
-        run: |
-          cd ~/Martos
-          sudo docker build -t vladimir-kiselev/espflash -f Dockerfile .
-          sudo docker-compose up
-
-      - name: Run QEMU test
-        working-directory: ./examples/rust-examples/xtensa-esp32/hello-world/target/release/
-        run: |
-          sudo qemu-system-xtensa -nographic -machine esp32 -drive file=./firmware,if=mtd,format=raw -m 4M
 
   xtensa-esp32-rust-example-timer:
     runs-on: ubuntu-latest
