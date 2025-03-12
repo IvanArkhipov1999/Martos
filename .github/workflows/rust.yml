@@ -78,7 +78,7 @@ jobs:
 
       - name: Run QEMU test
         run: |
-          cd ~/Martos/examples/rust-examples/xtensa-esp32/hello-world/target/release/
+          cd ./examples/rust-examples/xtensa-esp32/hello-world/
           qemu-system-xtensa -nographic -machine esp32 -drive file=./firmware,if=mtd,format=raw -m 4M
 
   xtensa-esp32-rust-example-timer:
