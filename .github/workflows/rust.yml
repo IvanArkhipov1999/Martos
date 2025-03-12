@@ -70,6 +70,17 @@ jobs:
       - name: Fmt
         run: cd ./examples/rust-examples/xtensa-esp32/dynamic-memory && cargo fmt --all -- --check
 
+  run-qemu-test:
+    runs-on: ubuntu-latest
+    needs: [ xtensa-esp32-rust-example-hello-world ]
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Run QEMU test
+        run: |
+          cd examples/rust-examples/xtensa-esp32/hello-world/target/release/
+          qemu-system-xtensa -nographic -machine esp32 -drive file=./firmware,if=mtd,format=raw -m 4Mfirmware --release
+
   xtensa-esp32-rust-example-timer:
     runs-on: ubuntu-latest
     env:

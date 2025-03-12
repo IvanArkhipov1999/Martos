@@ -21,6 +21,31 @@ jobs:
       - name: Push Docker image to Docker Hub
         run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/xtensa-esp32-rust:latest
 
+      - name: Install QEMU dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y meson ninja-build \
+          libglib2.0-0 libpixman-1-0 libsdl2-2.0-0 \
+          libslirp0 libgcrypt20-dev libgcrypt20 libslirp-dev
+          curl -sS https://bootstrap.pypa.io/get-pip.py | python3.11
+          python3.11 -m pip install --upgrade pip setuptools
+
+      - name: Install and build QEMU
+        run: git clone -b esp-develop-9.2.2-20250228 https://github.com/espressif/qemu.git --depth 1 --single-branch
+              cd qemu
+              python3.11 -m venv .venv
+              source .venv/bin/activate
+              pip install sphinx==5.3.0 sphinx_rtd_theme==1.1.1
+              ./configure --target-list=xtensa-softmmu,riscv32-softmmu
+              make -j$(nproc)
+              sudo make install
+
+      - name: Build espflash Docker image
+        run: |
+          cd ~/Martos
+          sudo docker build -t vladimir-kiselev/espflash -f Dockerfile .
+          sudo docker-compose up
+
   build-xtensa-esp32-c-dependencies-docker:
     runs-on: ubuntu-latest
     steps:
@@ -65,3 +90,14 @@ jobs:
 
       - name: Push Docker image to Docker Hub
         run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/esp-c:latest
+
+  build-espflash-docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Build espflash Docker image
+        run: |
+          cd ~/Martos
+          sudo docker build -t vladimir-kiselev/espflash -f Dockerfile .
+          sudo docker-compose up
