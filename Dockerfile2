@@ -1,25 +1,5 @@
-FROM rust:latest
+FROM arkhipovivan1/xtensa-esp32-rust
 
-# Установка системных зависимостей
-RUN apt-get update && \
-    apt-get install -y \
-    meson ninja-build \
-    libglib2.0-dev libpixman-1-dev libsdl2-dev \
-    python3.11 python3.11-venv \
-    git wget
-
-# Сборка QEMU
-RUN git clone -b esp-develop-9.2.2-20250228 https://github.com/espressif/qemu.git && \
-    cd qemu && \
-    python3.11 -m venv .venv && \
-    . .venv/bin/activate && \
-    pip install sphinx==5.3.0 sphinx_rtd_theme==1.1.1 && \
-    ./configure --target-list=xtensa-softmmu && \
-    make -j$(nproc) && \
-    make install
-
-# Настройка Rust
-RUN rustup target add xtensa-esp32-none-elf && \
-    cargo install cargo-espflash
-
-WORKDIR /workspace
+RUN apt-get update && apt-get install libudev-dev -y
+RUN apt-get install pkg-config -y
+RUN cargo install cargo-espflash --locked
