@@ -65,19 +65,3 @@ jobs:
 
       - name: Push Docker image to Docker Hub
         run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/esp-c:latest
-
-  version: '3.8'
-
-  services:
-    xtensa-esp32-rust-example-hello-world:
-      image: vladimir-kiselev/espflash
-      user: root
-      environment:
-        CARGO_HOME: /root/.cargo
-        RUSTUP_HOME: /root/.rustup
-      volumes:
-        - .:/workspace
-      working_dir: /workspace
-      command: >
-        sh -c "
-          cd ./examples/rust-examples/xtensa-esp32/hello-world && . /root/export-esp.sh && cargo espflash save-image --chip esp32 --merge firmware --release
