@@ -65,17 +65,29 @@ jobs:
       options: --user root
     steps:
       - uses: actions/checkout@v3
-      - name: Build firmware
+      - name: Install dependencies
+        run:
+          sudo apt update && sudo apt install -y meson ninja-build
+          sudo apt install -y libglib2.0-0 libpixman-1-0 libsdl2-2.0-0 libslirp0 libgcrypt20-dev libgcrypt20 libslirp-dev
+          curl -sS https://bootstrap.pypa.io/get-pip.py | python3.11
+          python3.11 -m pip install --upgrade pip setuptools
+      - name: Install Qemu
+        run: git clone -b esp-develop-9.2.2-20250228 https://github.com/espressif/qemu.git --depth 1 --single-branch
+              cd qemu
+              python3.11 -m venv .venv
+              source .venv/bin/activate
+              pip install sphinx==5.3.0 sphinx_rtd_theme==1.1.1
+              ./configure --target-list=xtensa-softmmu,riscv32-softmmu
+              make -j$(nproc)
+              sudo make install
+      - name: Build Qemu
+        run: cd ~/Martos
+              sudo docker build -t vladimir-kiselev/espflash -f Dockerfile2 .
+              sudo docker-compose up
+      - name: Run QEMU
         run: |
-          cd ./examples/rust-examples/xtensa-esp32/hello-world 
-          . /root/export-esp.sh 
-          cargo espflash save-image --chip esp32 --merge firmware --release
-      - name: Run in QEMU
-        run: |
-          cd ./examples/rust-examples/xtensa-esp32/hello-world
-          timeout 30s qemu-system-xtensa -nographic -machine esp32 \
-            -drive file=./firmware,if=mtd,format=raw -m 4M | grep "Hello, world!"
-        timeout-minutes: 2
+          cd ~/Martos/examples/rust-examples/xtensa-esp32/hello-world/target/release/
+          sudo qemu-system-xtensa -nographic -machine esp32 -drive file=./firmware,if=mtd,format=raw -m 4M
 
   xtensa-esp32-rust-example-dynamic-memory:
     runs-on: ubuntu-latest
