@@ -55,27 +55,16 @@ jobs:
       - name: Fmt
         run: cd ./examples/rust-examples/xtensa-esp32/hello-world && cargo fmt --all -- --check
 
-  name: QEMU
+  qemu-test:
+    runs-on: ubuntu-latest
+    env:
+      QEMU_VERSION: esp-develop-9.2.2-20250228
+    steps:
+      - uses: actions/checkout@v3
 
-  on:
-    push:
-      branches: [ "main" ]
-    pull_request:
-      branches: [ "main" ]
-
-  env:
-    CARGO_TERM_COLOR: always
-    QEMU_VERSION: esp-develop-9.2.2-20250228
-
-  jobs:
-    setup-environment:
-      runs-on: ubuntu-22.04
-      steps:
-        - uses: actions/checkout@v3
-
-        - name: Install system dependencies
-          run: |
-            sudo apt-get update
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
             sudo apt-get install -y \
               meson ninja-build libglib2.0-0 libpixman-1-0 libsdl2-2.0-0 libslirp0 \
               libgcrypt20-dev libslirp-dev libpixman-1-dev libsdl2-dev libspice-server-dev \
@@ -84,13 +73,13 @@ jobs:
               libseccomp-dev libfdt-dev libvirglrenderer-dev libepoxy-dev libdrm-dev \
               libgbm-dev libpmem-dev libdaxctl-dev liburing-dev python3.11 python3.11-venv
 
-        - name: Install Python dependencies
-          run: |
-            python3.11 -m pip install --upgrade pip
-            pip install sphinx==5.3.0 sphinx_rtd_theme==1.1.1
+      - name: Install Python dependencies
+        run: |
+          python3.11 -m pip install --upgrade pip
+          pip install sphinx==5.3.0 sphinx_rtd_theme==1.1.1
 
-        - name: Build and install QEMU
-          run: |
+      - name: Build and install QEMU
+        run: |
             git clone -b ${{ env.QEMU_VERSION }} --depth 1 https://github.com/espressif/qemu.git
             cd qemu
             ./configure --target-list=xtensa-softmmu,riscv32-softmmu
