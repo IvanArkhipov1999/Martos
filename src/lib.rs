@@ -1,6 +1,4 @@
 #![no_std]
-#![feature(naked_functions)]
-#![feature(asm_experimental_arch)]
 extern crate alloc;
 
 mod ports;

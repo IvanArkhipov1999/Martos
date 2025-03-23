@@ -1,5 +1,7 @@
 #![no_std]
 #![no_main]
+#![feature(naked_functions)]
+#![feature(asm_experimental_arch)]
 
 use core::sync::atomic::{AtomicU32, Ordering};
 use esp_backtrace as _;
