@@ -22,7 +22,7 @@ cfg-if = "1.0.0"
 
 [target.'cfg(any(target_arch = "riscv32", target_arch = "xtensa"))'.dependencies]
 esp-alloc = "0.5.0"
-esp-hal = "0.22.0"
+esp-hal = "0.21.1"
 esp-wifi = { version = "0.10.1", features = ["wifi"], optional = true }
 
 [dev-dependencies]

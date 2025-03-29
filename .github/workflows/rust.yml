@@ -66,7 +66,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Build
-        run: cd ./examples/rust-examples/xtensa-esp32/hello-world && . /root/export-esp.sh && cargo build
+        run: cd ./examples/rust-examples/xtensa-esp32/hello-world && . /root/export-esp.sh && cargo espflash save-image --chip esp32 --merge firmware --release
       - name: Fmt
         run: cd ./examples/rust-examples/xtensa-esp32/hello-world && cargo fmt --all -- --check
 
