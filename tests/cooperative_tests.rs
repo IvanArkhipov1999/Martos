@@ -251,7 +251,6 @@ mod cooperative_tests {
 
         TaskManager::schedule();
         TaskManager::schedule();
-        TaskManager::schedule();
         task_3 =
             TaskManager::get_task_by_id(3).unwrap_or_else(|| panic!("Task not found for id 3"));
 
@@ -285,7 +284,7 @@ mod cooperative_tests {
 
     /// Loop functions for task for test_terminate_non_terminated_task.
     fn test_terminate_non_terminated_task_loop_fn() {
-        TaskManager::terminate_task(2);
+        TaskManager::delete_task(2);
     }
     fn infinite_loop_fn() {
         loop {}
