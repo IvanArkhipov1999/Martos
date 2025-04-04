@@ -65,3 +65,18 @@ jobs:
 
       - name: Push Docker image to Docker Hub
         run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/esp-c:latest
+
+    build-qemu-dependencies-docker:
+      runs-on: ubuntu-latest
+      steps:
+        - name: Checkout code
+          uses: actions/checkout@v3
+
+        - name: Login to Docker Hub
+          run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
+
+        - name: Build Docker image with Qemu dependencies for all esp targets
+          run: docker build -f ./dockers/qemu/qemu.dockerfile -t ${{ secrets.DOCKERHUB_USERNAME }}/qemu .
+
+        - name: Push Docker image to Docker Hub
+          run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/qemu:latest
