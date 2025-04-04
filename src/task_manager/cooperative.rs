@@ -309,7 +309,7 @@ impl CooperativeTaskManager {
     pub fn schedule() {
         let exec_task_id_opt = unsafe { TASK_MANAGER.exec_task_id };
         if let Some(exec_task_id) = exec_task_id_opt {
-            let Some(mut exec_task) = CooperativeTaskManager::get_task_by_id(exec_task_id) else {
+            let Some(exec_task) = CooperativeTaskManager::get_task_by_id(exec_task_id) else {
                 panic!("Error: schedule: Task with id {} not found.", exec_task_id);
             };
             match exec_task.status {
@@ -333,7 +333,7 @@ impl CooperativeTaskManager {
                     }
                 }
                 TaskStatusType::Sleeping => {
-                    CooperativeTaskManager::move_to_queue_end(&mut exec_task);
+                    CooperativeTaskManager::move_to_queue_end(exec_task);
                 }
                 TaskStatusType::Terminated => {
                     CooperativeTaskManager::delete_task(exec_task_id);
