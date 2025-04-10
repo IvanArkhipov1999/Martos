@@ -1,6 +1,5 @@
-use crate::ports::xtensa_esp32::hardware_timer::{
-    PERIFERALS_RADIO_CLK, PERIFERALS_RNG, PERIFERALS_WIFI, TIMER10,
-};
+use crate::ports::xtensa_esp32::hardware_timer::TIMER10;
+use crate::ports::xtensa_esp32::peripherals::PERIPHERALS_VARIABLE;
 use esp_hal::rng::Rng;
 use esp_wifi::{esp_now::EspNow, init, EspWifiInitFor};
 
@@ -9,22 +8,26 @@ pub static mut ESP_NOW: Option<EspNow> = None;
 /// Network initialization.
 pub fn init_network() {
     unsafe {
-        let peripherals_rng = PERIFERALS_RNG.take().expect("RNG peripherals error");
-        let peripherals_radio_clk = PERIFERALS_RADIO_CLK
-            .take()
-            .expect("RADIO_CLK peripherals error");
-        let timer10 = TIMER10.take().expect("Network timer error");
-        let periferals_wifi = PERIFERALS_WIFI.take().expect("WIFI peripherals error");
+        if let Some(peripherals) = &mut PERIPHERALS_VARIABLE {
+            let peripherals_rng = peripherals.rng.take().expect("RNG peripherals error");
+            let peripherals_radio_clk = peripherals
+                .radio_clk
+                .take()
+                .expect("RADIO_CLK peripherals error");
+            let peripherals_wifi = peripherals.wifi.take().expect("WIFI peripherals error");
 
-        let init = init(
-            EspWifiInitFor::Wifi,
-            timer10,
-            Rng::new(peripherals_rng),
-            peripherals_radio_clk,
-        )
-        .unwrap();
+            let timer10 = TIMER10.take().expect("Network timer error");
 
-        ESP_NOW = Some(esp_wifi::esp_now::EspNow::new(&init, periferals_wifi).unwrap());
+            let init = init(
+                EspWifiInitFor::Wifi,
+                timer10,
+                Rng::new(peripherals_rng),
+                peripherals_radio_clk,
+            )
+            .unwrap();
+
+            ESP_NOW = Some(esp_wifi::esp_now::EspNow::new(&init, peripherals_wifi).unwrap());
+        }
     }
 }
 
