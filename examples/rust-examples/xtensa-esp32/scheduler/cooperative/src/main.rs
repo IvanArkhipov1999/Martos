@@ -43,7 +43,7 @@ fn main_task_loop_fn() {
 /// Stop condition for the main task.
 fn main_task_stop_condition_fn() -> bool {
     let count = unsafe { COUNTER.as_ptr().read() };
-    count == 25
+    count == 35
 }
 
 /// Setup function for the inner task.
