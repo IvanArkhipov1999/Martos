@@ -20,9 +20,6 @@ pub fn init_system() {
     #[cfg(feature = "network")]
     // Network setup.
     ports::Port::init_network();
-    #[cfg(any(target_arch = "riscv32", target_arch = "xtensa"))]
-    // Peripherals setup
-    ports::xtensa_esp32::peripherals::init_peripherals()
 }
 
 #[cfg(any(target_arch = "riscv32", target_arch = "xtensa"))]

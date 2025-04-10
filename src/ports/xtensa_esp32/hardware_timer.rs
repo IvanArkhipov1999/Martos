@@ -1,11 +1,14 @@
-use crate::ports::xtensa_esp32::peripherals::*;
 use core::sync::atomic::{AtomicBool, Ordering};
 use core::time::Duration;
 use esp_hal::timer::timg::{Timer, Timer0, TimerGroup};
 use esp_hal::{peripherals::*, prelude::*};
 
+// TODO: initialize peripherals in separate mod
 pub static mut TIMER00: Option<Timer<Timer0<TIMG0>, esp_hal::Blocking>> = None;
 pub static mut TIMER10: Option<Timer<Timer0<TIMG1>, esp_hal::Blocking>> = None;
+pub static mut PERIFERALS_RNG: Option<RNG> = None;
+pub static mut PERIFERALS_RADIO_CLK: Option<RADIO_CLK> = None;
+pub static mut PERIFERALS_WIFI: Option<WIFI> = None;
 
 static TIMER_BUSY: AtomicBool = AtomicBool::new(false);
 
@@ -21,6 +24,9 @@ pub fn setup_hardware_timer() {
     unsafe {
         TIMER00 = Some(timer00);
         TIMER10 = Some(timer10);
+        PERIFERALS_RNG = Some(peripherals.RNG);
+        PERIFERALS_RADIO_CLK = Some(peripherals.RADIO_CLK);
+        PERIFERALS_WIFI = Some(peripherals.WIFI);
     }
 }
 
