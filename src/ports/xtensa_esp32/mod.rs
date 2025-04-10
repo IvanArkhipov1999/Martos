@@ -2,7 +2,6 @@ pub mod hardware_timer;
 pub mod memory_manager;
 #[cfg(feature = "network")]
 pub mod network;
-pub mod peripherals;
 #[cfg(feature = "preemptive")]
 mod preempt;
 
