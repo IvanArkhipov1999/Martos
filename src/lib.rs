@@ -32,11 +32,11 @@ pub fn get_esp_now() -> EspNow<'static> {
 }
 
 #[cfg(feature = "uart")]
-pub fn get_uart2() -> ports::Port::Uart2Type {
+pub fn get_uart2() -> <XtensaEsp32 as PortTrait>::Uart2Type {
     ports::Port::get_uart2()
 }
 
 #[cfg(feature = "uart")]
-pub fn get_io() -> ports::Port::IoType {
+pub fn get_io() -> <XtensaEsp32 as PortTrait>::IoType {
     ports::Port::get_io()
 }

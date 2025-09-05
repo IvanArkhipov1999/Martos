@@ -75,7 +75,7 @@ pub trait PortTrait {
     /// Available only on ESP32 architectures (xtensa, riscv32) and only when
     /// the "uart" feature is enabled.
     #[cfg(feature = "uart")]
-    fn get_uart2() -> UART2;
+    fn get_uart2() -> Uart2Type;
     /// Returns a GPIO/IO peripheral instance for pin configuration.
     ///
     /// This function transfers ownership of the GPIO peripheral from the system
@@ -98,7 +98,7 @@ pub trait PortTrait {
     /// Available only on ESP32 architectures (xtensa, riscv32) and only when
     /// the "uart" feature is enabled.
     #[cfg(feature = "uart")]
-    fn get_io() -> Io;
+    fn get_io() -> IoType;
 
     // TODO: split to separate trait?
     #[cfg(feature = "preemptive")]
