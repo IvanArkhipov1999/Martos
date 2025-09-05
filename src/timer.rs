@@ -134,11 +134,13 @@
 //!
 //! let start_time = timer.get_time();
 //!
-//! // Execute code to be measured
-//! expensive_operation();
+//! // Execute code to be measured  
+//! for i in 0..1000 {
+//!     // Simulate some work
+//!     let _ = i * 2;
+//! }
 //!
 //! let end_time = timer.get_time();
-//! // Note: Time difference calculation is platform-dependent
 //! println!("Operation took: {:?}", end_time);
 //!
 //! timer.release_timer();
