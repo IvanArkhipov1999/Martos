@@ -17,6 +17,8 @@ use crate::ports::{Port, PortTrait};
 /// # Examples
 ///
 /// ```
+/// use martos::timer::TickType;
+///
 /// let ticks: TickType = 1000;
 /// let max_ticks = TickType::MAX;
 /// ```
@@ -52,6 +54,9 @@ pub type TickType = u64;
 /// # Examples
 ///
 /// ```
+/// use martos::timer::Timer;
+/// use core::time::Duration;
+///
 /// // Acquire timer 0
 /// let mut timer = Timer::get_timer(0).expect("Failed to acquire timer");
 ///
@@ -61,9 +66,6 @@ pub type TickType = u64;
 ///
 /// // Start the timer
 /// timer.start_timer();
-///
-/// // In your periodic interrupt or task:
-/// timer.loop_timer(); // Update tick counter
 ///
 /// // When done, release the resource
 /// timer.release_timer();
@@ -89,6 +91,8 @@ pub struct Timer {
     /// # Examples
     ///
     /// ```
+    /// use martos::timer::Timer;
+    ///
     /// let timer = Timer::get_timer(2).unwrap();
     /// assert_eq!(timer.timer_index, 2);
     /// ```
@@ -115,6 +119,8 @@ pub struct Timer {
     /// # Examples
     ///
     /// ```
+    /// use martos::timer::Timer;
+    ///
     /// let mut timer = Timer::get_timer(0).unwrap();
     /// assert_eq!(timer.tick_counter, 0); // Starts at zero
     ///
@@ -146,6 +152,8 @@ impl Timer {
     /// # Examples
     ///
     /// ```
+    /// use martos::timer::Timer;
+    ///
     /// // Call once during system startup
     /// Timer::setup_timer();
     ///
@@ -180,6 +188,8 @@ impl Timer {
     /// # Examples
     ///
     /// ```
+    /// use martos::timer::Timer;
+    ///
     /// // Try to acquire timer 0
     /// match Timer::get_timer(0) {
     ///     Some(timer) => {
@@ -230,6 +240,8 @@ impl Timer {
     /// # Examples
     ///
     /// ```
+    /// use martos::timer::Timer;
+    ///
     /// let mut timer = Timer::get_timer(0).unwrap();
     ///
     /// // In your interrupt handler or periodic task:
@@ -265,6 +277,9 @@ impl Timer {
     /// # Examples
     ///
     /// ```
+    /// use martos::timer::Timer;
+    /// use core::time::Duration;
+    ///
     /// let timer = Timer::get_timer(0).unwrap();
     ///
     /// // Configure timer first
@@ -313,6 +328,9 @@ impl Timer {
     /// # Examples
     ///
     /// ```
+    /// use martos::timer::Timer;
+    /// use core::time::Duration;
+    ///
     /// let timer = Timer::get_timer(0).unwrap();
     ///
     /// // Configure for periodic 1ms interrupts
@@ -365,6 +383,7 @@ impl Timer {
     /// # Examples
     ///
     /// ```
+    /// use martos::timer::Timer;
     /// use core::time::Duration;
     ///
     /// let timer = Timer::get_timer(0).unwrap();
@@ -373,9 +392,6 @@ impl Timer {
     /// timer.change_period_timer(Duration::from_millis(100));  // 100ms
     /// timer.change_period_timer(Duration::from_micros(500));  // 500μs  
     /// timer.change_period_timer(Duration::from_secs(1));      // 1 second
-    ///
-    /// // Very precise timing (if hardware supports it)
-    /// timer.change_period_timer(Duration::from_nanos(1250));  // 1.25μs
     /// ```
     pub fn change_period_timer(&self, period: Duration) {
         Port::change_period_timer(self.timer_index, period);
@@ -418,6 +434,8 @@ impl Timer {
     /// # Examples
     ///
     /// ```
+    /// use martos::timer::Timer;
+    ///
     /// let timer = Timer::get_timer(0).unwrap();
     /// timer.start_timer();
     ///
@@ -472,6 +490,9 @@ impl Timer {
     /// # Examples
     ///
     /// ```
+    /// use martos::timer::Timer;
+    /// use core::time::Duration;
+    ///
     /// let timer = Timer::get_timer(0).unwrap();
     /// timer.change_period_timer(Duration::from_millis(100));
     /// timer.start_timer();
@@ -479,12 +500,6 @@ impl Timer {
     /// // Check current timer value
     /// let current_time = timer.get_time();
     /// println!("Timer value: {:?}", current_time);
-    ///
-    /// // Use for timing measurements
-    /// let start_time = timer.get_time();
-    /// // ... do some work ...
-    /// let end_time = timer.get_time();
-    /// let elapsed = end_time - start_time; // May need platform-specific calculation
     /// ```
     pub fn get_time(&self) -> Duration {
         Port::get_time(self.timer_index)
@@ -527,6 +542,9 @@ impl Timer {
     /// # Examples
     ///
     /// ```
+    /// use martos::timer::Timer;
+    /// use core::time::Duration;
+    ///
     /// {
     ///     let timer = Timer::get_timer(0).unwrap();
     ///     
@@ -534,8 +552,6 @@ impl Timer {
     ///     timer.set_reload_mode(true);
     ///     timer.change_period_timer(Duration::from_millis(50));
     ///     timer.start_timer();
-    ///     
-    ///     // Do timing-related work...
     ///     
     ///     // Clean up when done
     ///     timer.release_timer();
