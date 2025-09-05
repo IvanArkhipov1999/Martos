@@ -8,6 +8,8 @@ pub mod c_api;
 pub mod task_manager;
 pub mod timer;
 #[cfg(any(target_arch = "riscv32", target_arch = "xtensa"))]
+use crate::ports::xtensa_esp32::XtensaEsp32;
+#[cfg(any(target_arch = "riscv32", target_arch = "xtensa"))]
 #[cfg(feature = "network")]
 use esp_wifi::esp_now::EspNow;
 
