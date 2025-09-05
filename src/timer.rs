@@ -1,6 +1,281 @@
-use core::time::Duration;
+//! Hardware timer abstraction for Martos RTOS.
+//!
+//! This module provides a platform-independent interface to hardware timers, enabling
+//! precise timing operations, periodic tasks, and time measurement across different
+//! embedded architectures. The timer system is built around exclusive resource management
+//! and cooperative multitasking principles.
+//!
+//! # Architecture Overview
+//!
+//! The timer system consists of several key components:
+//!
+//! - **Hardware Abstraction**: Platform-specific timer implementations through the [`Port`] trait
+//! - **Resource Management**: Exclusive access to timer resources via acquisition/release semantics  
+//! - **Tick Counting**: Software-maintained counters for precise time tracking
+//! - **Flexible Configuration**: Support for one-shot and periodic timer modes
+//!
+//! # Core Concepts
+//!
+//! ## Timer Lifecycle
+//!
+//! 1. **System Initialization**: Call [`Timer::setup_timer()`] during system startup
+//! 2. **Timer Acquisition**: Use [`Timer::get_timer()`] to acquire exclusive access to a timer
+//! 3. **Configuration**: Set period, mode, and other parameters
+//! 4. **Execution**: Start timer and handle tick events
+//! 5. **Cleanup**: Release timer with [`Timer::release_timer()`] when finished
+//!
+//! ## Tick System
+//!
+//! Each timer maintains two time representations:
+//! - **Hardware Timer**: The actual hardware counter value accessible via [`Timer::get_time()`]
+//! - **Software Ticks**: Application-maintained counter updated via [`Timer::loop_timer()`]
+//!
+//! This dual approach enables both high-resolution hardware timing and application-level
+//! event counting suitable for cooperative multitasking scenarios.
+//!
+//! ## Resource Management
+//!
+//! Timers are exclusive resources - only one [`Timer`] instance can control a given
+//! hardware timer at a time. The system uses atomic operations to ensure thread-safe
+//! acquisition and prevents conflicts between multiple tasks attempting to use the
+//! same timer hardware.
+//!
+//! # Platform Support
+//!
+//! The timer system supports multiple embedded architectures through platform-specific
+//! implementations:
+//!
+//! - **ESP32 (Xtensa)**: High-resolution timer groups with microsecond precision
+//! - **ESP32 (RISC-V)**: Timer support for ESP32-C3, C6 and other RISC-V variants
+//! - **MIPS64**: System timer and performance counter integration
+//! - **Mock Platform**: Simulation environment for testing and development
+//!
+//! Each platform provides different capabilities in terms of:
+//! - Number of available timers (typically 0-7 per timer group)
+//! - Maximum timer resolution (microsecond to nanosecond range)  
+//! - Timer period range (microseconds to hours)
+//! - Stop/start functionality support
+//!
+//! # Usage Patterns
+//!
+//! ## Basic Timer Setup
+//!
+//! ```
+//! use martos::timer::{Timer, TickType};
+//! use core::time::Duration;
+//!
+//! // Initialize timer subsystem (call once at startup)
+//! Timer::setup_timer();
+//!
+//! // Acquire timer 0
+//! let mut timer = Timer::get_timer(0).expect("Timer 0 not available");
+//!
+//! // Configure for 1ms periodic interrupts
+//! timer.set_reload_mode(true);
+//! timer.change_period_timer(Duration::from_millis(1));
+//!
+//! // Start the timer
+//! timer.start_timer();
+//! ```
+//!
+//! ## Periodic Task with Tick Counting
+//!
+//! ```
+//! use martos::timer::Timer;
+//! use core::time::Duration;
+//!
+//! let mut timer = Timer::get_timer(1).unwrap();
+//! timer.set_reload_mode(true);
+//! timer.change_period_timer(Duration::from_micros(100));
+//! timer.start_timer();
+//!
+//! // In your interrupt handler or periodic task:
+//! loop {
+//!     // Update software tick counter
+//!     timer.loop_timer();
+//!     
+//!     // Check if we've reached 10,000 ticks (1 second at 100μs intervals)
+//!     if timer.tick_counter >= 10_000 {
+//!         println!("One second elapsed: {} ticks", timer.tick_counter);
+//!         break;
+//!     }
+//!     
+//!     // Do periodic work here...
+//! }
+//!
+//! // Clean up
+//! timer.release_timer();
+//! ```
+//!
+//! ## One-Shot Timer for Delays
+//!
+//! ```
+//! use martos::timer::Timer;
+//! use core::time::Duration;
+//!
+//! let timer = Timer::get_timer(2).unwrap();
+//!
+//! // Configure for single 5-second timeout
+//! timer.set_reload_mode(false);  // One-shot mode
+//! timer.change_period_timer(Duration::from_secs(5));
+//! timer.start_timer();
+//!
+//! // Wait for timeout or do other work
+//! // Timer will automatically stop after 5 seconds
+//! ```
+//!
+//! ## High-Resolution Time Measurement
+//!
+//! ```
+//! use martos::timer::Timer;
+//!
+//! let timer = Timer::get_timer(3).unwrap();
+//! timer.start_timer();
+//!
+//! let start_time = timer.get_time();
+//!
+//! // Execute code to be measured
+//! expensive_operation();
+//!
+//! let end_time = timer.get_time();
+//! // Note: Time difference calculation is platform-dependent
+//! println!("Operation took: {:?}", end_time);
+//!
+//! timer.release_timer();
+//! ```
+//!
+//! # Integration with Martos RTOS
+//!
+//! The timer system integrates seamlessly with other Martos components:
+//!
+//! - **Task Manager**: Timers can be used within tasks for periodic execution
+//! - **Scheduler**: Time-based task switching and scheduling decisions
+//! - **Memory Manager**: Timer events can trigger garbage collection or memory management
+//! - **Network Stack**: Protocol timeouts, keepalive timers, and rate limiting
+//!
+//! ## Task Manager Integration
+//!
+//! ```
+//! use martos::{init_system, task_manager::{TaskManager, TaskManagerTrait}};
+//! use martos::timer::Timer;
+//! use core::time::Duration;
+//!
+//! static mut SYSTEM_TIMER: Option<Timer> = None;
+//!
+//! fn timer_setup() {
+//!     Timer::setup_timer();
+//!     unsafe {
+//!         SYSTEM_TIMER = Timer::get_timer(0);
+//!         if let Some(ref timer) = SYSTEM_TIMER {
+//!             timer.set_reload_mode(true);
+//!             timer.change_period_timer(Duration::from_millis(10));
+//!             timer.start_timer();
+//!         }
+//!     }
+//! }
+//!
+//! fn timer_task() {
+//!     unsafe {
+//!         if let Some(ref mut timer) = SYSTEM_TIMER {
+//!             timer.loop_timer();
+//!             // Handle periodic timer logic
+//!         }
+//!     }
+//! }
+//!
+//! fn timer_stop_condition() -> bool {
+//!     false // Run forever
+//! }
+//!
+//! // Register with task manager
+//! TaskManager::add_task(timer_setup, timer_task, timer_stop_condition);
+//! ```
+//!
+//! # Performance Considerations
+//!
+//! ## Timer Resolution and Accuracy
+//!
+//! - **Hardware Limitations**: Timer accuracy depends on system clock stability and frequency
+//! - **Interrupt Overhead**: High-frequency timers may impact system performance
+//! - **Platform Variations**: Different architectures provide different precision levels
+//!
+//! ## Memory Usage
+//!
+//! - **Minimal Footprint**: Each [`Timer`] instance uses only 16 bytes (8 + 8 for tick counter)
+//! - **No Dynamic Allocation**: All timer management uses compile-time known resources
+//! - **Zero-Copy Operations**: Timer operations avoid unnecessary memory copies
+//!
+//! ## Real-Time Guarantees
+//!
+//! - **Deterministic Behavior**: Timer operations have bounded execution time
+//! - **Interrupt Priority**: Timer interrupts should be configured with appropriate priorities
+//! - **Preemption Safety**: Timer state is protected against concurrent access
+//!
+//! # Error Handling
+//!
+//! The timer system uses Rust's type system for robust error handling:
+//!
+//! - **Acquisition Failures**: [`Timer::get_timer()`] returns [`Option<Timer>`] for safe failure handling  
+//! - **Platform Limitations**: Unsupported operations return [`bool`] status indicators
+//! - **Resource Exhaustion**: Timer acquisition automatically fails when resources are unavailable
+//!
+//! ## Common Error Scenarios
+//!
+//! ```
+//! use martos::timer::Timer;
+//!
+//! // Handle timer acquisition failure
+//! match Timer::get_timer(5) {
+//!     Some(timer) => {
+//!         // Timer successfully acquired
+//!         println!("Timer 5 acquired");
+//!         timer.release_timer();
+//!     }
+//!     None => {
+//!         println!("Timer 5 is busy or invalid index");
+//!         // Try alternative timer or handle gracefully
+//!     }
+//! }
+//!
+//! // Handle platform limitations
+//! let timer = Timer::get_timer(0).unwrap();
+//! if !timer.stop_condition_timer() {
+//!     println!("Platform doesn't support stopping timers");
+//!     // Use alternative approach (disable interrupts, etc.)
+//! }
+//! ```
+//!
+//! # Safety and Thread Safety
+//!
+//! - **Memory Safety**: All timer operations are memory-safe by design
+//! - **Resource Safety**: Automatic resource cleanup prevents timer leaks
+//! - **Concurrency**: Timer acquisition uses atomic operations for thread safety
+//! - **Interrupt Context**: Timer functions are suitable for use in interrupt handlers
+//!
+//! # Future Enhancements
+//!
+//! Planned improvements to the timer system include:
+//!
+//! - **Timer Pools**: Automatic timer allocation and management
+//! - **Cascade Timers**: Support for very long time periods using timer chaining
+//! - **Power Management**: Low-power timer modes and sleep integration
+//! - **Synchronization**: Timer synchronization primitives for coordinated timing
+//! - **Profiling**: Built-in performance measurement and timer usage statistics
+//!
+//! # See Also
+//!
+//! - [`crate::task_manager`] - Task scheduling and management
+//! - [`crate::ports`] - Platform-specific hardware abstraction
+//! - [`core::time::Duration`] - Standard time duration representation
+//!
+//! # Examples Repository
+//!
+//! For more comprehensive examples and use cases, see the `examples/` directory in
+//! the Martos repository, which contains platform-specific timer demonstrations
+//! and integration examples with other RTOS components.
 
 use crate::ports::{Port, PortTrait};
+use core::time::Duration;
 
 /// Type alias for timer tick counting.
 ///
