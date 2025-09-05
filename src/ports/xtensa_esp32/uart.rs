@@ -17,7 +17,7 @@ pub type Uart2Type = UART2;
 pub type IoType = Io;
 
 /// Initialize UART subsystem for ESP32
-/// 
+///
 /// This function initializes the UART2 and IO peripherals separately from
 /// the hardware timer initialization. It calls esp_hal::init to get fresh
 /// peripheral instances.
@@ -28,7 +28,7 @@ pub fn setup_uart() {
     {
         // Initialize ESP-HAL to get peripheral instances
         let peripherals = esp_hal::init(esp_hal::Config::default());
-        
+
         unsafe {
             PERIFERALS_UART2 = Some(peripherals.UART2);
             let io = Io::new(peripherals.GPIO, peripherals.IO_MUX);
@@ -38,21 +38,21 @@ pub fn setup_uart() {
 }
 
 /// Get UART2 peripheral instance
-/// 
+///
 /// Returns the UART2 peripheral for configuration. Can only be called once.
 pub fn get_uart2() -> UART2 {
     unsafe {
-        PERIFERALS_UART2.take().expect("UART2 not available - call setup_uart first")
+        PERIFERALS_UART2
+            .take()
+            .expect("UART2 not available - call setup_uart first")
     }
 }
 
 /// Get IO peripheral instance
-/// 
+///
 /// Returns the IO peripheral for pin configuration. Can only be called once.
 pub fn get_io() -> Io {
-    unsafe {
-        IO.take().expect("IO not available - call setup_uart first")
-    }
+    unsafe { IO.take().expect("IO not available - call setup_uart first") }
 }
 
 /// Check if UART is initialized

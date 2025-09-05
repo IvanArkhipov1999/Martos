@@ -12,7 +12,7 @@ pub struct Mok;
 impl PortTrait for Mok {
     #[cfg(feature = "uart")]
     type Uart2Type = uart::Uart2Type;
-    
+
     #[cfg(feature = "uart")]
     type IoType = uart::IoType;
 

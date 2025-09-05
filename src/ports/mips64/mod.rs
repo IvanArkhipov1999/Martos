@@ -12,7 +12,7 @@ pub struct Mips64;
 impl PortTrait for Mips64 {
     #[cfg(feature = "uart")]
     type Uart2Type = uart::Uart2Type;
-    
+
     #[cfg(feature = "uart")]
     type IoType = uart::IoType;
 

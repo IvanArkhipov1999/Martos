@@ -17,7 +17,7 @@ pub struct XtensaEsp32;
 impl PortTrait for XtensaEsp32 {
     #[cfg(feature = "uart")]
     type Uart2Type = uart::Uart2Type;
-    
+
     #[cfg(feature = "uart")]
     type IoType = uart::IoType;
 
