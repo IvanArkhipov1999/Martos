@@ -20,10 +20,23 @@ pub fn init_system() {
     #[cfg(feature = "network")]
     // Network setup.
     ports::Port::init_network();
+    // Uart setup.
+    #[cfg(feature = "uart")]
+    ports::Port::setup_uart();
 }
 
 #[cfg(any(target_arch = "riscv32", target_arch = "xtensa"))]
 #[cfg(feature = "network")]
 pub fn get_esp_now() -> EspNow<'static> {
     return ports::Port::get_esp_now();
+}
+
+#[cfg(feature = "uart")]
+pub fn get_uart2() -> <CurrentPort as crate::ports::PortTrait>::Uart2Type {
+    ports::Port::get_uart2()
+}
+
+#[cfg(feature = "uart")]
+pub fn get_io() -> <CurrentPort as crate::ports::PortTrait>::IoType {
+    ports::Port::get_io()
 }

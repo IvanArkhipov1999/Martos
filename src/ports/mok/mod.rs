@@ -2,12 +2,20 @@ pub mod hardware_timer;
 pub mod memory_manager;
 #[cfg(feature = "network")]
 pub mod network;
+#[cfg(feature = "uart")]
+pub mod uart;
 
 use crate::ports::PortTrait;
 
 /// PortTrait implementation for Mok platform
 pub struct Mok;
 impl PortTrait for Mok {
+    #[cfg(feature = "uart")]
+    type Uart2Type = uart::Uart2Type;
+    
+    #[cfg(feature = "uart")]
+    type IoType = uart::IoType;
+
     fn init_heap() {
         memory_manager::init_heap();
     }
@@ -60,6 +68,21 @@ impl PortTrait for Mok {
     fn save_ctx(thread_ctx: &mut crate::ports::TrapFrame, isr_ctx: &crate::ports::TrapFrame) {}
     #[cfg(feature = "preemptive")]
     fn load_ctx(thread_ctx: &crate::ports::TrapFrame, isr_ctx: &mut crate::ports::TrapFrame) {}
+
+    #[cfg(feature = "uart")]
+    fn setup_uart() {
+        uart::setup_uart();
+    }
+
+    #[cfg(feature = "uart")]
+    fn get_uart2() -> Self::Uart2Type {
+        uart::get_uart2()
+    }
+
+    #[cfg(feature = "uart")]
+    fn get_io() -> Self::IoType {
+        uart::get_io()
+    }
 }
 
 #[allow(dead_code)]
