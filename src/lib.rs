@@ -11,32 +11,41 @@ pub mod timer;
 #[cfg(feature = "network")]
 use esp_wifi::esp_now::EspNow;
 
+#[cfg(target_arch = "xtensa")]
+use crate::ports::xtensa_esp32::XtensaEsp32Port as CurrentPort;
+
+#[cfg(target_arch = "mips")]
+use crate::ports::mips64::Mips64 as CurrentPort;
+
+#[cfg(not(any(target_arch = "xtensa", target_arch = "mips")))]
+use crate::ports::mok::Mok as CurrentPort;
+
 /// Martos initialization. Should be called before using Martos functions.
 pub fn init_system() {
     // Memory initialization.
-    ports::Port::init_heap();
+    CurrentPort::init_heap();
     // Hardware timer setup.
-    ports::Port::setup_hardware_timer();
+    CurrentPort::setup_hardware_timer();
     #[cfg(feature = "network")]
     // Network setup.
-    ports::Port::init_network();
+    CurrentPort::init_network();
     // Uart setup.
     #[cfg(feature = "uart")]
-    ports::Port::setup_uart();
+    CurrentPort::setup_uart();
 }
 
 #[cfg(any(target_arch = "riscv32", target_arch = "xtensa"))]
 #[cfg(feature = "network")]
 pub fn get_esp_now() -> EspNow<'static> {
-    return ports::Port::get_esp_now();
+    return CurrentPort::get_esp_now();
 }
 
 #[cfg(feature = "uart")]
 pub fn get_uart2() -> <CurrentPort as crate::ports::PortTrait>::Uart2Type {
-    ports::Port::get_uart2()
+    CurrentPort::get_uart2()
 }
 
 #[cfg(feature = "uart")]
 pub fn get_io() -> <CurrentPort as crate::ports::PortTrait>::IoType {
-    ports::Port::get_io()
+    CurrentPort::get_io()
 }
