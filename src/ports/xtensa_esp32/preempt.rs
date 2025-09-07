@@ -77,17 +77,35 @@ mod context_switch {
 #[cfg(target_arch = "riscv32")]
 mod context_switch {
     use super::TrapFrame;
+    use crate::task_manager::preemptive::Thread;
 
     pub fn setup_stack(thread: &mut crate::task_manager::preemptive::Thread) {
-        todo!()
+        thread.context.pc = Thread::run_task as usize;
+        thread.context.ra = 0;
+
+        thread.context.a5 = thread.task.setup_fn as usize;
+        thread.context.a6 = thread.task.loop_fn as usize;
+        thread.context.a7 = thread.task.stop_condition_fn as usize;
+
+        let stack_ptr = thread.stack as usize + crate::task_manager::preemptive::THREAD_STACK_SIZE;
+        thread.context.sp = stack_ptr as usize;
+
+        thread.context.mstatus = 0x00000000;
+        thread.context.mstatus = 0x00040000 | (1 & 3) << 16;
+        unsafe {
+            *((stack_ptr - 4) as *mut u32) = 0;
+            *((stack_ptr - 8) as *mut u32) = 0;
+            *((stack_ptr - 12) as *mut u32) = stack_ptr as u32;
+            *((stack_ptr - 16) as *mut u32) = 0;
+        }
     }
 
     pub fn save_ctx(thread_ctx: &mut TrapFrame, isr_ctx: &TrapFrame) {
-        todo!()
+        thread_ctx.clone_from(isr_ctx)
     }
 
     pub fn load_ctx(thread_ctx: &TrapFrame, isr_ctx: &mut TrapFrame) {
-        todo!()
+        isr_ctx.clone_from(thread_ctx)
     }
 }
 
