@@ -29,7 +29,7 @@
 //!
 //! # Feature Selection
 //!
-//! ```
+//! ```toml
 //! # Cargo.toml
 //! [features]
 //! preemptive = []  # Enable preemptive scheduling
@@ -62,31 +62,6 @@
 //!
 //! // Start the scheduler (never returns)
 //! TaskManager::start_task_manager();
-//! ```
-//!
-//! ## Advanced Features (Cooperative)
-//!
-//! When using the cooperative scheduler, additional priority-based task management
-//! is available through the concrete type:
-//!
-//! ```
-//! use martos::task_manager::cooperative::CooperativeTaskManager;
-//!
-//! // High priority task (priority 10)
-//! CooperativeTaskManager::add_priority_task(
-//!     || println!("High priority setup"),
-//!     || println!("High priority work"),
-//!     || false,
-//!     10  // Highest priority
-//! );
-//!
-//! // Low priority task (priority 1)  
-//! CooperativeTaskManager::add_priority_task(
-//!     || println!("Low priority setup"),
-//!     || println!("Low priority work"),
-//!     || false,
-//!     1   // Lower priority
-//! );
 //! ```
 //!
 //! # Design Benefits
