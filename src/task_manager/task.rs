@@ -56,14 +56,14 @@
 /// # Examples
 ///
 /// ```
-/// use martos::task_manager::task::TaskSetupFunctionType;
+/// use martos::task_manager::{TaskManager, TaskManagerTrait};
 ///
 /// fn initialize_sensor() {
 ///     println!("Initializing sensor...");
 ///     // Hardware initialization code here
 /// }
 ///
-/// let setup: TaskSetupFunctionType = initialize_sensor;
+/// TaskManager::add_task(initialize_sensor, || {}, || false);
 /// ```
 ///
 /// # See Also
@@ -120,15 +120,19 @@ pub type TaskSetupFunctionType = extern "C" fn() -> ();
 /// # Examples
 ///
 /// ```
-/// use martos::task_manager::task::TaskLoopFunctionType;
+/// use martos::task_manager::{TaskManager, TaskManagerTrait};
+/// use core::sync::atomic::{AtomicU32, Ordering};
+///
+/// static COUNTER: AtomicU32 = AtomicU32::new(0);
 ///
 /// fn blink_led() {
-///     // Toggle LED state
-///     println!("LED toggle");
-///     // Quick, non-blocking operation
+///     let count = COUNTER.fetch_add(1, Ordering::Relaxed);
+///     if count % 1000 == 0 {
+///         println!("LED blink #{}", count);
+///     }
 /// }
 ///
-/// let main_loop: TaskLoopFunctionType = blink_led;
+/// TaskManager::add_task(|| {}, blink_led, || false);
 /// ```
 ///
 /// # See Also
@@ -189,9 +193,11 @@ pub type TaskLoopFunctionType = extern "C" fn() -> ();
 ///
 /// # Examples
 ///
+/// # Examples
+///
 /// ```
-/// use martos::task_manager::task::TaskStopConditionFunctionType;
-/// use std::sync::atomic::{AtomicU32, Ordering};
+/// use martos::task_manager::{TaskManager, TaskManagerTrait};
+/// use core::sync::atomic::{AtomicU32, Ordering};
 ///
 /// static COUNTER: AtomicU32 = AtomicU32::new(0);
 ///
@@ -200,7 +206,7 @@ pub type TaskLoopFunctionType = extern "C" fn() -> ();
 ///     count >= 100  // Stop after 100 iterations
 /// }
 ///
-/// let stop_condition: TaskStopConditionFunctionType = should_stop;
+/// TaskManager::add_task(|| {}, || {}, should_stop);
 /// ```
 ///
 /// # See Also
@@ -271,7 +277,7 @@ pub type TaskStopConditionFunctionType = extern "C" fn() -> bool;
 /// ## Basic Task Creation
 ///
 /// ```
-/// use martos::task_manager::task::Task;
+/// use martos::task_manager::{TaskManager, TaskManagerTrait};
 ///
 /// fn setup() {
 ///     println!("Task initializing...");
@@ -285,17 +291,13 @@ pub type TaskStopConditionFunctionType = extern "C" fn() -> bool;
 ///     false // Run forever
 /// }
 ///
-/// let task = Task {
-///     setup_fn: setup,
-///     loop_fn: main_loop,
-///     stop_condition_fn: stop_condition,
-/// };
+/// TaskManager::add_task(my_setup, my_loop, my_stop);
 /// ```
 ///
 /// ## Task with Termination Condition
 ///
 /// ```
-/// use martos::task_manager::task::Task;
+/// use martos::task_manager::{TaskManager, TaskManagerTrait};
 /// use std::sync::atomic::{AtomicBool, Ordering};
 ///
 /// static TASK_COMPLETE: AtomicBool = AtomicBool::new(false);
@@ -314,11 +316,7 @@ pub type TaskStopConditionFunctionType = extern "C" fn() -> bool;
 ///     TASK_COMPLETE.load(Ordering::Acquire)
 /// }
 ///
-/// let task = Task {
-///     setup_fn: setup,
-///     loop_fn: work,
-///     stop_condition_fn: is_complete,
-/// };
+/// TaskManager::add_task(setup, work, is_complete);
 /// ```
 ///
 /// # Integration with TaskManager
@@ -363,19 +361,16 @@ pub struct Task {
     /// # Examples
     ///
     /// ```
-    /// use martos::task_manager::task::Task;
+    /// use martos::task_manager::{TaskManager, TaskManagerTrait};
     ///
     /// fn my_setup() {
     ///     println!("Initializing task resources...");
     ///     // Initialize hardware, allocate memory, etc.
     /// }
     ///
-    /// let task = Task {
-    ///     setup_fn: my_setup,
-    ///     // ... other fields
-    /// #     loop_fn: || {},
-    /// #     stop_condition_fn: || false,
-    /// };
+    /// // Register task using public API
+    /// TaskManager::add_task(my_setup, || {}, || false);
+    /// ```
     /// ```
     pub(crate) setup_fn: TaskSetupFunctionType,
 
@@ -399,8 +394,8 @@ pub struct Task {
     /// # Examples
     ///
     /// ```
-    /// use martos::task_manager::task::Task;
-    /// use std::sync::atomic::{AtomicU32, Ordering};
+    /// use martos::task_manager::{TaskManager, TaskManagerTrait};
+    /// use core::sync::atomic::{AtomicU32, Ordering};
     ///
     /// static COUNTER: AtomicU32 = AtomicU32::new(0);
     ///
@@ -409,15 +404,9 @@ pub struct Task {
     ///     if count % 1000 == 0 {
     ///         println!("Processed {} items", count);
     ///     }
-    ///     // Do actual work here...
     /// }
     ///
-    /// let task = Task {
-    /// #     setup_fn: || {},
-    ///     loop_fn: periodic_work,
-    /// #     stop_condition_fn: || false,
-    ///     // ... other fields
-    /// };
+    /// TaskManager::add_task(|| {}, periodic_work, || false);
     /// ```
     pub(crate) loop_fn: TaskLoopFunctionType,
 
@@ -441,9 +430,8 @@ pub struct Task {
     /// # Examples
     ///
     /// ```
-    /// use martos::task_manager::task::Task;
-    /// use std::sync::atomic::{AtomicBool, Ordering};
-    /// use std::time::{Duration, Instant};
+    /// use martos::task_manager::{TaskManager, TaskManagerTrait};
+    /// use core::sync::atomic::{AtomicBool, Ordering};
     ///
     /// static SHUTDOWN_REQUESTED: AtomicBool = AtomicBool::new(false);
     ///
@@ -451,19 +439,7 @@ pub struct Task {
     ///     SHUTDOWN_REQUESTED.load(Ordering::Acquire)
     /// }
     ///
-    /// // Time-based termination example
-    /// fn time_based_stop() -> bool {
-    ///     static START_TIME: Option<Instant> = None;
-    ///     // TODO: Implement proper time tracking
-    ///     false // Placeholder
-    /// }
-    ///
-    /// let task = Task {
-    /// #     setup_fn: || {},
-    /// #     loop_fn: || {},
-    ///     stop_condition_fn: should_terminate,
-    ///     // ... other fields
-    /// };
+    /// TaskManager::add_task(|| {}, || {}, should_terminate);
     /// ```
     pub(crate) stop_condition_fn: TaskStopConditionFunctionType,
 }
