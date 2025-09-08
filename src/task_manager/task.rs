@@ -18,7 +18,7 @@
 //!
 //! ## Examples
 //!
-//! ```
+//! ```rust,no_run
 //! use martos::task_manager::{TaskManager, TaskManagerTrait};
 //!
 //! fn my_setup() {
@@ -321,7 +321,7 @@ pub type TaskStopConditionFunctionType = extern "C" fn() -> bool;
 /// Tasks are typically created and registered with the [`TaskManager`] which
 /// handles their execution lifecycle:
 ///
-/// ```
+/// ```rust,no_run
 /// use martos::task_manager::{TaskManager, TaskManagerTrait};
 ///
 /// // Create task functions
