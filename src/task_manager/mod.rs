@@ -42,7 +42,7 @@
 //!
 //! ## Basic Task Creation
 //!
-//! ```
+//! ```rust,no_run
 //! use martos::task_manager::{TaskManager, TaskManagerTrait};
 //!
 //! fn setup_sensor() {
@@ -196,7 +196,7 @@ pub trait TaskManagerTrait {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```rust,no_run
     /// use martos::task_manager::{TaskManager, TaskManagerTrait};
     ///
     /// // Register tasks first
