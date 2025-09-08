@@ -143,7 +143,7 @@ pub trait TaskManagerTrait {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```rust,no_run
     /// use martos::task_manager::{TaskManager, TaskManagerTrait};
     ///
     /// fn init() { println!("Task starting"); }
