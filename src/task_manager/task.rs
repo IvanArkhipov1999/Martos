@@ -19,7 +19,7 @@
 //! ## Examples
 //!
 //! ```
-//! use martos::task_manager::task::{Task, TaskSetupFunctionType, TaskLoopFunctionType, TaskStopConditionFunctionType};
+//! use martos::task_manager::{TaskManager, TaskManagerTrait};
 //!
 //! fn my_setup() {
 //!     println!("Task starting...");
@@ -34,11 +34,8 @@
 //!     false
 //! }
 //!
-//! let task = Task {
-//!     setup_fn: my_setup,
-//!     loop_fn: my_loop,
-//!     stop_condition_fn: my_stop_condition,
-//! };
+//! TaskManager::add_task(my_setup, my_loop, my_stop_condition);
+//! TaskManager::start_task_manager();
 //! ```
 
 // TODO: rewrite with cfg! macro for cleaner conditional compilation
@@ -291,7 +288,7 @@ pub type TaskStopConditionFunctionType = extern "C" fn() -> bool;
 ///     false // Run forever
 /// }
 ///
-/// TaskManager::add_task(my_setup, my_loop, my_stop);
+/// TaskManager::add_task(setup, main_loop, stop_condition);
 /// ```
 ///
 /// ## Task with Termination Condition
@@ -326,7 +323,6 @@ pub type TaskStopConditionFunctionType = extern "C" fn() -> bool;
 ///
 /// ```
 /// use martos::task_manager::{TaskManager, TaskManagerTrait};
-/// use martos::task_manager::task::Task;
 ///
 /// // Create task functions
 /// fn my_setup() { /* setup code */ }
