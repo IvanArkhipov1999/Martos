@@ -340,7 +340,7 @@ pub type TaskStopConditionFunctionType = extern "C" fn() -> bool;
 /// TaskManager::start_task_manager();
 /// ```
 ///
-/// # TODO
+/// # TODO (needs update)
 ///
 /// - Add support for task priorities and scheduling policies
 /// - Implement task state tracking (running, suspended, terminated)
@@ -467,3 +467,12 @@ pub struct Task {
     /// ```
     pub(crate) stop_condition_fn: TaskStopConditionFunctionType,
 }
+
+// TODO: Implement additional task management features (needs update):
+// - Task priorities and scheduling weights
+// - Task state tracking (Ready, Running, Suspended, Terminated)
+// - Task-local storage for per-task data
+// - Task communication primitives (channels, shared memory)
+// - Task dependency management
+// - Resource usage monitoring and limits
+// - Task profiling and performance metrics
