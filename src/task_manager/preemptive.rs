@@ -113,7 +113,7 @@ pub(crate) const THREAD_STACK_SIZE: usize = 1024;
 ///
 /// Each thread encapsulates a task along with its execution context,
 /// including a dedicated stack and saved CPU registers. Threads are
-/// managed by the [`PreemptiveTaskManager`] and scheduled using 
+/// managed by the [`PreemptiveTaskManager`] and scheduled using
 /// round-robin time-slicing.
 ///
 /// # Memory Layout
@@ -352,7 +352,7 @@ impl PreemptiveTaskManager {
 /// Provides the common interface for task management while implementing
 /// preemptive-specific behavior like stack allocation and interrupt setup.
 impl TaskManagerTrait for PreemptiveTaskManager {
-        /// Adds a new task to the preemptive scheduler.
+    /// Adds a new task to the preemptive scheduler.
     ///
     /// Creates a new thread with dedicated stack space and registers
     /// it with the scheduler. The task will be included in the round-robin
