@@ -40,7 +40,7 @@
 //!
 //! ## Basic Task Management
 //!
-//! ```
+//! ```rust,no_run
 //! use martos::task_manager::{TaskManager, TaskManagerTrait};
 //! use core::sync::atomic::{AtomicU32, Ordering};
 //!
@@ -131,26 +131,70 @@ use crate::task_manager::{
 };
 use alloc::vec::Vec;
 
-/// The number of tasks id can fit into a type usize.
+/// Type alias for task identifiers.
+///
+/// Each task receives a unique ID when created. IDs are assigned sequentially
+/// starting from 1. The ID is used to reference tasks for operations like
+/// sleeping, waking, and deletion.
+///
+/// # TODO
+/// Handle ID overflow when `usize::MAX` tasks have been created.
 type TaskIdType = usize;
-/// Type of priority number of a task.
+
+/// Type alias for task priority values.
+///
+/// Priorities range from 0 to [`NUM_PRIORITIES`]-1, where higher values
+/// indicate higher priority. Tasks with priority 10 will always be
+/// scheduled before tasks with priority 9, and so on.
 type TaskPriorityType = usize;
 
-/// Number of existing priorities.
+/// Number of priority levels supported by the scheduler.
+///
+/// The scheduler supports priorities from 0 (lowest) to 10 (highest).
+/// This creates 11 distinct priority queues for task organization.
 const NUM_PRIORITIES: usize = 11;
 
-/// The status of the task changes during execution. ```enum TaskStatusType``` contains possible states.
+/// Represents the current execution state of a cooperative task.
+///
+/// Tasks transition between these states during their lifecycle as managed
+/// by the scheduler and through explicit API calls.
+///
+/// # State Transitions
+///
+/// - **Ready → Running**: Task is selected by scheduler
+/// - **Running → Ready**: Task loop function returns normally  
+/// - **Running → Terminated**: Task stop condition becomes true
+/// - **Ready → Sleeping**: Task is explicitly put to sleep
+/// - **Sleeping → Ready**: Task is explicitly woken up
+/// - **Any → Terminated**: Task is explicitly deleted
 #[derive(PartialEq, Copy, Clone, Debug)]
 pub enum TaskStatusType {
-    /// Task status after setup function. It is ready to be executed.
+    /// Task is ready to be scheduled for execution.
+    ///
+    /// This is the initial state for newly created tasks and the state
+    /// tasks return to after their loop function completes normally.
     Ready,
-    /// Task status when loop function is running.
+
+    /// Task is currently executing its loop function.
+    ///
+    /// Only one task can be in this state at any given time in the
+    /// cooperative scheduler, as there is no preemption.
     Running,
-    /// Task status when it is sleeping. After waking up, a task again starts loop_fn.
+
+    /// Task is sleeping and will not be scheduled.
+    ///
+    /// Tasks enter this state through explicit [`put_to_sleep`] calls
+    /// and can only be scheduled again after [`wake_up_task`] is called.
+    ///
+    /// [`put_to_sleep`]: CooperativeTaskManager::put_to_sleep
+    /// [`wake_up_task`]: CooperativeTaskManager::wake_up_task
     Sleeping,
-    /// Task status when it terminated.
-    /// It can be in both cases when a task is finished and when the other task called
-    /// ```terminate_task``` function with id of a task that will be terminated.
+
+    /// Task has finished execution and will be removed.
+    ///
+    /// Tasks enter this state when their stop condition returns `true`
+    /// or when explicitly deleted. Terminated tasks are automatically
+    /// removed from all scheduling queues.
     Terminated,
 }
 
