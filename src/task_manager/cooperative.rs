@@ -1,3 +1,128 @@
+//! # Cooperative Task Scheduler
+//!
+//! This module implements cooperative multitasking for Martos RTOS, providing priority-based
+//! task scheduling where tasks voluntarily yield control to each other. The scheduler uses
+//! a round-robin approach within priority levels and relies on tasks to cooperate rather
+//! than being preemptively interrupted.
+//!
+//! # Architecture Overview
+//!
+//! The cooperative scheduler organizes tasks into 11 priority levels (0-10), where higher
+//! numbers indicate higher priority. Within each priority level, tasks are scheduled using
+//! round-robin to ensure fairness. Tasks must explicitly yield control by returning from
+//! their loop function, making the system deterministic and suitable for real-time applications.
+//!
+//! ## Key Components
+//!
+//! - [`TaskStatusType`] - Enumeration of possible task states
+//! - [`CooperativeTask`] - Individual task with state, priority, and ID
+//! - [`CooperativeTaskManager`] - Main scheduler managing all tasks
+//! - Priority queues organized as `[Option<Vec<CooperativeTask>>; 11]`
+//!
+//! ## Task State Machine
+//!
+//! ```text
+//! [Ready] --schedule()--> [Running] --loop_fn_returns--> [Ready]
+//!    |                       |                             ^
+//!    |                  stop_condition()                   |
+//!    |                       |                       wake_up()
+//!    v                       v                             |
+//! [Sleeping] <--put_to_sleep()   [Terminated] --deleted----+
+//! ```
+//!
+//! ## Priority Scheduling
+//!
+//! Tasks are selected for execution in strict priority order. The scheduler always
+//! chooses the highest priority ready task. Within the same priority level, tasks
+//! are executed in round-robin fashion to ensure fair resource allocation.
+//!
+//! # Usage Examples
+//!
+//! ## Basic Task Management
+//!
+//! ```
+//! use martos::task_manager::{TaskManager, TaskManagerTrait};
+//! use core::sync::atomic::{AtomicU32, Ordering};
+//!
+//! static WORK_COUNTER: AtomicU32 = AtomicU32::new(0);
+//!
+//! fn sensor_setup() {
+//!     println!("Initializing sensor task");
+//! }
+//!
+//! fn sensor_loop() {
+//!     let count = WORK_COUNTER.fetch_add(1, Ordering::Relaxed);
+//!     println!("Reading sensor data... iteration {}", count);
+//!     
+//!     // Cooperative yield - function returns, allowing other tasks to run
+//! }
+//!
+//! fn sensor_stop() -> bool {
+//!     WORK_COUNTER.load(Ordering::Relaxed) >= 100
+//! }
+//!
+//! // Add task with default priority (0)
+//! TaskManager::add_task(sensor_setup, sensor_loop, sensor_stop);
+//! TaskManager::start_task_manager();
+//! ```
+//!
+//! ## Priority-Based Task Management
+//!
+//! ```
+//! use martos::task_manager::{TaskManager, TaskManagerTrait};
+//!
+//! // Critical task with highest priority
+//! TaskManager::add_priority_task(
+//!     || println!("Critical task init"),
+//!     || println!("Critical work"),
+//!     || false,
+//!     10  // Highest priority
+//! );
+//!
+//! // Background task with lower priority
+//! TaskManager::add_priority_task(
+//!     || println!("Background task init"),
+//!     || println!("Background processing"),
+//!     || false,
+//!     1   // Lower priority
+//! );
+//! ```
+//!
+//! # Performance Characteristics
+//!
+//! - **Scheduling complexity**: O(1) for task selection within priority level
+//! - **Memory overhead**: O(n) where n is the number of tasks
+//! - **Deterministic timing**: No unexpected interruptions or context switches
+//! - **Priority inversion**: Possible if high-priority tasks wait on low-priority tasks
+//!
+//! # Safety Considerations
+//!
+//! ## Cooperative Nature
+//! Tasks must be well-behaved and return control promptly. A task that never returns
+//! from its loop function will prevent all other tasks from executing.
+//!
+//! ## Memory Safety
+//! - Uses unsafe blocks to access global `TASK_MANAGER` state
+//! - Task IDs may overflow (marked as TODO in implementation)
+//! - No protection against use-after-free for task references
+//!
+//! ## Concurrency
+//! - Designed for single-core systems only
+//! - No built-in protection against race conditions between tasks
+//!
+//! # Limitations
+//!
+//! - **No preemption**: Misbehaving tasks can starve others
+//! - **No automatic priority inheritance**: Priority inversion possible
+//! - **Fixed priority levels**: Cannot add priorities beyond 0-10 range
+//! - **ID overflow**: Task IDs will eventually wrap around
+//!
+//! # See Also
+//!
+//! - [`preemptive`] - Alternative preemptive scheduler
+//! - [`TaskManagerTrait`] - Common interface for all schedulers
+//! - [`Task`] - Basic task structure definition
+
 extern crate alloc;
 
 use crate::task_manager::{
