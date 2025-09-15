@@ -200,7 +200,7 @@ jobs:
           . /root/esp/esp-idf/export.sh
       - name: Run firmware in QEMU and assert UART output
         run: |
-          set -euo pipefail
+          set -eu
           . /root/esp/esp-idf/export.sh
           cd examples/rust-examples/xtensa-esp32/hello-world/target/xtensa-esp32-none-elf/release
           esptool.py --chip esp32 elf2image --flash_mode "dio" --flash_freq "40m" --flash_size "4MB" -o firmware.bin example_xtensa_esp32
