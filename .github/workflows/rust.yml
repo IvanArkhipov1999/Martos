@@ -54,11 +54,15 @@ jobs:
         run: cd ./examples/rust-examples/xtensa-esp32/hello-world && . /root/export-esp.sh && cargo build --release
       - name: Fmt
         run: cd ./examples/rust-examples/xtensa-esp32/hello-world && cargo fmt --all -- --check
-      - name: Upload ELF artifact
+      - name: Install cargo-espflash 3.3.0
+        run: . /root/export-esp.sh && cargo install cargo-espflash --version 3.3.0
+      - name: Create merged firmware image
+        run: cd ./examples/rust-examples/xtensa-esp32/hello-world && . /root/export-esp.sh && cargo espflash save-image --chip esp32 --merge firmware.bin --release
+      - name: Upload merged firmware
         uses: actions/upload-artifact@v4
         with:
-          name: xtensa-esp32-hello-world-elf
-          path: examples/rust-examples/xtensa-esp32/hello-world/target/xtensa-esp32-none-elf/release/example_xtensa_esp32
+          name: xtensa-esp32-hello-world-firmware
+          path: examples/rust-examples/xtensa-esp32/hello-world/firmware.bin
           retention-days: 3
 
   xtensa-esp32-rust-example-dynamic-memory:
@@ -192,11 +196,11 @@ jobs:
         run: |
           apt-get update
           apt-get install -y libpixman-1-0 libglib2.0-0 libslirp0 libsdl2-2.0-0 libgcrypt20
-      - name: Download ELF artifact
+      - name: Download merged firmware
         uses: actions/download-artifact@v4
         with:
-          name: xtensa-esp32-hello-world-elf
-          path: examples/rust-examples/xtensa-esp32/hello-world/target/xtensa-esp32-none-elf/release
+          name: xtensa-esp32-hello-world-firmware
+          path: examples/rust-examples/xtensa-esp32/hello-world
       - name: Install Espressif QEMU
         shell: bash
         run: |
@@ -209,9 +213,8 @@ jobs:
         run: |
           set -e
           source /root/esp/esp-idf/export.sh
-          cd examples/rust-examples/xtensa-esp32/hello-world/target/xtensa-esp32-none-elf/release
-          esptool.py --chip esp32 elf2image --flash_mode "dio" --flash_freq "40m" --flash_size "4MB" -o firmware.bin example_xtensa_esp32
-          # Pad/merge image to exactly 4MB to satisfy QEMU flash size constraints
+          cd examples/rust-examples/xtensa-esp32/hello-world
+          # Ensure 4MB size
           dd if=/dev/zero of=flash.bin bs=1 count=0 seek=4M
           dd if=firmware.bin of=flash.bin conv=notrunc
           # Resolve QEMU path explicitly if not in PATH
@@ -220,9 +223,9 @@ jobs:
             QEMU_BIN=$(find /root/.espressif/tools/qemu-xtensa -type f -name qemu-system-xtensa | head -n1)
           fi
           echo "Using QEMU: $QEMU_BIN"
-          timeout 30s "$QEMU_BIN" -nographic -machine esp32 \
+          timeout 60s "$QEMU_BIN" -nographic -machine esp32 \
             -drive file=flash.bin,if=none,format=raw,id=flash \
-            -global driver=esp32.flash,property=drive,value=flash \
+            -global driver=esp32.spi_flash,property=drive,value=flash \
             -serial mon:stdio | tee qemu.log || true
           grep -q "Setup hello world!" qemu.log
           grep -q "Loop hello world!" qemu.log
