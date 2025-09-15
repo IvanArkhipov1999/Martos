@@ -191,7 +191,7 @@ jobs:
       - name: Install QEMU runtime libraries
         run: |
           apt-get update
-          apt-get install -y libpixman-1-0 libglib2.0-0 libslirp0
+          apt-get install -y libpixman-1-0 libglib2.0-0 libslirp0 libsdl2-2.0-0 libgcrypt20
       - name: Download ELF artifact
         uses: actions/download-artifact@v4
         with:
@@ -211,7 +211,13 @@ jobs:
           source /root/esp/esp-idf/export.sh
           cd examples/rust-examples/xtensa-esp32/hello-world/target/xtensa-esp32-none-elf/release
           esptool.py --chip esp32 elf2image --flash_mode "dio" --flash_freq "40m" --flash_size "4MB" -o firmware.bin example_xtensa_esp32
-          timeout 30s qemu-system-xtensa -nographic -machine esp32 \
+          # Resolve QEMU path explicitly if not in PATH
+          QEMU_BIN="$(command -v qemu-system-xtensa || true)"
+          if [[ -z "$QEMU_BIN" ]]; then
+            QEMU_BIN=$(find /root/.espressif/tools/qemu-xtensa -type f -name qemu-system-xtensa | head -n1)
+          fi
+          echo "Using QEMU: $QEMU_BIN"
+          timeout 30s "$QEMU_BIN" -nographic -machine esp32 \
             -drive file=firmware.bin,if=mtd,format=raw \
             -serial mon:stdio | tee qemu.log || true
           grep -q "Setup hello world!" qemu.log
