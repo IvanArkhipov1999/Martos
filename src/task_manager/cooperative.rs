@@ -198,32 +198,105 @@ pub enum TaskStatusType {
     Terminated,
 }
 
-/// The main structure for a cooperative task.
-/// Shell for ```Task```, the same for both cooperative and preemptive task managers.
+/// Represents a single cooperatively scheduled task.
 ///
+/// A `CooperativeTask` wraps the user-provided callbacks stored in its `core`
+/// and augments them with runtime metadata used by the cooperative scheduler:
+/// a unique `id`, a lifecycle `status`, and a `priority` that determines when
+/// the task is selected to run relative to others. The memory layout is
+/// `repr(C)` to keep FFI options open and to ensure a stable layout across
+/// compilers.
+///
+/// Lifecycle rules:
+/// - `setup_fn` is executed exactly once when the task is created.
+/// - `loop_fn` is called repeatedly by the scheduler while the task is `Running`.
+///   Returning from `loop_fn` yields control cooperatively.
+/// - After each `loop_fn` call, `stop_condition_fn` is evaluated; when it returns
+///   `true`, the task transitions to `Terminated` and is removed from queues.
+///
+/// Scheduling rules:
+/// - Higher `priority` values are scheduled before lower ones.
+/// - Within the same `priority`, tasks are served in round-robin order.
 #[repr(C)]
 #[derive(Clone)]
 pub struct CooperativeTask {
-    ///  Contains 3 functions for task execution inherited from the ```Task```: ```setup_fn```,
-    /// ```loop_fn``` and ```stop_condition_fn```.
+    /// Encapsulated task callbacks taken from the underlying `Task`:
+    /// - `setup_fn`: runs once at creation for task-specific initialization
+    /// - `loop_fn`: runs on each scheduling turn; returning yields cooperatively
+    /// - `stop_condition_fn`: checked after `loop_fn`; `true` terminates the task
     pub(crate) core: Task,
-    /// Each task has a unique ```id```. The First ```id``` number is 0.
+
+    /// Monotonically increasing unique identifier assigned at creation.
+    ///
+    /// The first created task receives `id == 1`. The `id` is used by public
+    /// APIs such as `put_to_sleep`, `wake_up_task`, `delete_task`, and
+    /// `get_task_by_id` to reference a specific task.
+    ///
+    /// Note: `id` may eventually wrap if the system runs long enough; overflow
+    /// handling is currently a known limitation.
     pub(crate) id: TaskIdType,
-    /// Status of existing ```CooperativeTask```. It may change during the task executing.
+
+    /// Current lifecycle state of the task managed by the scheduler.
+    ///
+    /// Typical transitions: `Ready → Running → Ready` on each turn, `Running →
+    /// Terminated` when `stop_condition_fn` returns `true`, and `Ready ↔ Sleeping`
+    /// via explicit API calls. Externally mutating this field is intentionally
+    /// restricted to the scheduler (`pub(crate)`).
     pub(crate) status: TaskStatusType,
-    /// Each ```CooperativeTask``` has a ```priority```.
-    /// It is taken into account when selecting the next task to execute.
+
+    /// Priority used to order execution among tasks.
+    ///
+    /// Valid range is `0..NUM_PRIORITIES` (inclusive of 0, exclusive of the
+    /// upper bound). Higher values indicate higher priority and are always
+    /// scheduled before lower values. Within the same `priority`, the scheduler
+    /// uses round-robin fairness. Changing priority after creation is not
+    /// currently supported by this manager.
     pub(crate) priority: TaskPriorityType,
 }
 
-/// Cooperative task manager representation. Based on round-robin scheduling with priorities.
+/// Cooperative task manager responsible for creating, organizing, and scheduling tasks.
+///
+/// The `CooperativeTaskManager` maintains per-priority ready queues and executes
+/// tasks using strict priority selection with round-robin fairness within the
+/// same priority. It does not preempt tasks; instead, tasks yield by returning
+/// from their `loop_fn`. The manager also owns task identifiers and the notion of
+/// the currently executing task.
+///
+/// Scheduling policy:
+/// - Always pick the highest non-empty priority queue.
+/// - Execute the task at the front of that queue.
+/// - After a turn, move the task to the back of its queue unless it is still
+///   `Running` or has been `Terminated`.
+///
+/// Invariants and notes:
+/// - Each task has a unique, monotonically increasing `id` assigned at creation
+///   time (starting from 1).
+/// - `exec_task_id` is `Some(id)` only if a task with that `id` exists and is
+///   either `Ready` or `Running`.
+/// - Queues store only `Ready` or `Sleeping` tasks; `Terminated` tasks are
+///   removed eagerly.
 #[repr(C)]
 pub struct CooperativeTaskManager {
-    /// Array of vectors with ```CooperativeTask``` to execute.
+    /// Per-priority ready queues containing `CooperativeTask` instances.
+    ///
+    /// The array length equals `NUM_PRIORITIES`. Each element is either `None`
+    /// (no tasks exist at that priority) or `Some(Vec<...>)` storing tasks in
+    /// scheduling order. Highest priority is the last index (`NUM_PRIORITIES-1`).
     pub(crate) tasks: [Option<Vec<CooperativeTask>>; NUM_PRIORITIES],
-    /// ```id``` of a task that will be created the next. The first created task has id 1.
+
+    /// Next unique identifier to assign on task creation.
+    ///
+    /// Starts from 0 internally and is incremented before assignment, so the
+    /// first created task obtains `id == 1`. This value grows monotonically; ID
+    /// wrap-around is a known limitation and not yet handled.
     pub(crate) next_task_id: TaskIdType,
-    /// ```id``` of executing task.
+
+    /// Identifier of the task selected for the current scheduling turn.
+    ///
+    /// If this field is `Some(id)`, the scheduler targets that task on the next call to
+    /// `schedule()`. It may temporarily point to a `Sleeping` task; in that case
+    /// the task is rotated to the end of its queue, and a new `exec_task_id` is
+    /// selected from the highest non-empty priority.
     pub(crate) exec_task_id: Option<TaskIdType>,
 }
 
