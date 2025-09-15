@@ -188,20 +188,27 @@ jobs:
       options: --user root
     steps:
       - uses: actions/checkout@v3
+      - name: Install QEMU runtime libraries
+        run: |
+          apt-get update
+          apt-get install -y libpixman-1-0 libglib2.0-0 libslirp0
       - name: Download ELF artifact
         uses: actions/download-artifact@v4
         with:
           name: xtensa-esp32-hello-world-elf
           path: examples/rust-examples/xtensa-esp32/hello-world/target/xtensa-esp32-none-elf/release
       - name: Install Espressif QEMU
+        shell: bash
         run: |
-          . /root/esp/esp-idf/export.sh
+          set -e
+          source /root/esp/esp-idf/export.sh
           python "$IDF_PATH/tools/idf_tools.py" install qemu-xtensa
-          . /root/esp/esp-idf/export.sh
+          source /root/esp/esp-idf/export.sh
       - name: Run firmware in QEMU and assert UART output
+        shell: bash
         run: |
-          set -eu
-          . /root/esp/esp-idf/export.sh
+          set -e
+          source /root/esp/esp-idf/export.sh
           cd examples/rust-examples/xtensa-esp32/hello-world/target/xtensa-esp32-none-elf/release
           esptool.py --chip esp32 elf2image --flash_mode "dio" --flash_freq "40m" --flash_size "4MB" -o firmware.bin example_xtensa_esp32
           timeout 30s qemu-system-xtensa -nographic -machine esp32 \
