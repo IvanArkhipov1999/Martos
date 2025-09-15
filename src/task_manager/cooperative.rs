@@ -300,10 +300,22 @@ pub struct CooperativeTaskManager {
     pub(crate) exec_task_id: Option<TaskIdType>,
 }
 
-/// Cooperative implementation of ```TaskManagerTrait```.
 impl TaskManagerTrait for CooperativeTaskManager {
-    /// Add a task to task manager. It should pass setup, loop, and condition functions.
-    /// Task added with this function has ```priority``` 0.
+    /// Register a new task at the default priority (0).
+    ///
+    /// This is a convenience wrapper around [`add_priority_task`], using
+    /// `priority == 0` (lowest) by default. The task's `setup_fn` will be
+    /// executed immediately, and the task will be enqueued into the priority-0
+    /// ready queue in round-robin order.
+    ///
+    /// # Arguments
+    /// - `setup_fn` — called exactly once when the task is created
+    /// - `loop_fn` — called on each scheduling turn while the task runs
+    /// - `stop_condition_fn` — evaluated after each `loop_fn`; `true` terminates
+    ///
+    /// # Notes
+    /// - If there is no current `exec_task_id`, this newly added task becomes
+    ///   the initial candidate to run.
     fn add_task(
         setup_fn: TaskSetupFunctionType,
         loop_fn: TaskLoopFunctionType,
@@ -312,7 +324,20 @@ impl TaskManagerTrait for CooperativeTaskManager {
         CooperativeTaskManager::add_priority_task(setup_fn, loop_fn, stop_condition_fn, 0);
     }
 
-    /// Start task manager work.
+    /// Start the cooperative scheduler loop (never returns).
+    ///
+    /// Repeatedly calls [`schedule`] to advance task execution according to the
+    /// cooperative policy (strict priority with round-robin within a priority).
+    /// This function runs indefinitely on single-core targets.
+    ///
+    /// # Behavior
+    /// - Non-preemptive: tasks yield by returning from `loop_fn`
+    /// - Highest-priority ready task is always selected next
+    /// - Terminates a task when its `stop_condition_fn` returns `true`
+    ///
+    /// # Panics
+    /// Panics only if internal invariants are violated (e.g., missing task IDs),
+    /// which indicates a logic error in scheduler usage.
     fn start_task_manager() -> ! {
         loop {
             CooperativeTaskManager::schedule();
@@ -321,7 +346,10 @@ impl TaskManagerTrait for CooperativeTaskManager {
 }
 
 impl CooperativeTaskManager {
-    /// Create new task manager.
+    /// Create a new, empty cooperative task manager.
+    ///
+    /// Initializes all priority queues as empty, sets `next_task_id` to `0`
+    /// (the first created task will get `id == 1`), and clears `exec_task_id`.
     pub(crate) const fn new() -> CooperativeTaskManager {
         CooperativeTaskManager {
             tasks: [const { None }; NUM_PRIORITIES],
@@ -330,8 +358,20 @@ impl CooperativeTaskManager {
         }
     }
 
-    /// Add a task to task manager. It should pass setup, loop, and condition functions.
-    /// Task added with this function has given priority.
+    /// Add a new task with an explicit priority.
+    ///
+    /// Runs the task's `setup_fn` immediately, then enqueues it to the tail of
+    /// the ready queue corresponding to `priority`. If there is no current
+    /// `exec_task_id`, the just-created task becomes the first candidate to run.
+    ///
+    /// # Arguments
+    /// - `setup_fn` — initialization function called once upon creation
+    /// - `loop_fn` — main function called repeatedly when scheduled
+    /// - `stop_condition_fn` — termination condition checked after each loop turn
+    /// - `priority` — value in `0..NUM_PRIORITIES`; higher values run first
+    ///
+    /// # Panics
+    /// Panics if `priority >= NUM_PRIORITIES`.
     pub fn add_priority_task(
         setup_fn: TaskSetupFunctionType,
         loop_fn: TaskLoopFunctionType,
@@ -354,7 +394,10 @@ impl CooperativeTaskManager {
         }
     }
 
-    /// Helper function for ```add_priority_task```.
+    /// Create a `CooperativeTask` instance for `add_priority_task`.
+    ///
+    /// Assigns a fresh `id`, initializes state as `Ready`, and stores the
+    /// provided callbacks and `priority`.
     fn create_task(
         setup_fn: TaskSetupFunctionType,
         loop_fn: TaskLoopFunctionType,
@@ -380,7 +423,16 @@ impl CooperativeTaskManager {
         }
     }
 
-    /// Task can put to sleep another task in ```Ready``` state by its ```id```.
+    /// Put a task into the `Sleeping` state by its `id`.
+    ///
+    /// The task must currently be `Ready`. Sleeping tasks are skipped by the
+    /// scheduler until explicitly woken.
+    ///
+    /// # Panics
+    /// - If the task with the provided `id` does not exist
+    /// - If the task is `Running` (cannot sleep a running task)
+    /// - If the task is already `Sleeping`
+    /// - If the task is `Terminated`
     pub fn put_to_sleep(id: TaskIdType) {
         let Some(task) = CooperativeTaskManager::get_task_by_id(id) else {
             panic!("Error: put_to_sleep: Task with id {} not found.", id);
@@ -410,8 +462,15 @@ impl CooperativeTaskManager {
         }
     }
 
-    /// Task can terminate and delete another task by ```id```.
-    /// Remove task from ```tasks``` queue.
+    /// Terminate and remove a task by `id`.
+    ///
+    /// Removes the task from its priority queue. If the task is currently the
+    /// executing one, the scheduler will select a new `exec_task_id` on the next
+    /// `schedule()` turn.
+    ///
+    /// # Panics
+    /// - If the task does not exist
+    /// - If the task is not found in its priority queue (internal inconsistency)
     pub fn delete_task(id: TaskIdType) {
         let Some(task) = CooperativeTaskManager::get_task_by_id(id) else {
             panic!("Error: delete_task: Task with id {} not found.", id);
@@ -438,7 +497,13 @@ impl CooperativeTaskManager {
         }
     }
 
-    /// Wake up task in ```Sleeping``` state. Otherwise, panic.
+    /// Wake up a task currently in the `Sleeping` state.
+    ///
+    /// Sets its state to `Ready` so it can be scheduled again.
+    ///
+    /// # Panics
+    /// - If the task does not exist
+    /// - If the task is not in the `Sleeping` state
     pub fn wake_up_task(id: TaskIdType) {
         let Some(task) = CooperativeTaskManager::get_task_by_id(id) else {
             panic!("Error: wake_up_task: Task with id {} not found.", id);
@@ -452,7 +517,10 @@ impl CooperativeTaskManager {
         task.status = TaskStatusType::Ready;
     }
 
-    /// Get a task by ```id``` and return it.
+    /// Get a mutable reference to a task by `id`.
+    ///
+    /// Iterates all priority queues in ascending priority order and returns the
+    /// first task whose `id` matches. Returns `None` if the task does not exist.
     pub fn get_task_by_id<'a>(id: TaskIdType) -> Option<&'a mut CooperativeTask> {
         unsafe {
             for queue in TASK_MANAGER.tasks.iter_mut().flatten() {
@@ -464,7 +532,19 @@ impl CooperativeTaskManager {
         None
     }
 
-    /// Get task ```id``` by its position in ```tasks``` vector.
+    /// Get a task `id` by its position within a priority queue.
+    ///
+    /// Useful for tests or diagnostics to reference tasks deterministically by
+    /// their queue position.
+    ///
+    /// # Arguments
+    /// - `priority` — the queue to inspect
+    /// - `position` — zero-based index within that queue
+    ///
+    /// # Panics
+    /// - If `priority` is out of range
+    /// - If there is no queue at `priority`
+    /// - If `position` is out of bounds for that queue
     pub fn get_id_by_position(priority: TaskPriorityType, position: usize) -> TaskIdType {
         if priority >= NUM_PRIORITIES {
             panic!("Error: get_id_by_priorities: Task's priority {} is invalid. It must be between 0 and {}.", priority, NUM_PRIORITIES);
@@ -491,7 +571,12 @@ impl CooperativeTaskManager {
         }
     }
 
-    /// Push task to the queue.
+    /// Enqueue a task at the tail of its priority queue.
+    ///
+    /// Creates the queue lazily if it does not yet exist.
+    ///
+    /// # Panics
+    /// Panics only if the internal queue is unexpectedly `None` after creation.
     fn push_to_queue(task: CooperativeTask) {
         let priority = task.priority;
         unsafe {
@@ -512,7 +597,11 @@ impl CooperativeTaskManager {
         }
     }
 
-    /// Get id of task to be executed next.
+    /// Get the `id` of the next task to execute.
+    ///
+    /// Scans queues from highest to lowest priority and returns the `id` of the
+    /// task at the head of the first non-empty queue. Returns `None` if no tasks
+    /// exist.
     fn get_next_task_id() -> Option<TaskIdType> {
         unsafe {
             for queue in TASK_MANAGER.tasks.iter_mut().rev().flatten() {
@@ -524,7 +613,13 @@ impl CooperativeTaskManager {
         None // In case when task manager has not tasks.
     }
 
-    /// Push task to the other queue end.
+    /// Move a task to the tail of its priority queue.
+    ///
+    /// Maintains round-robin fairness within a priority level.
+    ///
+    /// # Panics
+    /// - If the queue for the task's priority does not exist
+    /// - If the task cannot be found in its own queue
     fn move_to_queue_end(task: &mut CooperativeTask) {
         unsafe {
             if let Some(queue) = TASK_MANAGER.tasks[task.priority].as_mut() {
@@ -547,7 +642,16 @@ impl CooperativeTaskManager {
         }
     }
 
-    /// One task manager iteration.
+    /// Execute one scheduling step.
+    ///
+    /// Behavior:
+    /// - If `exec_task_id` points to a `Ready` task, mark it `Running`.
+    /// - If it points to a `Running` task, call its `loop_fn`, then evaluate
+    ///   `stop_condition_fn` and terminate if `true`.
+    /// - If it points to a `Sleeping` task, rotate it to queue tail.
+    /// - If it points to a `Terminated` task, remove it.
+    /// - If after handling, the task is no longer `Running`, choose a new
+    ///   `exec_task_id` from the highest non-empty queue.
     pub fn schedule() {
         let exec_task_id_opt = unsafe { TASK_MANAGER.exec_task_id };
         if let Some(exec_task_id) = exec_task_id_opt {
@@ -588,14 +692,20 @@ impl CooperativeTaskManager {
         }
     }
 
-    /// Starts task manager work. Returns after 1000 steps only for testing task_manager_step.
+    /// Run the scheduler for 1000 iterations (test helper).
+    ///
+    /// This does not loop forever and is intended for unit/integration tests to
+    /// drive the scheduler deterministically.
     pub fn test_start_task_manager() {
         for _n in 1..=1000 {
             CooperativeTaskManager::schedule();
         }
     }
 
-    /// Reset task manager to default state.
+    /// Reset the manager to its initial, empty state.
+    ///
+    /// Clears all queues, resets `next_task_id` to `0`, and clears
+    /// `exec_task_id`. Intended for tests.
     pub fn reset_task_manager() {
         unsafe {
             for priority in 0..NUM_PRIORITIES {
@@ -609,7 +719,7 @@ impl CooperativeTaskManager {
         }
     }
 
-    /// Check if the task manager is empty.
+    /// Return `true` if there are no tasks in any queue.
     pub fn is_empty() -> bool {
         unsafe {
             for vec_opt in TASK_MANAGER.tasks.iter() {
