@@ -221,7 +221,8 @@ jobs:
           fi
           echo "Using QEMU: $QEMU_BIN"
           timeout 30s "$QEMU_BIN" -nographic -machine esp32 \
-            -pflash flash.bin \
+            -drive file=flash.bin,if=none,format=raw,id=flash \
+            -global driver=esp32.flash,property=drive,value=flash \
             -serial mon:stdio | tee qemu.log || true
           grep -q "Setup hello world!" qemu.log
           grep -q "Loop hello world!" qemu.log
