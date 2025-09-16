@@ -187,29 +187,28 @@ jobs:
         with:
           name: xtensa-esp32-hello-world-elf
           path: examples/rust-examples/xtensa-esp32/hello-world/target/xtensa-esp32-none-elf/release
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-      - name: Run with Wokwi CLI and assert UART output
+      - name: Create Wokwi diagram
         run: |
-          set -e
           cd examples/rust-examples/xtensa-esp32/hello-world/target/xtensa-esp32-none-elf/release
-          # Minimal Wokwi diagram for ESP32 DevKit
           cat > diagram.json << 'JSON'
           {
             "version": 1,
             "author": "ci",
-            "editor": "code",
             "parts": [
-              { "type": "board-esp32-devkit-v1", "id": "esp32", "top": -64, "left": -64 }
+              { "type": "board-esp32-devkit-v1", "id": "esp32" }
             ]
           }
           JSON
-          npx -y @wokwi/cli@latest --diagram diagram.json --elf ./example_xtensa_esp32 --timeout 60000 --log-serial | tee wokwi.log || true
-          grep -q "Setup hello world!" wokwi.log
-          grep -q "Loop hello world!" wokwi.log
-          grep -q "Counter =" wokwi.log
+      - name: Run simulation with Wokwi CI Action
+        uses: Wokwi/wokwi-ci-action@v1
+        with:
+          diagram-file: examples/rust-examples/xtensa-esp32/hello-world/target/xtensa-esp32-none-elf/release/diagram.json
+          elf-file: examples/rust-examples/xtensa-esp32/hello-world/target/xtensa-esp32-none-elf/release/example_xtensa_esp32
+          expect: |
+            Setup hello world!
+            Loop hello world!
+            Counter =
+          timeout: 60
 
   risc-v-esp32c6-rust-example-hello-world:
     runs-on: ubuntu-latest
