@@ -54,15 +54,11 @@ jobs:
         run: cd ./examples/rust-examples/xtensa-esp32/hello-world && . /root/export-esp.sh && cargo build --release
       - name: Fmt
         run: cd ./examples/rust-examples/xtensa-esp32/hello-world && cargo fmt --all -- --check
-      - name: Install cargo-espflash 3.3.0
-        run: . /root/export-esp.sh && cargo install cargo-espflash --version 3.3.0
-      - name: Create merged firmware image
-        run: cd ./examples/rust-examples/xtensa-esp32/hello-world && . /root/export-esp.sh && cargo espflash save-image --chip esp32 --merge firmware.bin --release
-      - name: Upload merged firmware
+      - name: Upload ELF artifact
         uses: actions/upload-artifact@v4
         with:
-          name: xtensa-esp32-hello-world-firmware
-          path: examples/rust-examples/xtensa-esp32/hello-world/firmware.bin
+          name: xtensa-esp32-hello-world-elf
+          path: examples/rust-examples/xtensa-esp32/hello-world/target/xtensa-esp32-none-elf/release/example_xtensa_esp32
           retention-days: 3
 
   xtensa-esp32-rust-example-dynamic-memory:
@@ -196,11 +192,11 @@ jobs:
         run: |
           apt-get update
           apt-get install -y libpixman-1-0 libglib2.0-0 libslirp0 libsdl2-2.0-0 libgcrypt20
-      - name: Download merged firmware
+      - name: Download ELF artifact
         uses: actions/download-artifact@v4
         with:
-          name: xtensa-esp32-hello-world-firmware
-          path: examples/rust-examples/xtensa-esp32/hello-world
+          name: xtensa-esp32-hello-world-elf
+          path: examples/rust-examples/xtensa-esp32/hello-world/target/xtensa-esp32-none-elf/release
       - name: Install Espressif QEMU
         shell: bash
         run: |
@@ -213,7 +209,9 @@ jobs:
         run: |
           set -e
           source /root/esp/esp-idf/export.sh
-          cd examples/rust-examples/xtensa-esp32/hello-world
+          cd examples/rust-examples/xtensa-esp32/hello-world/target/xtensa-esp32-none-elf/release
+          # Convert ELF to firmware image (4MB params)
+          esptool.py --chip esp32 elf2image --flash_mode "dio" --flash_freq "40m" --flash_size "4MB" -o firmware.bin example_xtensa_esp32
           # Ensure 4MB size
           dd if=/dev/zero of=flash.bin bs=1 count=0 seek=4M
           dd if=firmware.bin of=flash.bin conv=notrunc
