@@ -180,53 +180,36 @@ jobs:
   xtensa-esp32-rust-example-hello-world-emulator:
     needs: xtensa-esp32-rust-example-hello-world
     runs-on: ubuntu-latest
-    env:
-      IDF_PATH: /root/esp/esp-idf
-      IDF_TOOLS_PATH: /root/.espressif
-    container:
-      image: arkhipovivan1/xtensa-esp32-c:latest
-      options: --user root
     steps:
       - uses: actions/checkout@v3
-      - name: Install QEMU runtime libraries
-        run: |
-          apt-get update
-          apt-get install -y libpixman-1-0 libglib2.0-0 libslirp0 libsdl2-2.0-0 libgcrypt20
       - name: Download ELF artifact
         uses: actions/download-artifact@v4
         with:
           name: xtensa-esp32-hello-world-elf
           path: examples/rust-examples/xtensa-esp32/hello-world/target/xtensa-esp32-none-elf/release
-      - name: Install Espressif QEMU
-        shell: bash
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Run with Wokwi CLI and assert UART output
         run: |
           set -e
-          source /root/esp/esp-idf/export.sh
-          python "$IDF_PATH/tools/idf_tools.py" install qemu-xtensa
-          source /root/esp/esp-idf/export.sh
-      - name: Run firmware in QEMU and assert UART output
-        shell: bash
-        run: |
-          set -e
-          source /root/esp/esp-idf/export.sh
           cd examples/rust-examples/xtensa-esp32/hello-world/target/xtensa-esp32-none-elf/release
-          # Convert ELF to firmware image and prepare 4MB flash image
-          esptool.py --chip esp32 elf2image --flash_mode "dio" --flash_freq "40m" --flash_size "4MB" -o firmware.bin example_xtensa_esp32
-          dd if=/dev/zero of=flash.bin bs=1 count=0 seek=4M
-          dd if=firmware.bin of=flash.bin conv=notrunc
-          # Resolve QEMU path explicitly if not in PATH
-          QEMU_BIN="$(command -v qemu-system-xtensa || true)"
-          if [[ -z "$QEMU_BIN" ]]; then
-            QEMU_BIN=$(find /root/.espressif/tools/qemu-xtensa -type f -name qemu-system-xtensa | head -n1)
-          fi
-          echo "Using QEMU: $QEMU_BIN"
-          timeout 90s "$QEMU_BIN" -nographic -machine esp32 \
-            -drive file=flash.bin,if=none,format=raw,id=flash \
-            -global esp32.spi_flash.drive=flash \
-            -serial mon:stdio | tee qemu.log || true
-          grep -q "Setup hello world!" qemu.log
-          grep -q "Loop hello world!" qemu.log
-          grep -q "Counter =" qemu.log
+          # Minimal Wokwi diagram for ESP32 DevKit
+          cat > diagram.json << 'JSON'
+          {
+            "version": 1,
+            "author": "ci",
+            "editor": "code",
+            "parts": [
+              { "type": "board-esp32-devkit-v1", "id": "esp32", "top": -64, "left": -64 }
+            ]
+          }
+          JSON
+          npx -y @wokwi/cli@latest --diagram diagram.json --elf ./example_xtensa_esp32 --timeout 60000 --log-serial | tee wokwi.log || true
+          grep -q "Setup hello world!" wokwi.log
+          grep -q "Loop hello world!" wokwi.log
+          grep -q "Counter =" wokwi.log
 
   risc-v-esp32c6-rust-example-hello-world:
     runs-on: ubuntu-latest
