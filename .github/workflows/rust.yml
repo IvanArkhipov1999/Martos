@@ -180,6 +180,12 @@ jobs:
   xtensa-esp32-rust-example-hello-world-emulator:
     needs: xtensa-esp32-rust-example-hello-world
     runs-on: ubuntu-latest
+    env:
+      IDF_PATH: /root/esp/esp-idf
+      IDF_TOOLS_PATH: /root/.espressif
+    container:
+      image: arkhipovivan1/xtensa-esp32-c:latest
+      options: --user root
     steps:
       - uses: actions/checkout@v3
       - name: Download ELF artifact
@@ -187,28 +193,56 @@ jobs:
         with:
           name: xtensa-esp32-hello-world-elf
           path: examples/rust-examples/xtensa-esp32/hello-world/target/xtensa-esp32-none-elf/release
-      - name: Create Wokwi diagram
+      - name: Install QEMU runtime libraries
         run: |
-          cd examples/rust-examples/xtensa-esp32/hello-world/target/xtensa-esp32-none-elf/release
-          cat > diagram.json << 'JSON'
-          {
-            "version": 1,
-            "author": "ci",
-            "parts": [
-              { "type": "board-esp32-devkit-v1", "id": "esp32" }
-            ]
-          }
-          JSON
-      - name: Run simulation with Wokwi CI Action
-        uses: Wokwi/wokwi-ci-action@v1
-        with:
-          diagram-file: examples/rust-examples/xtensa-esp32/hello-world/target/xtensa-esp32-none-elf/release/diagram.json
-          elf-file: examples/rust-examples/xtensa-esp32/hello-world/target/xtensa-esp32-none-elf/release/example_xtensa_esp32
-          expect: |
-            Setup hello world!
-            Loop hello world!
-            Counter =
-          timeout: 60
+          apt-get update
+          apt-get install -y libpixman-1-0 libglib2.0-0 libslirp0 libsdl2-2.0-0 libgcrypt20
+      - name: Install Espressif QEMU
+        shell: bash
+        run: |
+          set -e
+          source /root/esp/esp-idf/export.sh
+          python "$IDF_PATH/tools/idf_tools.py" install qemu-xtensa
+          source /root/esp/esp-idf/export.sh
+      - name: Build minimal IDF hello_world to get bootloader and partition table
+        shell: bash
+        run: |
+          set -e
+          source /root/esp/esp-idf/export.sh
+          mkdir -p /tmp/idf_hello && cd /tmp/idf_hello
+          idf.py create-project hello_world
+          cd hello_world
+          idf.py -DIDF_TARGET=esp32 build
+      - name: Merge bootloader + partitions + app into flash image
+        shell: bash
+        run: |
+          set -e
+          source /root/esp/esp-idf/export.sh
+          APP_DIR=examples/rust-examples/xtensa-esp32/hello-world/target/xtensa-esp32-none-elf/release
+          BOOT_BIN=/tmp/idf_hello/hello_world/build/bootloader/bootloader.bin
+          PART_BIN=/tmp/idf_hello/hello_world/build/partition_table/partition-table.bin
+          cd "$APP_DIR"
+          esptool.py --chip esp32 elf2image --flash_mode dio --flash_freq 40m --flash_size 4MB -o app.bin example_xtensa_esp32
+          esptool.py --chip esp32 merge_bin -o flash.bin 0x1000 "$BOOT_BIN" 0x8000 "$PART_BIN" 0x10000 app.bin
+      - name: Run QEMU with merged flash and assert UART output
+        shell: bash
+        run: |
+          set -e
+          source /root/esp/esp-idf/export.sh
+          APP_DIR=examples/rust-examples/xtensa-esp32/hello-world/target/xtensa-esp32-none-elf/release
+          cd "$APP_DIR"
+          QEMU_BIN="$(command -v qemu-system-xtensa || true)"
+          if [[ -z "$QEMU_BIN" ]]; then
+            QEMU_BIN=$(find /root/.espressif/tools/qemu-xtensa -type f -name qemu-system-xtensa | head -n1)
+          fi
+          echo "Using QEMU: $QEMU_BIN"
+          timeout 90s "$QEMU_BIN" -nographic -machine esp32 \
+            -drive file=flash.bin,if=none,format=raw,id=flash \
+            -serial mon:stdio | tee qemu.log || true
+          # Check expected output
+          grep -q "Setup hello world!" qemu.log
+          grep -q "Loop hello world!" qemu.log
+          grep -q "Counter =" qemu.log
 
   risc-v-esp32c6-rust-example-hello-world:
     runs-on: ubuntu-latest
