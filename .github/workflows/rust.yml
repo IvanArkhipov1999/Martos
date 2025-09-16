@@ -51,9 +51,15 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Build
-        run: cd ./examples/rust-examples/xtensa-esp32/hello-world && . /root/export-esp.sh && cargo build
+        run: cd ./examples/rust-examples/xtensa-esp32/hello-world && . /root/export-esp.sh && cargo build --release
       - name: Fmt
         run: cd ./examples/rust-examples/xtensa-esp32/hello-world && cargo fmt --all -- --check
+      - name: Upload ELF artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: xtensa-esp32-hello-world-elf
+          path: examples/rust-examples/xtensa-esp32/hello-world/target/xtensa-esp32-none-elf/release/example_xtensa_esp32
+          retention-days: 3
 
   xtensa-esp32-rust-example-dynamic-memory:
     runs-on: ubuntu-latest
@@ -170,6 +176,118 @@ jobs:
       - name: Build
         run: cd ./examples/c-examples/xtensa-esp32 && . /root/esp/esp-idf/export.sh && make && esptool.py --chip esp32 elf2image --flash_mode="dio" --flash_freq "40m" --flash_size "4MB" -o main.bin main.elf
 
+
+  xtensa-esp32-rust-example-hello-world-emulator:
+    needs: xtensa-esp32-rust-example-hello-world
+    runs-on: ubuntu-latest
+    env:
+      IDF_PATH: /root/esp/esp-idf
+      IDF_TOOLS_PATH: /root/.espressif
+    container:
+      image: arkhipovivan1/xtensa-esp32-c:latest
+      options: --user root
+    steps:
+      - uses: actions/checkout@v3
+      - name: Download ELF artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: xtensa-esp32-hello-world-elf
+          path: examples/rust-examples/xtensa-esp32/hello-world/target/xtensa-esp32-none-elf/release
+      - name: Install QEMU runtime libraries
+        run: |
+          apt-get update
+          apt-get install -y libpixman-1-0 libglib2.0-0 libslirp0 libsdl2-2.0-0 libgcrypt20
+      - name: Install Espressif QEMU
+        shell: bash
+        run: |
+          set -e
+          source /root/esp/esp-idf/export.sh
+          python "$IDF_PATH/tools/idf_tools.py" install qemu-xtensa
+          source /root/esp/esp-idf/export.sh
+      - name: Build minimal IDF hello_world to get bootloader and partition table
+        shell: bash
+        run: |
+          set -e
+          source /root/esp/esp-idf/export.sh
+          mkdir -p /tmp/idf_hello && cd /tmp/idf_hello
+          idf.py create-project hello_world
+          cd hello_world
+          idf.py -DIDF_TARGET=esp32 build
+      - name: Merge bootloader + partitions + app into flash image
+        shell: bash
+        run: |
+          set -e
+          source /root/esp/esp-idf/export.sh
+          APP_DIR=examples/rust-examples/xtensa-esp32/hello-world/target/xtensa-esp32-none-elf/release
+          BOOT_BIN=/tmp/idf_hello/hello_world/build/bootloader/bootloader.bin
+          PART_BIN=/tmp/idf_hello/hello_world/build/partition_table/partition-table.bin
+          cd "$APP_DIR"
+          # Convert our ELF to IDF-style app image
+          esptool.py --chip esp32 elf2image --flash_mode dio --flash_freq 40m --flash_size 4MB -o app.bin example_xtensa_esp32
+          # Inject into the IDF project's build as the main app image (optional, kept for reference)
+          cp app.bin /tmp/idf_hello/hello_world/build/hello_world.bin || true
+          # Merge into full flash image expected by ROM bootloader
+          esptool.py --chip esp32 merge_bin -o flash.bin \
+            0x1000 "$BOOT_BIN" \
+            0x8000 "$PART_BIN" \
+            0x10000 app.bin
+
+      - name: Diagnose QEMU device mapping
+        shell: bash
+        run: |
+          set -e
+          source /root/esp/esp-idf/export.sh
+          APP_DIR=examples/rust-examples/xtensa-esp32/hello-world/target/xtensa-esp32-none-elf/release
+          cd "$APP_DIR"
+          QEMU_BIN="$(command -v qemu-system-xtensa || true)"
+          if [[ -z "$QEMU_BIN" ]]; then
+            QEMU_BIN=$(find /root/.espressif/tools/qemu-xtensa -type f -name qemu-system-xtensa | head -n1)
+          fi
+          echo "Using QEMU: $QEMU_BIN"
+          echo "Listing ESP-IDF tools directories (if present):"
+          ls -la "$IDF_PATH/tools" || true
+          ls -la "$IDF_PATH/tools/qemu" || true
+          # Capture supported devices for this esp32 machine to determine correct flash mapping
+          "$QEMU_BIN" -nographic -machine esp32 -device help | tee qemu_devices.txt || true
+
+      - name: Upload QEMU diagnostics
+        uses: actions/upload-artifact@v4
+        with:
+          name: qemu-esp32-devices
+          path: examples/rust-examples/xtensa-esp32/hello-world/target/xtensa-esp32-none-elf/release/qemu_devices.txt
+          retention-days: 3
+      - name: Run QEMU with merged flash and assert UART output
+        shell: bash
+        run: |
+          set -e
+          source /root/esp/esp-idf/export.sh
+          APP_DIR=examples/rust-examples/xtensa-esp32/hello-world/target/xtensa-esp32-none-elf/release
+          cd "$APP_DIR"
+          test -f flash.bin || { echo "flash.bin not found, previous step failed"; ls -la; exit 1; }
+          QEMU_BIN="$(command -v qemu-system-xtensa || true)"
+          if [[ -z "$QEMU_BIN" ]]; then
+            QEMU_BIN=$(find /root/.espressif/tools/qemu-xtensa -type f -name qemu-system-xtensa | head -n1)
+          fi
+          echo "Using QEMU: $QEMU_BIN"
+          set +e
+          # Attempt 1: attach flash via raw drive with guessed binding
+          timeout 120s "$QEMU_BIN" -nographic -machine esp32 \
+            -drive file=flash.bin,if=none,format=raw,id=flash \
+            -serial mon:stdio | tee qemu.log
+          EXIT_CODE=$?
+          if [[ $EXIT_CODE -ne 0 ]]; then
+            echo "First QEMU invocation failed ($EXIT_CODE), trying -pflash fallback..."
+            timeout 120s "$QEMU_BIN" -nographic -machine esp32 \
+              -pflash flash.bin \
+              -serial mon:stdio | tee qemu.log
+            EXIT_CODE=$?
+          fi
+          set -e
+          test $EXIT_CODE -eq 0 || exit $EXIT_CODE
+          # Check expected output
+          grep -q "Setup hello world!" qemu.log
+          grep -q "Loop hello world!" qemu.log
+          grep -q "Counter =" qemu.log
 
   risc-v-esp32c6-rust-example-hello-world:
     runs-on: ubuntu-latest
