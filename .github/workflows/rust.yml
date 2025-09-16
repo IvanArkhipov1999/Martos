@@ -231,7 +231,7 @@ jobs:
             0x1000 "$BOOT_BIN" \
             0x8000 "$PART_BIN" \
             0x10000 app.bin
-      - name: Run QEMU with merged flash and assert UART output
+      - name: Run QEMU (via ESP-IDF helper) and assert UART output
         shell: bash
         run: |
           set -e
@@ -239,27 +239,8 @@ jobs:
           APP_DIR=examples/rust-examples/xtensa-esp32/hello-world/target/xtensa-esp32-none-elf/release
           cd "$APP_DIR"
           test -f flash.bin || { echo "flash.bin not found, previous step failed"; ls -la; exit 1; }
-          QEMU_BIN="$(command -v qemu-system-xtensa || true)"
-          if [[ -z "$QEMU_BIN" ]]; then
-            QEMU_BIN=$(find /root/.espressif/tools/qemu-xtensa -type f -name qemu-system-xtensa | head -n1)
-          fi
-          echo "Using QEMU: $QEMU_BIN"
-          set +e
-          # Try variant 1: raw drive + esp32 spi_flash binding
-          timeout 120s "$QEMU_BIN" -nographic -machine esp32 \
-            -drive file=flash.bin,if=none,format=raw,id=flash \
-            -global esp32.spi_flash.drive=flash \
-            -serial mon:stdio | tee qemu.log
-          EXIT_CODE=$?
-          if [[ $EXIT_CODE -ne 0 ]]; then
-            echo "First QEMU invocation failed ($EXIT_CODE), trying -pflash fallback..."
-            timeout 120s "$QEMU_BIN" -nographic -machine esp32 \
-              -pflash flash.bin \
-              -serial mon:stdio | tee qemu.log
-            EXIT_CODE=$?
-          fi
-          set -e
-          test $EXIT_CODE -eq 0 || exit $EXIT_CODE
+          # Use ESP-IDF helper to run QEMU with proper esp32 flash mapping
+          python "$IDF_PATH/tools/qemu/run_qemu.py" --target esp32 --image flash.bin --timeout 120 --nographic | tee qemu.log || true
           # Check expected output
           grep -q "Setup hello world!" qemu.log
           grep -q "Loop hello world!" qemu.log
