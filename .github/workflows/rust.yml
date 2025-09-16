@@ -231,6 +231,31 @@ jobs:
             0x1000 "$BOOT_BIN" \
             0x8000 "$PART_BIN" \
             0x10000 app.bin
+
+      - name: Diagnose QEMU device mapping
+        shell: bash
+        run: |
+          set -e
+          source /root/esp/esp-idf/export.sh
+          APP_DIR=examples/rust-examples/xtensa-esp32/hello-world/target/xtensa-esp32-none-elf/release
+          cd "$APP_DIR"
+          QEMU_BIN="$(command -v qemu-system-xtensa || true)"
+          if [[ -z "$QEMU_BIN" ]]; then
+            QEMU_BIN=$(find /root/.espressif/tools/qemu-xtensa -type f -name qemu-system-xtensa | head -n1)
+          fi
+          echo "Using QEMU: $QEMU_BIN"
+          echo "Listing ESP-IDF tools directories (if present):"
+          ls -la "$IDF_PATH/tools" || true
+          ls -la "$IDF_PATH/tools/qemu" || true
+          # Capture supported devices for this esp32 machine to determine correct flash mapping
+          "$QEMU_BIN" -nographic -machine esp32 -device help | tee qemu_devices.txt || true
+
+      - name: Upload QEMU diagnostics
+        uses: actions/upload-artifact@v4
+        with:
+          name: qemu-esp32-devices
+          path: examples/rust-examples/xtensa-esp32/hello-world/target/xtensa-esp32-none-elf/release/qemu_devices.txt
+          retention-days: 3
       - name: Run QEMU (via ESP-IDF helper) and assert UART output
         shell: bash
         run: |
