@@ -216,8 +216,9 @@ jobs:
             QEMU_BIN=$(find /root/.espressif/tools/qemu-xtensa -type f -name qemu-system-xtensa | head -n1)
           fi
           echo "Using QEMU: $QEMU_BIN"
-          timeout 60s "$QEMU_BIN" -nographic -machine esp32 \
-            -kernel example_xtensa_esp32 \
+          timeout 90s "$QEMU_BIN" -nographic -machine esp32 \
+            -drive file=flash.bin,if=none,format=raw,id=flash \
+            -global esp32.spi_flash.drive=flash \
             -serial mon:stdio | tee qemu.log || true
           grep -q "Setup hello world!" qemu.log
           grep -q "Loop hello world!" qemu.log
