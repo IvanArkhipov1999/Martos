@@ -210,11 +210,6 @@ jobs:
           set -e
           source /root/esp/esp-idf/export.sh
           cd examples/rust-examples/xtensa-esp32/hello-world/target/xtensa-esp32-none-elf/release
-          # Convert ELF to firmware image (4MB params)
-          esptool.py --chip esp32 elf2image --flash_mode "dio" --flash_freq "40m" --flash_size "4MB" -o firmware.bin example_xtensa_esp32
-          # Ensure 4MB size
-          dd if=/dev/zero of=flash.bin bs=1 count=0 seek=4M
-          dd if=firmware.bin of=flash.bin conv=notrunc
           # Resolve QEMU path explicitly if not in PATH
           QEMU_BIN="$(command -v qemu-system-xtensa || true)"
           if [[ -z "$QEMU_BIN" ]]; then
@@ -222,8 +217,7 @@ jobs:
           fi
           echo "Using QEMU: $QEMU_BIN"
           timeout 60s "$QEMU_BIN" -nographic -machine esp32 \
-            -drive file=flash.bin,if=none,format=raw,id=flash \
-            -global driver=esp32.spi_flash,property=drive,value=flash \
+            -kernel example_xtensa_esp32 \
             -serial mon:stdio | tee qemu.log || true
           grep -q "Setup hello world!" qemu.log
           grep -q "Loop hello world!" qemu.log
