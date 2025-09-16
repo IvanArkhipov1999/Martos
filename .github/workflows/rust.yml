@@ -219,11 +219,18 @@ jobs:
           set -e
           source /root/esp/esp-idf/export.sh
           APP_DIR=examples/rust-examples/xtensa-esp32/hello-world/target/xtensa-esp32-none-elf/release
+          BOOT_BIN=/tmp/idf_hello/hello_world/build/bootloader/bootloader.bin
+          PART_BIN=/tmp/idf_hello/hello_world/build/partition_table/partition-table.bin
           cd "$APP_DIR"
           # Convert our ELF to IDF-style app image
           esptool.py --chip esp32 elf2image --flash_mode dio --flash_freq 40m --flash_size 4MB -o app.bin example_xtensa_esp32
-          # Inject into the IDF project's build as the main app image
-          cp app.bin /tmp/idf_hello/hello_world/build/hello_world.bin
+          # Inject into the IDF project's build as the main app image (optional, kept for reference)
+          cp app.bin /tmp/idf_hello/hello_world/build/hello_world.bin || true
+          # Merge into full flash image expected by ROM bootloader
+          esptool.py --chip esp32 merge_bin -o flash.bin \
+            0x1000 "$BOOT_BIN" \
+            0x8000 "$PART_BIN" \
+            0x10000 app.bin
       - name: Run QEMU with merged flash and assert UART output
         shell: bash
         run: |
@@ -231,6 +238,7 @@ jobs:
           source /root/esp/esp-idf/export.sh
           APP_DIR=examples/rust-examples/xtensa-esp32/hello-world/target/xtensa-esp32-none-elf/release
           cd "$APP_DIR"
+          test -f flash.bin || { echo "flash.bin not found, previous step failed"; ls -la; exit 1; }
           QEMU_BIN="$(command -v qemu-system-xtensa || true)"
           if [[ -z "$QEMU_BIN" ]]; then
             QEMU_BIN=$(find /root/.espressif/tools/qemu-xtensa -type f -name qemu-system-xtensa | head -n1)
