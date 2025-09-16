@@ -219,26 +219,19 @@ jobs:
           set -e
           source /root/esp/esp-idf/export.sh
           APP_DIR=examples/rust-examples/xtensa-esp32/hello-world/target/xtensa-esp32-none-elf/release
-          BOOT_BIN=/tmp/idf_hello/hello_world/build/bootloader/bootloader.bin
-          PART_BIN=/tmp/idf_hello/hello_world/build/partition_table/partition-table.bin
           cd "$APP_DIR"
+          # Convert our ELF to IDF-style app image
           esptool.py --chip esp32 elf2image --flash_mode dio --flash_freq 40m --flash_size 4MB -o app.bin example_xtensa_esp32
-          esptool.py --chip esp32 merge_bin -o flash.bin 0x1000 "$BOOT_BIN" 0x8000 "$PART_BIN" 0x10000 app.bin
-      - name: Run QEMU with merged flash and assert UART output
+          # Inject into the IDF project's build as the main app image
+          cp app.bin /tmp/idf_hello/hello_world/build/hello_world.bin
+      - name: Run IDF QEMU and assert UART output
         shell: bash
         run: |
           set -e
           source /root/esp/esp-idf/export.sh
-          APP_DIR=examples/rust-examples/xtensa-esp32/hello-world/target/xtensa-esp32-none-elf/release
-          cd "$APP_DIR"
-          QEMU_BIN="$(command -v qemu-system-xtensa || true)"
-          if [[ -z "$QEMU_BIN" ]]; then
-            QEMU_BIN=$(find /root/.espressif/tools/qemu-xtensa -type f -name qemu-system-xtensa | head -n1)
-          fi
-          echo "Using QEMU: $QEMU_BIN"
-          timeout 90s "$QEMU_BIN" -nographic -machine esp32 \
-            -drive file=flash.bin,if=none,format=raw,id=flash \
-            -serial mon:stdio | tee qemu.log || true
+          cd /tmp/idf_hello/hello_world
+          # Run with IDF helper so it configures QEMU/flash mapping properly
+          timeout 120s idf.py qemu | tee qemu.log || true
           # Check expected output
           grep -q "Setup hello world!" qemu.log
           grep -q "Loop hello world!" qemu.log
