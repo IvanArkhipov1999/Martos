@@ -8,7 +8,7 @@ martos = { path = "../../../../", features = ["network"] }
 esp-hal = { version = "0.21.1", features = ["esp32"] }
 esp-backtrace = { version = "0.14.1", features = ["esp32", "panic-handler", "exception-handler", "println"] }
 esp-println = { version = "0.11.0", features = ["esp32"] }
-esp-wifi = { version = "0.10.1", features = ["wifi", "esp-now"] }
+esp-wifi = { version = "0.10.1", features = ["wifi", "esp-now", "esp32"] }
 static_cell = "2.0.0"
 
 [features]
