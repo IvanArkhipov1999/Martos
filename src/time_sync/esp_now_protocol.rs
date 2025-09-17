@@ -21,19 +21,19 @@ impl EspNow {
     pub fn peer_exists(&self, _mac: &[u8; 6]) -> bool {
         false
     }
-    
+
     pub fn send(&self, _mac: &[u8; 6], _data: &[u8]) -> Result<(), ()> {
         Ok(())
     }
-    
+
     pub fn add_peer(&self, _peer: PeerInfo) -> Result<(), ()> {
         Ok(())
     }
-    
+
     pub fn receive(&self) -> Option<EspNowReceive> {
         None
     }
-    
+
     pub fn remove_peer(&self, _mac: &[u8; 6]) -> Result<(), ()> {
         Ok(())
     }
@@ -48,7 +48,6 @@ pub struct EspNowReceiveInfo {
     pub src_address: [u8; 6],
     pub dst_address: [u8; 6],
 }
-
 
 /// ESP-NOW protocol handler for time synchronization
 #[cfg(feature = "network")]
@@ -185,12 +184,16 @@ pub mod utils {
     use super::*;
 
     /// Extract MAC address from ESP-NOW received data
-    pub fn extract_sender_mac(received: &crate::time_sync::esp_now_protocol::EspNowReceive) -> [u8; 6] {
+    pub fn extract_sender_mac(
+        received: &crate::time_sync::esp_now_protocol::EspNowReceive,
+    ) -> [u8; 6] {
         received.info.src_address
     }
 
     /// Extract destination MAC address from ESP-NOW received data
-    pub fn extract_dest_mac(received: &crate::time_sync::esp_now_protocol::EspNowReceive) -> [u8; 6] {
+    pub fn extract_dest_mac(
+        received: &crate::time_sync::esp_now_protocol::EspNowReceive,
+    ) -> [u8; 6] {
         received.info.dst_address
     }
 
@@ -200,7 +203,11 @@ pub mod utils {
     }
 
     /// Calculate network delay estimation based on message timestamps
-    pub fn estimate_network_delay(send_time: u64, receive_time: u64, _remote_timestamp: u64) -> u64 {
+    pub fn estimate_network_delay(
+        send_time: u64,
+        receive_time: u64,
+        _remote_timestamp: u64,
+    ) -> u64 {
         // Simple delay estimation: half of round-trip time
         let round_trip_time = receive_time - send_time;
         round_trip_time / 2

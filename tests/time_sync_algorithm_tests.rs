@@ -45,11 +45,11 @@ fn test_peer_quality_management() {
 
     // Test quality score bounds
     peer.quality_score = 1.5; // Above maximum
-    // Note: In real implementation, this would be clamped, but in tests we just verify the value
+                              // Note: In real implementation, this would be clamped, but in tests we just verify the value
     assert_eq!(peer.quality_score, 1.5);
 
     peer.quality_score = -0.5; // Below minimum
-    // Note: In real implementation, this would be clamped, but in tests we just verify the value
+                               // Note: In real implementation, this would be clamped, but in tests we just verify the value
     assert_eq!(peer.quality_score, -0.5);
 
     // Test quality score updates
@@ -114,10 +114,10 @@ fn test_acceleration_factor_calculations() {
     assert!(config.deceleration_factor > 0.0);
     assert!(config.acceleration_factor <= 1.0);
     assert!(config.deceleration_factor <= 1.0);
-    
+
     // Test that acceleration factor is greater than deceleration factor
     assert!(config.acceleration_factor > config.deceleration_factor);
-    
+
     // Test threshold calculations
     let convergence_threshold = config.max_correction_threshold_us as i64 / 10;
     assert_eq!(convergence_threshold, 100); // 1000 / 10 = 100

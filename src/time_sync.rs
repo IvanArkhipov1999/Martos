@@ -307,8 +307,10 @@ impl TimeSyncManager {
     /// Create a new time synchronization manager
     pub fn new(config: SyncConfig) -> Self {
         #[cfg(feature = "network")]
-        let sync_algorithm = Some(crate::time_sync::sync_algorithm::SyncAlgorithm::new(config.clone()));
-        
+        let sync_algorithm = Some(crate::time_sync::sync_algorithm::SyncAlgorithm::new(
+            config.clone(),
+        ));
+
         Self {
             config,
             sync_enabled: AtomicBool::new(false),
@@ -485,7 +487,7 @@ impl TimeSyncManager {
         } else {
             Vec::new()
         };
-        
+
         for message in messages {
             self.handle_sync_message(message);
         }
@@ -495,7 +497,8 @@ impl TimeSyncManager {
             >= self.config.sync_interval_ms as u64 * 1000
         {
             self.send_periodic_sync_requests(current_time_us);
-            self.last_sync_time.store(current_time_us, Ordering::Release);
+            self.last_sync_time
+                .store(current_time_us, Ordering::Release);
         }
     }
 
@@ -523,7 +526,11 @@ impl TimeSyncManager {
                         // Convert node_id to MAC address (simplified - in real app you'd have a mapping)
                         let mut mac = [0u8; 6];
                         mac[0..4].copy_from_slice(&message.source_node_id.to_le_bytes());
-                        let _ = protocol.send_sync_response(&mac, message.source_node_id, current_time_us);
+                        let _ = protocol.send_sync_response(
+                            &mac,
+                            message.source_node_id,
+                            current_time_us,
+                        );
                     }
                 }
                 SyncMessageType::SyncResponse => {
