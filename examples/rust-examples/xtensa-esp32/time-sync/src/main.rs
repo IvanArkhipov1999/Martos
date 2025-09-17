@@ -29,9 +29,6 @@ static mut NEXT_STATS_TIME: Option<u32> = None;
 fn setup_fn() {
     println!("=== ESP32 Time Synchronization Example ===");
 
-    // Initialize Martos system
-    init_system();
-
     // Get ESP-NOW instance
     unsafe {
         ESP_NOW = Some(get_esp_now());
