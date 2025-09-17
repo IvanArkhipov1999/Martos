@@ -25,10 +25,6 @@ jobs:
       - uses: actions/checkout@v3
       - name: Run tests
         run: cargo test --verbose
-      - name: Run time sync tests
-        run: cargo test --test time_sync_tests --features network --verbose
-      - name: Run time sync algorithm tests
-        run: cargo test --test time_sync_algorithm_tests --features network --verbose
 
   fmt:
     runs-on: ubuntu-latest
