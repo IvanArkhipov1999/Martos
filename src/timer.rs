@@ -973,7 +973,7 @@ impl Timer {
     /// ```
     pub fn get_synchronized_time(&self) -> Duration {
         let local_time = self.get_time();
-        let offset_duration = Duration::from_micros(self.sync_offset_us.abs() as u64);
+        let offset_duration = Duration::from_micros(self.sync_offset_us.unsigned_abs());
 
         if self.sync_offset_us >= 0 {
             local_time + offset_duration
