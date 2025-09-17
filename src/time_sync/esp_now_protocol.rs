@@ -7,16 +7,38 @@
 use crate::time_sync::{SyncError, SyncMessage, SyncMessageType, SyncResult};
 use alloc::vec::Vec;
 
-// Mock types for testing and when network feature is not available
+#[cfg(all(feature = "network", not(test)))]
+pub use esp_wifi::esp_now::{EspNow, EspNowReceiver, PeerInfo, ReceivedData, BROADCAST_ADDRESS};
+
+#[cfg(any(not(feature = "network"), test))]
 pub struct EspNow {}
+#[cfg(any(not(feature = "network"), test))]
 pub struct PeerInfo {
     pub peer_address: [u8; 6],
     pub lmk: Option<[u8; 16]>,
     pub channel: Option<u8>,
     pub encrypt: bool,
 }
+#[cfg(any(not(feature = "network"), test))]
 pub const BROADCAST_ADDRESS: [u8; 6] = [0xFF; 6];
+#[cfg(any(not(feature = "network"), test))]
+pub struct EspNowReceive {
+    pub data: Vec<u8>,
+}
+#[cfg(any(not(feature = "network"), test))]
+pub struct EspNowReceiveInfo {
+    pub src_address: [u8; 6],
+    pub dst_address: [u8; 6],
+}
+#[cfg(any(not(feature = "network"), test))]
+pub struct EspNowReceiver {}
+#[cfg(any(not(feature = "network"), test))]
+pub struct ReceivedData {
+    pub info: EspNowReceiveInfo,
+    pub data: Vec<u8>,
+}
 
+#[cfg(any(not(feature = "network"), test))]
 impl EspNow {
     pub fn peer_exists(&self, _mac: &[u8; 6]) -> bool {
         false
@@ -39,11 +61,7 @@ impl EspNow {
     }
 }
 
-pub struct EspNowReceive {
-    pub info: EspNowReceiveInfo,
-    pub data: Vec<u8>,
-}
-
+#[cfg(not(feature = "network"))]
 pub struct EspNowReceiveInfo {
     pub src_address: [u8; 6],
     pub dst_address: [u8; 6],
@@ -51,16 +69,16 @@ pub struct EspNowReceiveInfo {
 
 /// ESP-NOW protocol handler for time synchronization
 #[cfg(feature = "network")]
-pub struct EspNowTimeSyncProtocol {
-    esp_now: EspNow,
+pub struct EspNowTimeSyncProtocol<'a> {
+    esp_now: EspNow<'a>,
     local_node_id: u32,
     local_mac: [u8; 6],
 }
 
 #[cfg(feature = "network")]
-impl EspNowTimeSyncProtocol {
+impl<'a> EspNowTimeSyncProtocol<'a> {
     /// Create a new ESP-NOW time synchronization protocol handler
-    pub fn new(esp_now: EspNow, local_node_id: u32, local_mac: [u8; 6]) -> Self {
+    pub fn new(esp_now: EspNow<'a>, local_node_id: u32, local_mac: [u8; 6]) -> Self {
         Self {
             esp_now,
             local_node_id,
@@ -179,26 +197,22 @@ impl EspNowTimeSyncProtocol {
 }
 
 /// Utility functions for ESP-NOW time synchronization
-#[cfg(feature = "network")]
+#[cfg(all(feature = "network", not(test)))]
 pub mod utils {
     use super::*;
 
     /// Extract MAC address from ESP-NOW received data
-    pub fn extract_sender_mac(
-        received: &crate::time_sync::esp_now_protocol::EspNowReceive,
-    ) -> [u8; 6] {
+    pub fn extract_sender_mac(received: &ReceivedData) -> [u8; 6] {
         received.info.src_address
     }
 
     /// Extract destination MAC address from ESP-NOW received data
-    pub fn extract_dest_mac(
-        received: &crate::time_sync::esp_now_protocol::EspNowReceive,
-    ) -> [u8; 6] {
+    pub fn extract_dest_mac(received: &ReceivedData) -> [u8; 6] {
         received.info.dst_address
     }
 
     /// Check if a received message is a broadcast
-    pub fn is_broadcast(received: &crate::time_sync::esp_now_protocol::EspNowReceive) -> bool {
+    pub fn is_broadcast(received: &ReceivedData) -> bool {
         received.info.dst_address == BROADCAST_ADDRESS
     }
 
@@ -261,5 +275,35 @@ mod tests {
 
         // Message too old
         assert!(!utils::validate_message(&message, 1000, 5000));
+    }
+}
+
+#[cfg(any(not(feature = "network"), test))]
+pub mod utils {
+    use super::*;
+
+    /// Extract MAC address from ESP-NOW received data (mock)
+    pub fn extract_sender_mac(_received: &[u8]) -> [u8; 6] {
+        [0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
+    }
+
+    /// Extract destination MAC address from ESP-NOW received data (mock)
+    pub fn extract_dest_mac(_received: &[u8]) -> [u8; 6] {
+        [0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
+    }
+
+    /// Check if a received message is a broadcast (mock)
+    pub fn is_broadcast(_received: &[u8]) -> bool {
+        false
+    }
+
+    /// Calculate network delay estimation based on message timestamps (mock)
+    pub fn estimate_network_delay(_send_time: u64, _receive_time: u64, _local_time: u64) -> u64 {
+        0
+    }
+
+    /// Validate synchronization message (mock)
+    pub fn validate_message(_message: &SyncMessage, _current_time: u64, _max_age: u64) -> bool {
+        true
     }
 }

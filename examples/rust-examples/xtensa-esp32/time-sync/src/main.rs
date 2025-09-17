@@ -21,9 +21,9 @@ use martos::task_manager::{TaskManager, TaskManagerTrait};
 /// Global variables for the application
 static mut SYNC_MANAGER: Option<TimeSyncManager> = None;
 static mut TIMER: Option<Timer> = None;
-static mut ESP_NOW: Option<esp_wifi::esp_now::EspNow> = None;
-static mut NEXT_SYNC_TIME: Option<u64> = None;
-static mut NEXT_STATS_TIME: Option<u64> = None;
+static mut ESP_NOW: Option<esp_wifi::esp_now::EspNow<'static>> = None;
+static mut NEXT_SYNC_TIME: Option<u32> = None;
+static mut NEXT_STATS_TIME: Option<u32> = None;
 
 /// Setup function for the time synchronization task
 fn setup_fn() {
@@ -68,10 +68,10 @@ fn setup_fn() {
         
         // Initialize ESP-NOW protocol handler
         if let Some(ref mut sync_manager) = SYNC_MANAGER {
-            if let Some(ref esp_now) = ESP_NOW {
+            if let Some(esp_now) = ESP_NOW.take() {
                 // Get local MAC address (simplified - in real app you'd get actual MAC)
                 let local_mac = [0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC];
-                sync_manager.init_esp_now_protocol(esp_now.clone(), local_mac);
+                sync_manager.init_esp_now_protocol(esp_now, local_mac);
             }
             
             // Add some example peers (in real app, peers would be discovered dynamically)
@@ -86,7 +86,7 @@ fn setup_fn() {
         }
         
         // Set initial sync and stats times
-        let current_time = time::now().duration_since_epoch().to_millis();
+        let current_time = time::now().duration_since_epoch().to_millis() as u32;
         NEXT_SYNC_TIME = Some(current_time + 5000); // First sync in 5 seconds
         NEXT_STATS_TIME = Some(current_time + 10000); // First stats in 10 seconds
     }
@@ -100,7 +100,7 @@ fn setup_fn() {
 /// Loop function for the time synchronization task
 fn loop_fn() {
     unsafe {
-        let current_time = time::now().duration_since_epoch().to_millis();
+        let current_time = time::now().duration_since_epoch().to_millis() as u32;
         
         // Process timer tick
         if let Some(ref mut timer) = TIMER {
@@ -112,7 +112,7 @@ fn loop_fn() {
             if let Some(next_sync_time) = NEXT_SYNC_TIME {
                 if current_time >= next_sync_time {
                     // Process synchronization with ESP-NOW
-                    let current_time_us = time::now().duration_since_epoch().to_micros();
+                    let current_time_us = time::now().duration_since_epoch().to_micros() as u32;
                     sync_manager.process_sync_cycle_with_esp_now(current_time_us);
                     
                     // Schedule next sync
@@ -174,15 +174,20 @@ fn print_sync_stats(sync_manager: &TimeSyncManager) {
     println!("=====================================\n");
 }
 
+/// Stop condition function (never stops in this example)
+fn stop_condition_fn() -> bool {
+    false
+}
+
 /// Main entry point
 #[entry]
 fn main() -> ! {
-    // Create task manager
-    let mut task_manager = TaskManager::new();
+    // Initialize Martos system
+    init_system();
     
     // Add time synchronization task
-    task_manager.add_task(setup_fn, loop_fn);
+    TaskManager::add_task(setup_fn, loop_fn, stop_condition_fn);
     
-    // Run the system
-    task_manager.run();
+    // Start task manager
+    TaskManager::start_task_manager();
 }

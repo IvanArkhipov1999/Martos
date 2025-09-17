@@ -44,7 +44,7 @@
 
 use alloc::collections::BTreeMap;
 use alloc::vec::Vec;
-use core::sync::atomic::{AtomicBool, AtomicI64, AtomicU64, Ordering};
+use core::sync::atomic::{AtomicBool, AtomicI32, AtomicU32, Ordering};
 
 #[cfg(feature = "network")]
 pub mod esp_now_protocol;
@@ -280,30 +280,30 @@ impl SyncMessage {
 }
 
 /// Main time synchronization manager
-pub struct TimeSyncManager {
+pub struct TimeSyncManager<'a> {
     /// Configuration parameters
     config: SyncConfig,
     /// Synchronization enabled flag
     sync_enabled: AtomicBool,
     /// Current time offset in microseconds
-    time_offset_us: AtomicI64,
+    time_offset_us: AtomicI32,
     /// Last synchronization time
-    last_sync_time: AtomicU64,
+    last_sync_time: AtomicU32,
     /// Synchronized peers
     peers: BTreeMap<u32, SyncPeer>,
     /// Message sequence counter
-    sequence_counter: AtomicU64,
+    sequence_counter: AtomicU32,
     /// Current synchronization quality score
-    sync_quality: AtomicU64, // Stored as fixed-point (0.0-1.0 * 1000)
+    sync_quality: AtomicU32, // Stored as fixed-point (0.0-1.0 * 1000)
     /// ESP-NOW protocol handler (only available with network feature)
     #[cfg(feature = "network")]
-    esp_now_protocol: Option<crate::time_sync::esp_now_protocol::EspNowTimeSyncProtocol>,
+    esp_now_protocol: Option<crate::time_sync::esp_now_protocol::EspNowTimeSyncProtocol<'a>>,
     /// Synchronization algorithm instance (only available with network feature)
     #[cfg(feature = "network")]
     sync_algorithm: Option<crate::time_sync::sync_algorithm::SyncAlgorithm>,
 }
 
-impl TimeSyncManager {
+impl<'a> TimeSyncManager<'a> {
     /// Create a new time synchronization manager
     pub fn new(config: SyncConfig) -> Self {
         #[cfg(feature = "network")]
@@ -314,11 +314,11 @@ impl TimeSyncManager {
         Self {
             config,
             sync_enabled: AtomicBool::new(false),
-            time_offset_us: AtomicI64::new(0),
-            last_sync_time: AtomicU64::new(0),
+            time_offset_us: AtomicI32::new(0),
+            last_sync_time: AtomicU32::new(0),
             peers: BTreeMap::new(),
-            sequence_counter: AtomicU64::new(0),
-            sync_quality: AtomicU64::new(1000), // Start with perfect quality
+            sequence_counter: AtomicU32::new(0),
+            sync_quality: AtomicU32::new(1000), // Start with perfect quality
             #[cfg(feature = "network")]
             esp_now_protocol: None,
             #[cfg(feature = "network")]
@@ -354,7 +354,7 @@ impl TimeSyncManager {
     }
 
     /// Get current time offset in microseconds
-    pub fn get_time_offset_us(&self) -> i64 {
+    pub fn get_time_offset_us(&self) -> i32 {
         self.time_offset_us.load(Ordering::Acquire)
     }
 
@@ -424,8 +424,8 @@ impl TimeSyncManager {
     }
 
     /// Apply time correction to the system
-    fn apply_time_correction(&mut self, correction_us: i64) {
-        if correction_us.abs() > self.config.max_correction_threshold_us as i64 {
+    fn apply_time_correction(&mut self, correction_us: i32) {
+        if correction_us.abs() > self.config.max_correction_threshold_us as i32 {
             return; // Skip correction if too large
         }
 
@@ -462,7 +462,7 @@ impl TimeSyncManager {
     #[cfg(feature = "network")]
     pub fn init_esp_now_protocol(
         &mut self,
-        esp_now: crate::time_sync::esp_now_protocol::EspNow,
+        esp_now: crate::time_sync::esp_now_protocol::EspNow<'static>,
         local_mac: [u8; 6],
     ) {
         self.esp_now_protocol = Some(
@@ -476,7 +476,7 @@ impl TimeSyncManager {
 
     /// Process one synchronization cycle with ESP-NOW
     #[cfg(feature = "network")]
-    pub fn process_sync_cycle_with_esp_now(&mut self, current_time_us: u64) {
+    pub fn process_sync_cycle_with_esp_now(&mut self, current_time_us: u32) {
         if !self.is_sync_enabled() {
             return;
         }
@@ -494,7 +494,7 @@ impl TimeSyncManager {
 
         // Send periodic sync requests
         if current_time_us - self.last_sync_time.load(Ordering::Acquire)
-            >= self.config.sync_interval_ms as u64 * 1000
+            >= self.config.sync_interval_ms as u32 * 1000
         {
             self.send_periodic_sync_requests(current_time_us);
             self.last_sync_time
@@ -504,12 +504,12 @@ impl TimeSyncManager {
 
     /// Send periodic synchronization requests to all peers
     #[cfg(feature = "network")]
-    fn send_periodic_sync_requests(&mut self, current_time_us: u64) {
+    fn send_periodic_sync_requests(&mut self, current_time_us: u32) {
         if let Some(ref mut protocol) = self.esp_now_protocol {
             for peer in self.peers.values() {
                 if peer.quality_score > 0.1 {
                     // Only sync with good quality peers
-                    let _ = protocol.send_sync_request(&peer.mac_address, current_time_us);
+                    let _ = protocol.send_sync_request(&peer.mac_address, current_time_us as u64);
                 }
             }
         }
@@ -540,7 +540,7 @@ impl TimeSyncManager {
                         message.timestamp_us,
                         current_time_us,
                     ) {
-                        self.apply_time_correction(correction);
+                        self.apply_time_correction(correction as i32);
                     }
                 }
                 SyncMessageType::TimeBroadcast => {
@@ -550,7 +550,7 @@ impl TimeSyncManager {
                         message.timestamp_us,
                         current_time_us,
                     ) {
-                        self.apply_time_correction(correction);
+                        self.apply_time_correction(correction as i32);
                     }
                 }
             }
