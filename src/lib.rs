@@ -7,6 +7,8 @@ use ports::PortTrait;
 pub mod c_api;
 pub mod task_manager;
 pub mod timer;
+#[cfg(feature = "network")]
+pub mod time_sync;
 #[cfg(any(target_arch = "riscv32", target_arch = "xtensa"))]
 #[cfg(feature = "network")]
 use esp_wifi::esp_now::EspNow;

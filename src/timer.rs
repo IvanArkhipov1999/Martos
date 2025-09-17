@@ -405,6 +405,29 @@ pub struct Timer {
     /// assert_eq!(timer.tick_counter, 1); // Incremented by one
     /// ```
     pub tick_counter: TickType,
+
+    /// Time synchronization offset in microseconds.
+    ///
+    /// This field stores the cumulative time correction applied by the time
+    /// synchronization system. Positive values indicate the local time is ahead,
+    /// negative values indicate the local time is behind the synchronized time.
+    ///
+    /// # Synchronization
+    ///
+    /// This offset is automatically updated by the time synchronization manager
+    /// when synchronization messages are processed. Applications should use
+    /// [`Timer::get_synchronized_time()`] to get the corrected time.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use martos::timer::Timer;
+    ///
+    /// let timer = Timer::get_timer(0).unwrap();
+    /// let offset = timer.get_sync_offset_us();
+    /// println!("Time offset: {} microseconds", offset);
+    /// ```
+    pub sync_offset_us: i64,
 }
 
 impl Timer {
@@ -484,6 +507,7 @@ impl Timer {
             Some(Self {
                 timer_index,
                 tick_counter: 0,
+                sync_offset_us: 0,
             })
         } else {
             None
@@ -839,5 +863,183 @@ impl Timer {
     /// ```
     pub fn release_timer(&self) {
         Port::release_hardware_timer(self.timer_index)
+    }
+
+    /// Adjusts the timer's synchronization offset.
+    ///
+    /// This method applies a time correction to the timer's synchronization offset.
+    /// The correction is cumulative - multiple calls will add to the existing offset.
+    /// This is typically called by the time synchronization manager when processing
+    /// synchronization messages from other nodes.
+    ///
+    /// # Arguments
+    ///
+    /// * `correction_us` - Time correction in microseconds. Positive values indicate
+    ///   the local time should be adjusted forward, negative values indicate it should
+    ///   be adjusted backward.
+    ///
+    /// # Safety
+    ///
+    /// Large corrections may cause timing issues in applications. The time synchronization
+    /// manager should validate corrections before applying them.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use martos::timer::Timer;
+    ///
+    /// let mut timer = Timer::get_timer(0).unwrap();
+    /// 
+    /// // Apply a 100 microsecond correction
+    /// timer.adjust_sync_offset(100);
+    /// 
+    /// // Apply a -50 microsecond correction
+    /// timer.adjust_sync_offset(-50);
+    /// 
+    /// // Net offset is now 50 microseconds
+    /// assert_eq!(timer.get_sync_offset_us(), 50);
+    /// ```
+    pub fn adjust_sync_offset(&mut self, correction_us: i64) {
+        self.sync_offset_us += correction_us;
+    }
+
+    /// Gets the current synchronization offset in microseconds.
+    ///
+    /// Returns the cumulative time correction applied to this timer instance.
+    /// This value represents how much the local time differs from the synchronized
+    /// network time.
+    ///
+    /// # Returns
+    ///
+    /// The synchronization offset in microseconds:
+    /// - Positive values: Local time is ahead of synchronized time
+    /// - Negative values: Local time is behind synchronized time
+    /// - Zero: Local time is synchronized
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use martos::timer::Timer;
+    ///
+    /// let timer = Timer::get_timer(0).unwrap();
+    /// let offset = timer.get_sync_offset_us();
+    /// 
+    /// if offset > 0 {
+    ///     println!("Local time is {} microseconds ahead", offset);
+    /// } else if offset < 0 {
+    ///     println!("Local time is {} microseconds behind", -offset);
+    /// } else {
+    ///     println!("Time is synchronized");
+    /// }
+    /// ```
+    pub fn get_sync_offset_us(&self) -> i64 {
+        self.sync_offset_us
+    }
+
+    /// Gets the synchronized time including the synchronization offset.
+    ///
+    /// This method returns the current hardware timer time adjusted by the
+    /// synchronization offset. This provides the "network-synchronized" time
+    /// that should be consistent across all nodes in the network.
+    ///
+    /// # Returns
+    ///
+    /// A `Duration` representing the synchronized time, which is the hardware
+    /// timer time plus the synchronization offset.
+    ///
+    /// # Usage
+    ///
+    /// Use this method when you need time values that are consistent across
+    /// multiple nodes in a synchronized network. For local timing operations,
+    /// use [`Timer::get_time()`] instead.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use martos::timer::Timer;
+    ///
+    /// let mut timer = Timer::get_timer(0).unwrap();
+    /// 
+    /// // Apply some synchronization offset
+    /// timer.adjust_sync_offset(1000); // 1ms ahead
+    /// 
+    /// // Get synchronized time
+    /// let sync_time = timer.get_synchronized_time();
+    /// let local_time = timer.get_time();
+    /// 
+    /// // sync_time should be 1ms ahead of local_time
+    /// println!("Synchronized time: {:?}", sync_time);
+    /// println!("Local time: {:?}", local_time);
+    /// ```
+    pub fn get_synchronized_time(&self) -> Duration {
+        let local_time = self.get_time();
+        let offset_duration = Duration::from_micros(self.sync_offset_us.abs() as u64);
+        
+        if self.sync_offset_us >= 0 {
+            local_time + offset_duration
+        } else {
+            local_time - offset_duration
+        }
+    }
+
+    /// Resets the synchronization offset to zero.
+    ///
+    /// This method clears the current synchronization offset, effectively
+    /// disabling time synchronization for this timer instance. This should
+    /// be used when:
+    /// - Disabling time synchronization
+    /// - Resetting synchronization after errors
+    /// - Recalibrating the timer
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use martos::timer::Timer;
+    ///
+    /// let mut timer = Timer::get_timer(0).unwrap();
+    /// 
+    /// // Apply some offset
+    /// timer.adjust_sync_offset(500);
+    /// assert_eq!(timer.get_sync_offset_us(), 500);
+    /// 
+    /// // Reset synchronization
+    /// timer.reset_sync_offset();
+    /// assert_eq!(timer.get_sync_offset_us(), 0);
+    /// ```
+    pub fn reset_sync_offset(&mut self) {
+        self.sync_offset_us = 0;
+    }
+
+    /// Checks if the timer is currently synchronized.
+    ///
+    /// A timer is considered synchronized if its synchronization offset
+    /// is within acceptable bounds (typically close to zero).
+    ///
+    /// # Arguments
+    ///
+    /// * `tolerance_us` - Maximum acceptable offset in microseconds
+    ///
+    /// # Returns
+    ///
+    /// `true` if the timer is synchronized within the specified tolerance,
+    /// `false` otherwise.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use martos::timer::Timer;
+    ///
+    /// let mut timer = Timer::get_timer(0).unwrap();
+    /// 
+    /// // Small offset - synchronized
+    /// timer.adjust_sync_offset(50);
+    /// assert!(timer.is_synchronized(100)); // Within 100μs tolerance
+    /// 
+    /// // Large offset - not synchronized
+    /// timer.adjust_sync_offset(1000);
+    /// assert!(!timer.is_synchronized(100)); // Outside 100μs tolerance
+    /// ```
+    pub fn is_synchronized(&self, tolerance_us: u64) -> bool {
+        self.sync_offset_us.abs() <= tolerance_us as i64
     }
 }
