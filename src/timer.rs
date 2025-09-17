@@ -889,13 +889,13 @@ impl Timer {
     /// use martos::timer::Timer;
     ///
     /// let mut timer = Timer::get_timer(0).unwrap();
-    /// 
+    ///
     /// // Apply a 100 microsecond correction
     /// timer.adjust_sync_offset(100);
-    /// 
+    ///
     /// // Apply a -50 microsecond correction
     /// timer.adjust_sync_offset(-50);
-    /// 
+    ///
     /// // Net offset is now 50 microseconds
     /// assert_eq!(timer.get_sync_offset_us(), 50);
     /// ```
@@ -923,7 +923,7 @@ impl Timer {
     ///
     /// let timer = Timer::get_timer(0).unwrap();
     /// let offset = timer.get_sync_offset_us();
-    /// 
+    ///
     /// if offset > 0 {
     ///     println!("Local time is {} microseconds ahead", offset);
     /// } else if offset < 0 {
@@ -959,14 +959,14 @@ impl Timer {
     /// use martos::timer::Timer;
     ///
     /// let mut timer = Timer::get_timer(0).unwrap();
-    /// 
+    ///
     /// // Apply some synchronization offset
     /// timer.adjust_sync_offset(1000); // 1ms ahead
-    /// 
+    ///
     /// // Get synchronized time
     /// let sync_time = timer.get_synchronized_time();
     /// let local_time = timer.get_time();
-    /// 
+    ///
     /// // sync_time should be 1ms ahead of local_time
     /// println!("Synchronized time: {:?}", sync_time);
     /// println!("Local time: {:?}", local_time);
@@ -974,7 +974,7 @@ impl Timer {
     pub fn get_synchronized_time(&self) -> Duration {
         let local_time = self.get_time();
         let offset_duration = Duration::from_micros(self.sync_offset_us.abs() as u64);
-        
+
         if self.sync_offset_us >= 0 {
             local_time + offset_duration
         } else {
@@ -997,11 +997,11 @@ impl Timer {
     /// use martos::timer::Timer;
     ///
     /// let mut timer = Timer::get_timer(0).unwrap();
-    /// 
+    ///
     /// // Apply some offset
     /// timer.adjust_sync_offset(500);
     /// assert_eq!(timer.get_sync_offset_us(), 500);
-    /// 
+    ///
     /// // Reset synchronization
     /// timer.reset_sync_offset();
     /// assert_eq!(timer.get_sync_offset_us(), 0);
@@ -1030,11 +1030,11 @@ impl Timer {
     /// use martos::timer::Timer;
     ///
     /// let mut timer = Timer::get_timer(0).unwrap();
-    /// 
+    ///
     /// // Small offset - synchronized
     /// timer.adjust_sync_offset(50);
     /// assert!(timer.is_synchronized(100)); // Within 100μs tolerance
-    /// 
+    ///
     /// // Large offset - not synchronized
     /// timer.adjust_sync_offset(1000);
     /// assert!(!timer.is_synchronized(100)); // Outside 100μs tolerance

@@ -42,10 +42,10 @@
 //! }
 //! ```
 
+use alloc::collections::BTreeMap;
+use alloc::vec::Vec;
 use core::sync::atomic::{AtomicBool, AtomicI64, AtomicU64, Ordering};
 use core::time::Duration;
-use alloc::vec::Vec;
-use alloc::collections::BTreeMap;
 
 #[cfg(feature = "network")]
 pub mod esp_now_protocol;
@@ -75,7 +75,7 @@ impl Default for SyncConfig {
     fn default() -> Self {
         Self {
             node_id: 0,
-            sync_interval_ms: 1000, // 1 second
+            sync_interval_ms: 1000,            // 1 second
             max_correction_threshold_us: 1000, // 1ms
             acceleration_factor: 0.1,
             deceleration_factor: 0.05,
@@ -174,39 +174,40 @@ impl SyncMessage {
     /// Serialize message to bytes for ESP-NOW transmission
     pub fn to_bytes(&self) -> Vec<u8> {
         let mut data = Vec::with_capacity(32);
-        
+
         // Message type (1 byte)
         data.push(self.msg_type as u8);
-        
+
         // Source node ID (4 bytes)
         data.extend_from_slice(&self.source_node_id.to_le_bytes());
-        
+
         // Target node ID (4 bytes)
         data.extend_from_slice(&self.target_node_id.to_le_bytes());
-        
+
         // Timestamp (8 bytes)
         data.extend_from_slice(&self.timestamp_us.to_le_bytes());
-        
+
         // Sequence number (4 bytes)
         data.extend_from_slice(&self.sequence.to_le_bytes());
-        
+
         // Payload length (2 bytes)
         data.extend_from_slice(&(self.payload.len() as u16).to_le_bytes());
-        
+
         // Payload data
         data.extend_from_slice(&self.payload);
-        
+
         data
     }
 
     /// Deserialize message from bytes received via ESP-NOW
     pub fn from_bytes(data: &[u8]) -> Option<Self> {
-        if data.len() < 23 { // Minimum message size
+        if data.len() < 23 {
+            // Minimum message size
             return None;
         }
 
         let mut offset = 0;
-        
+
         // Message type
         let msg_type = match data[offset] {
             0x01 => SyncMessageType::SyncRequest,
@@ -215,44 +216,59 @@ impl SyncMessage {
             _ => return None,
         };
         offset += 1;
-        
+
         // Source node ID
         let source_node_id = u32::from_le_bytes([
-            data[offset], data[offset + 1], data[offset + 2], data[offset + 3]
+            data[offset],
+            data[offset + 1],
+            data[offset + 2],
+            data[offset + 3],
         ]);
         offset += 4;
-        
+
         // Target node ID
         let target_node_id = u32::from_le_bytes([
-            data[offset], data[offset + 1], data[offset + 2], data[offset + 3]
+            data[offset],
+            data[offset + 1],
+            data[offset + 2],
+            data[offset + 3],
         ]);
         offset += 4;
-        
+
         // Timestamp
         let timestamp_us = u64::from_le_bytes([
-            data[offset], data[offset + 1], data[offset + 2], data[offset + 3],
-            data[offset + 4], data[offset + 5], data[offset + 6], data[offset + 7]
+            data[offset],
+            data[offset + 1],
+            data[offset + 2],
+            data[offset + 3],
+            data[offset + 4],
+            data[offset + 5],
+            data[offset + 6],
+            data[offset + 7],
         ]);
         offset += 8;
-        
+
         // Sequence number
         let sequence = u32::from_le_bytes([
-            data[offset], data[offset + 1], data[offset + 2], data[offset + 3]
+            data[offset],
+            data[offset + 1],
+            data[offset + 2],
+            data[offset + 3],
         ]);
         offset += 4;
-        
+
         // Payload length
         let payload_len = u16::from_le_bytes([data[offset], data[offset + 1]]) as usize;
         offset += 2;
-        
+
         // Check if we have enough data for payload
         if data.len() < offset + payload_len {
             return None;
         }
-        
+
         // Payload
         let payload = data[offset..offset + payload_len].to_vec();
-        
+
         Some(Self {
             msg_type,
             source_node_id,
@@ -302,7 +318,9 @@ impl TimeSyncManager {
             #[cfg(feature = "network")]
             esp_now_protocol: None,
             #[cfg(feature = "network")]
-            sync_algorithm: Some(crate::time_sync::sync_algorithm::SyncAlgorithm::new(config.clone())),
+            sync_algorithm: Some(crate::time_sync::sync_algorithm::SyncAlgorithm::new(
+                config.clone(),
+            )),
         }
     }
 
@@ -418,10 +436,12 @@ impl TimeSyncManager {
     fn update_peer_quality(&mut self, node_id: u32, success: bool) {
         if let Some(peer) = self.peers.get_mut(&node_id) {
             if success {
-                peer.quality_score = (peer.quality_score + self.config.acceleration_factor).min(1.0);
+                peer.quality_score =
+                    (peer.quality_score + self.config.acceleration_factor).min(1.0);
                 peer.sync_count += 1;
             } else {
-                peer.quality_score = (peer.quality_score - self.config.deceleration_factor).max(0.0);
+                peer.quality_score =
+                    (peer.quality_score - self.config.deceleration_factor).max(0.0);
             }
         }
     }
@@ -438,12 +458,18 @@ impl TimeSyncManager {
 
     /// Initialize ESP-NOW protocol handler
     #[cfg(feature = "network")]
-    pub fn init_esp_now_protocol(&mut self, esp_now: esp_wifi::esp_now::EspNow<'static>, local_mac: [u8; 6]) {
-        self.esp_now_protocol = Some(crate::time_sync::esp_now_protocol::EspNowTimeSyncProtocol::new(
-            esp_now,
-            self.config.node_id,
-            local_mac,
-        ));
+    pub fn init_esp_now_protocol(
+        &mut self,
+        esp_now: esp_wifi::esp_now::EspNow<'static>,
+        local_mac: [u8; 6],
+    ) {
+        self.esp_now_protocol = Some(
+            crate::time_sync::esp_now_protocol::EspNowTimeSyncProtocol::new(
+                esp_now,
+                self.config.node_id,
+                local_mac,
+            ),
+        );
     }
 
     /// Process one synchronization cycle with ESP-NOW
@@ -461,18 +487,26 @@ impl TimeSyncManager {
             }
 
             // Send periodic sync requests
-            if current_time_us - self.last_sync_time.load(Ordering::Acquire) >= self.config.sync_interval_ms as u64 * 1000 {
+            if current_time_us - self.last_sync_time.load(Ordering::Acquire)
+                >= self.config.sync_interval_ms as u64 * 1000
+            {
                 self.send_periodic_sync_requests(protocol, current_time_us);
-                self.last_sync_time.store(current_time_us, Ordering::Release);
+                self.last_sync_time
+                    .store(current_time_us, Ordering::Release);
             }
         }
     }
 
     /// Send periodic synchronization requests to all peers
     #[cfg(feature = "network")]
-    fn send_periodic_sync_requests(&mut self, protocol: &mut crate::time_sync::esp_now_protocol::EspNowTimeSyncProtocol, current_time_us: u64) {
+    fn send_periodic_sync_requests(
+        &mut self,
+        protocol: &mut crate::time_sync::esp_now_protocol::EspNowTimeSyncProtocol,
+        current_time_us: u64,
+    ) {
         for peer in self.peers.values() {
-            if peer.quality_score > 0.1 { // Only sync with good quality peers
+            if peer.quality_score > 0.1 {
+                // Only sync with good quality peers
                 let _ = protocol.send_sync_request(&peer.mac_address, current_time_us);
             }
         }
@@ -486,18 +520,30 @@ impl TimeSyncManager {
                 SyncMessageType::SyncRequest => {
                     // Send response
                     if let Some(ref mut protocol) = self.esp_now_protocol {
-                        let _ = protocol.send_sync_response(&message.source_node_id.to_le_bytes(), message.source_node_id, current_time_us);
+                        let _ = protocol.send_sync_response(
+                            &message.source_node_id.to_le_bytes(),
+                            message.source_node_id,
+                            current_time_us,
+                        );
                     }
                 }
                 SyncMessageType::SyncResponse => {
                     // Process response and calculate correction
-                    if let Ok(correction) = algorithm.process_sync_message(message.source_node_id, message.timestamp_us, current_time_us) {
+                    if let Ok(correction) = algorithm.process_sync_message(
+                        message.source_node_id,
+                        message.timestamp_us,
+                        current_time_us,
+                    ) {
                         self.apply_time_correction(correction);
                     }
                 }
                 SyncMessageType::TimeBroadcast => {
                     // Process broadcast and calculate correction
-                    if let Ok(correction) = algorithm.process_sync_message(message.source_node_id, message.timestamp_us, current_time_us) {
+                    if let Ok(correction) = algorithm.process_sync_message(
+                        message.source_node_id,
+                        message.timestamp_us,
+                        current_time_us,
+                    ) {
                         self.apply_time_correction(correction);
                     }
                 }

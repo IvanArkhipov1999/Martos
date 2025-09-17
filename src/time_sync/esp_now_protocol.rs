@@ -4,7 +4,7 @@
 //! using ESP-NOW protocol. It handles message serialization, transmission,
 //! and reception of synchronization data between network nodes.
 
-use crate::time_sync::{SyncMessage, SyncMessageType, SyncError, SyncResult};
+use crate::time_sync::{SyncError, SyncMessage, SyncMessageType, SyncResult};
 use esp_wifi::esp_now::{EspNow, PeerInfo, BROADCAST_ADDRESS};
 
 /// ESP-NOW protocol handler for time synchronization
@@ -31,8 +31,14 @@ impl EspNowTimeSyncProtocol {
     }
 
     /// Send a time synchronization response to a specific peer
-    pub fn send_sync_response(&mut self, target_mac: &[u8; 6], target_node_id: u32, timestamp_us: u64) -> SyncResult<()> {
-        let message = SyncMessage::new_sync_response(self.local_node_id, target_node_id, timestamp_us);
+    pub fn send_sync_response(
+        &mut self,
+        target_mac: &[u8; 6],
+        target_node_id: u32,
+        timestamp_us: u64,
+    ) -> SyncResult<()> {
+        let message =
+            SyncMessage::new_sync_response(self.local_node_id, target_node_id, timestamp_us);
         self.send_message(&message, target_mac)
     }
 
@@ -52,7 +58,7 @@ impl EspNowTimeSyncProtocol {
     /// Send a synchronization message to a specific MAC address
     fn send_message(&mut self, message: &SyncMessage, target_mac: &[u8; 6]) -> SyncResult<()> {
         let data = message.to_bytes();
-        
+
         // Ensure peer exists
         if !self.esp_now.peer_exists(target_mac) {
             self.add_peer(target_mac)?;
@@ -83,7 +89,7 @@ impl EspNowTimeSyncProtocol {
     /// Receive and process incoming synchronization messages
     pub fn receive_messages(&mut self) -> Vec<SyncMessage> {
         let mut messages = Vec::new();
-        
+
         // Process all available messages
         while let Some(received) = self.esp_now.receive() {
             if let Some(message) = SyncMessage::from_bytes(&received.data) {
@@ -93,7 +99,7 @@ impl EspNowTimeSyncProtocol {
                 }
             }
         }
-        
+
         messages
     }
 
@@ -180,7 +186,7 @@ mod tests {
         let message = SyncMessage::new_sync_request(123, 456, 789012345);
         let data = message.to_bytes();
         let deserialized = SyncMessage::from_bytes(&data).unwrap();
-        
+
         assert_eq!(message.msg_type as u8, deserialized.msg_type as u8);
         assert_eq!(message.source_node_id, deserialized.source_node_id);
         assert_eq!(message.target_node_id, deserialized.target_node_id);
@@ -196,10 +202,10 @@ mod tests {
     #[test]
     fn test_message_validation() {
         let message = SyncMessage::new_sync_request(123, 456, 1000);
-        
+
         // Valid message
         assert!(utils::validate_message(&message, 10000, 5000));
-        
+
         // Message too old
         assert!(!utils::validate_message(&message, 1000, 5000));
     }
