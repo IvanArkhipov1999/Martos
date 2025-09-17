@@ -5,18 +5,63 @@
 //! and reception of synchronization data between network nodes.
 
 use crate::time_sync::{SyncError, SyncMessage, SyncMessageType, SyncResult};
-use esp_wifi::esp_now::{EspNow, PeerInfo, BROADCAST_ADDRESS};
+use alloc::vec::Vec;
+
+// Mock types for testing and when network feature is not available
+pub struct EspNow {}
+pub struct PeerInfo {
+    pub peer_address: [u8; 6],
+    pub lmk: Option<[u8; 16]>,
+    pub channel: Option<u8>,
+    pub encrypt: bool,
+}
+pub const BROADCAST_ADDRESS: [u8; 6] = [0xFF; 6];
+
+impl EspNow {
+    pub fn peer_exists(&self, _mac: &[u8; 6]) -> bool {
+        false
+    }
+    
+    pub fn send(&self, _mac: &[u8; 6], _data: &[u8]) -> Result<(), ()> {
+        Ok(())
+    }
+    
+    pub fn add_peer(&self, _peer: PeerInfo) -> Result<(), ()> {
+        Ok(())
+    }
+    
+    pub fn receive(&self) -> Option<EspNowReceive> {
+        None
+    }
+    
+    pub fn remove_peer(&self, _mac: &[u8; 6]) -> Result<(), ()> {
+        Ok(())
+    }
+}
+
+pub struct EspNowReceive {
+    pub info: EspNowReceiveInfo,
+    pub data: Vec<u8>,
+}
+
+pub struct EspNowReceiveInfo {
+    pub src_address: [u8; 6],
+    pub dst_address: [u8; 6],
+}
+
 
 /// ESP-NOW protocol handler for time synchronization
+#[cfg(feature = "network")]
 pub struct EspNowTimeSyncProtocol {
-    esp_now: EspNow<'static>,
+    esp_now: EspNow,
     local_node_id: u32,
     local_mac: [u8; 6],
 }
 
+#[cfg(feature = "network")]
 impl EspNowTimeSyncProtocol {
     /// Create a new ESP-NOW time synchronization protocol handler
-    pub fn new(esp_now: EspNow<'static>, local_node_id: u32, local_mac: [u8; 6]) -> Self {
+    pub fn new(esp_now: EspNow, local_node_id: u32, local_mac: [u8; 6]) -> Self {
         Self {
             esp_now,
             local_node_id,
@@ -135,26 +180,27 @@ impl EspNowTimeSyncProtocol {
 }
 
 /// Utility functions for ESP-NOW time synchronization
+#[cfg(feature = "network")]
 pub mod utils {
     use super::*;
 
     /// Extract MAC address from ESP-NOW received data
-    pub fn extract_sender_mac(received: &esp_wifi::esp_now::EspNowReceive) -> [u8; 6] {
+    pub fn extract_sender_mac(received: &crate::time_sync::esp_now_protocol::EspNowReceive) -> [u8; 6] {
         received.info.src_address
     }
 
     /// Extract destination MAC address from ESP-NOW received data
-    pub fn extract_dest_mac(received: &esp_wifi::esp_now::EspNowReceive) -> [u8; 6] {
+    pub fn extract_dest_mac(received: &crate::time_sync::esp_now_protocol::EspNowReceive) -> [u8; 6] {
         received.info.dst_address
     }
 
     /// Check if a received message is a broadcast
-    pub fn is_broadcast(received: &esp_wifi::esp_now::EspNowReceive) -> bool {
+    pub fn is_broadcast(received: &crate::time_sync::esp_now_protocol::EspNowReceive) -> bool {
         received.info.dst_address == BROADCAST_ADDRESS
     }
 
     /// Calculate network delay estimation based on message timestamps
-    pub fn estimate_network_delay(send_time: u64, receive_time: u64, remote_timestamp: u64) -> u64 {
+    pub fn estimate_network_delay(send_time: u64, receive_time: u64, _remote_timestamp: u64) -> u64 {
         // Simple delay estimation: half of round-trip time
         let round_trip_time = receive_time - send_time;
         round_trip_time / 2

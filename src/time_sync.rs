@@ -45,7 +45,6 @@
 use alloc::collections::BTreeMap;
 use alloc::vec::Vec;
 use core::sync::atomic::{AtomicBool, AtomicI64, AtomicU64, Ordering};
-use core::time::Duration;
 
 #[cfg(feature = "network")]
 pub mod esp_now_protocol;
@@ -307,6 +306,9 @@ pub struct TimeSyncManager {
 impl TimeSyncManager {
     /// Create a new time synchronization manager
     pub fn new(config: SyncConfig) -> Self {
+        #[cfg(feature = "network")]
+        let sync_algorithm = Some(crate::time_sync::sync_algorithm::SyncAlgorithm::new(config.clone()));
+        
         Self {
             config,
             sync_enabled: AtomicBool::new(false),
@@ -318,9 +320,7 @@ impl TimeSyncManager {
             #[cfg(feature = "network")]
             esp_now_protocol: None,
             #[cfg(feature = "network")]
-            sync_algorithm: Some(crate::time_sync::sync_algorithm::SyncAlgorithm::new(
-                config.clone(),
-            )),
+            sync_algorithm,
         }
     }
 
@@ -397,25 +397,25 @@ impl TimeSyncManager {
     }
 
     /// Handle synchronization request from a peer
-    fn handle_sync_request(&mut self, message: SyncMessage) {
+    fn handle_sync_request(&mut self, _message: SyncMessage) {
         // TODO: Implement sync request handling
         // This should send a response with current timestamp
     }
 
     /// Handle synchronization response from a peer
-    fn handle_sync_response(&mut self, message: SyncMessage) {
+    fn handle_sync_response(&mut self, _message: SyncMessage) {
         // TODO: Implement sync response handling
         // This should calculate time difference and update peer info
     }
 
     /// Handle time broadcast from a peer
-    fn handle_time_broadcast(&mut self, message: SyncMessage) {
+    fn handle_time_broadcast(&mut self, _message: SyncMessage) {
         // TODO: Implement time broadcast handling
         // This should update peer time information
     }
 
     /// Calculate time correction based on peer data
-    fn calculate_time_correction(&self, peer: &SyncPeer) -> i64 {
+    fn calculate_time_correction(&self, _peer: &SyncPeer) -> i64 {
         // TODO: Implement time correction calculation
         // This should use the dynamic acceleration/deceleration algorithm
         0
@@ -460,7 +460,7 @@ impl TimeSyncManager {
     #[cfg(feature = "network")]
     pub fn init_esp_now_protocol(
         &mut self,
-        esp_now: esp_wifi::esp_now::EspNow<'static>,
+        esp_now: crate::time_sync::esp_now_protocol::EspNow,
         local_mac: [u8; 6],
     ) {
         self.esp_now_protocol = Some(
@@ -479,35 +479,35 @@ impl TimeSyncManager {
             return;
         }
 
-        if let Some(ref mut protocol) = self.esp_now_protocol {
-            // Receive and process incoming messages
-            let messages = protocol.receive_messages();
-            for message in messages {
-                self.handle_sync_message(message);
-            }
+        // Receive and process incoming messages
+        let messages = if let Some(ref mut protocol) = self.esp_now_protocol {
+            protocol.receive_messages()
+        } else {
+            Vec::new()
+        };
+        
+        for message in messages {
+            self.handle_sync_message(message);
+        }
 
-            // Send periodic sync requests
-            if current_time_us - self.last_sync_time.load(Ordering::Acquire)
-                >= self.config.sync_interval_ms as u64 * 1000
-            {
-                self.send_periodic_sync_requests(protocol, current_time_us);
-                self.last_sync_time
-                    .store(current_time_us, Ordering::Release);
-            }
+        // Send periodic sync requests
+        if current_time_us - self.last_sync_time.load(Ordering::Acquire)
+            >= self.config.sync_interval_ms as u64 * 1000
+        {
+            self.send_periodic_sync_requests(current_time_us);
+            self.last_sync_time.store(current_time_us, Ordering::Release);
         }
     }
 
     /// Send periodic synchronization requests to all peers
     #[cfg(feature = "network")]
-    fn send_periodic_sync_requests(
-        &mut self,
-        protocol: &mut crate::time_sync::esp_now_protocol::EspNowTimeSyncProtocol,
-        current_time_us: u64,
-    ) {
-        for peer in self.peers.values() {
-            if peer.quality_score > 0.1 {
-                // Only sync with good quality peers
-                let _ = protocol.send_sync_request(&peer.mac_address, current_time_us);
+    fn send_periodic_sync_requests(&mut self, current_time_us: u64) {
+        if let Some(ref mut protocol) = self.esp_now_protocol {
+            for peer in self.peers.values() {
+                if peer.quality_score > 0.1 {
+                    // Only sync with good quality peers
+                    let _ = protocol.send_sync_request(&peer.mac_address, current_time_us);
+                }
             }
         }
     }
@@ -520,11 +520,10 @@ impl TimeSyncManager {
                 SyncMessageType::SyncRequest => {
                     // Send response
                     if let Some(ref mut protocol) = self.esp_now_protocol {
-                        let _ = protocol.send_sync_response(
-                            &message.source_node_id.to_le_bytes(),
-                            message.source_node_id,
-                            current_time_us,
-                        );
+                        // Convert node_id to MAC address (simplified - in real app you'd have a mapping)
+                        let mut mac = [0u8; 6];
+                        mac[0..4].copy_from_slice(&message.source_node_id.to_le_bytes());
+                        let _ = protocol.send_sync_response(&mac, message.source_node_id, current_time_us);
                     }
                 }
                 SyncMessageType::SyncResponse => {

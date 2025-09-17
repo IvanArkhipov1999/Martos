@@ -30,12 +30,13 @@ pub struct SyncEvent {
 impl SyncAlgorithm {
     /// Create a new synchronization algorithm instance
     pub fn new(config: SyncConfig) -> Self {
+        let convergence_threshold = config.max_correction_threshold_us as i64 / 10; // 10% of max threshold
         Self {
             config,
             peers: BTreeMap::new(),
             sync_history: Vec::new(),
             current_correction: 0,
-            convergence_threshold: config.max_correction_threshold_us as i64 / 10, // 10% of max threshold
+            convergence_threshold,
         }
     }
 
@@ -73,8 +74,8 @@ impl SyncAlgorithm {
     }
 
     /// Calculate time correction using dynamic acceleration/deceleration algorithm
-    fn calculate_dynamic_correction(&mut self, peer_id: u32, time_diff: i64) -> SyncResult<i64> {
-        let peer = self.peers.get(&peer_id).ok_or(SyncError::PeerNotFound)?;
+    fn calculate_dynamic_correction(&mut self, peer_id: u32, _time_diff: i64) -> SyncResult<i64> {
+        let _peer = self.peers.get(&peer_id).ok_or(SyncError::PeerNotFound)?;
 
         // Calculate weighted average of time differences from all peers
         let weighted_diff = self.calculate_weighted_average_diff();
