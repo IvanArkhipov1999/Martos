@@ -9,7 +9,7 @@ use martos::get_esp_now;
 use martos::{
     init_system,
     task_manager::{TaskManager, TaskManagerTrait},
-    time_sync::{TimeSyncManager, SyncConfig},
+    time_sync::{TimeSyncManager, SyncConfig, SyncMessage},
 };
 
 /// Esp-now object for network
@@ -51,41 +51,70 @@ fn loop_fn() {
     unsafe {
         // Получаем ESP-NOW из sync_manager
         if let Some(ref mut sync_manager) = SYNC_MANAGER {
-            if let Some(ref mut esp_now_protocol) = sync_manager.esp_now_protocol {
+            // Сначала получаем сообщения
+            let received_message = if let Some(ref mut esp_now_protocol) = sync_manager.esp_now_protocol {
                 let esp_now = &mut esp_now_protocol.esp_now;
+                esp_now.receive()
+            } else {
+                None
+            };
+            
+            // Обрабатываем полученное сообщение
+            if let Some(r) = received_message {
+                println!("ESP32-C6: Received {:?}", r);
                 
-                // Получаем сообщения как в wifi примерах
-                let r = esp_now.receive();
-                if let Some(r) = r {
-                    println!("ESP32-C6: Received {:?}", r);
+                // Обрабатываем broadcast сообщения для синхронизации времени
+                if r.info.dst_address == BROADCAST_ADDRESS {
+                    println!("ESP32-C6: Received broadcast message from {:02X}:{:02X}:{:02X}:{:02X}:{:02X}:{:02X}", 
+                        r.info.src_address[0], r.info.src_address[1], r.info.src_address[2],
+                        r.info.src_address[3], r.info.src_address[4], r.info.src_address[5]);
+                    println!("ESP32-C6: Data: {:?}", r.data);
                     
-                    // Просто получаем broadcast сообщения, никаких ответов не отправляем
-                    if r.info.dst_address == BROADCAST_ADDRESS {
-                        println!("ESP32-C6: Received broadcast message from {:02X}:{:02X}:{:02X}:{:02X}:{:02X}:{:02X}", 
-                            r.info.src_address[0], r.info.src_address[1], r.info.src_address[2],
-                            r.info.src_address[3], r.info.src_address[4], r.info.src_address[5]);
-                        println!("ESP32-C6: Data: {:?}", r.data);
+                    // Парсим время из ESP-NOW сообщения
+                    let current_time_us = time::now().duration_since_epoch().to_micros() as u64;
+                    
+                    // Пытаемся создать SyncMessage из полученных данных
+                    if let Some(received_sync_message) = SyncMessage::from_bytes(&r.data) {
+                        println!("ESP32-C6: Received timestamp: {}μs, current time: {}μs", received_sync_message.timestamp_us, current_time_us);
+                        
+                        // Обрабатываем сообщение для синхронизации
+                        let time_before = time::now().duration_since_epoch().to_micros() as u64;
+                        sync_manager.handle_sync_message(received_sync_message);
+                        let time_after = time::now().duration_since_epoch().to_micros() as u64;
+                        let offset = sync_manager.get_time_offset_us();
+                        println!("ESP32-C6: Processed sync message for time synchronization");
+                        println!("ESP32-C6: Time before: {}μs, after: {}μs, offset: {}μs", time_before, time_after, offset);
+                    } else {
+                        println!("ESP32-C6: Failed to parse sync message from ESP-NOW data");
                     }
                 }
-                
-                // Отправляем broadcast каждые 2 секунды как в wifi примерах
-                let mut next_send_time = NEXT_SEND_TIME.take().expect("Next send time error in main");
-                if time::now().duration_since_epoch().to_millis() >= next_send_time {
-                    next_send_time = time::now().duration_since_epoch().to_millis() + 2000;
-                    println!("ESP32-C6: Send");
-                    let status = esp_now
-                        .send(&BROADCAST_ADDRESS, b"Time Sync Request")
-                        .unwrap()
-                        .wait();
-                    println!("ESP32-C6: Send broadcast status: {:?}", status);
-                }
-                
-                NEXT_SEND_TIME = Some(next_send_time);
             }
             
-            // Обработка синхронизации времени
-            let current_time_us = time::now().duration_since_epoch().to_micros() as u32;
-            sync_manager.process_sync_cycle_with_esp_now(current_time_us);
+            // Отправляем broadcast каждые 2 секунды
+            if let Some(ref mut esp_now_protocol) = sync_manager.esp_now_protocol {
+                let esp_now = &mut esp_now_protocol.esp_now;
+                let mut next_send_time = NEXT_SEND_TIME.take().expect("Next send time error in main");
+                        if time::now().duration_since_epoch().to_millis() >= next_send_time {
+                            next_send_time = time::now().duration_since_epoch().to_millis() + 2000;
+                            println!("ESP32-C6: Send");
+                            
+                            // Создаем правильное SyncMessage с текущим временем
+                            let current_time_us = time::now().duration_since_epoch().to_micros() as u64;
+                            let sync_message = SyncMessage::new_sync_request(
+                                0x87654321, // ESP32-C6 node ID
+                                0, // broadcast
+                                current_time_us
+                            );
+                            let message_data = sync_message.to_bytes();
+                            
+                            let status = esp_now
+                                .send(&BROADCAST_ADDRESS, &message_data)
+                                .unwrap()
+                                .wait();
+                            println!("ESP32-C6: Send broadcast status: {:?}", status);
+                        }
+                NEXT_SEND_TIME = Some(next_send_time);
+            }
         }
     }
 }
