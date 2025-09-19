@@ -32,9 +32,9 @@ fn setup_fn() {
         let config = SyncConfig {
             node_id: 0x87654321,
             sync_interval_ms: 2000,
-            max_correction_threshold_us: 1000,
-            acceleration_factor: 0.1,
-            deceleration_factor: 0.05,
+            max_correction_threshold_us: 100000, // 100ms instead of 1ms
+            acceleration_factor: 0.8,           // Much higher acceleration
+            deceleration_factor: 0.6,           // Much higher deceleration
             max_peers: 10,
             adaptive_frequency: true,
         };
@@ -67,39 +67,45 @@ fn loop_fn() {
                     // Парсим время из ESP-NOW сообщения
                     let current_time_us = time::now().duration_since_epoch().to_micros() as u64;
                     
-                    // Пытаемся создать SyncMessage из полученных данных
-                    if let Some(received_sync_message) = SyncMessage::from_bytes(&r.data) {
-                        println!("ESP32-C6: Received timestamp: {}μs, current time: {}μs", received_sync_message.timestamp_us, current_time_us);
-                        
-                        // Обрабатываем сообщение для синхронизации
-                        sync_manager.handle_sync_message(received_sync_message);
-                    }
+                             // Пытаемся создать SyncMessage из полученных данных
+                             if let Some(received_sync_message) = SyncMessage::from_bytes(&r.data) {
+                                 let corrected_time_us = sync_manager.get_corrected_time_us();
+                                 let time_diff = received_sync_message.timestamp_us as i64 - corrected_time_us as i64;
+                                 println!("ESP32-C6: Received timestamp: {}μs, corrected time: {}μs, diff: {}μs", received_sync_message.timestamp_us, corrected_time_us, time_diff);
+                                 
+                                 // Обрабатываем сообщение для синхронизации
+                                 sync_manager.handle_sync_message(received_sync_message);
+                                 
+                                 // Показываем текущий offset
+                                 let offset = sync_manager.get_time_offset_us();
+                                 println!("ESP32-C6: Current offset: {}μs", offset);
+                             }
                 }
             }
             
             // Отправляем broadcast каждые 2 секунды
-            if let Some(ref mut esp_now_protocol) = sync_manager.esp_now_protocol {
-                let esp_now = &mut esp_now_protocol.esp_now;
-                let mut next_send_time = NEXT_SEND_TIME.take().expect("Next send time error in main");
-                        if time::now().duration_since_epoch().to_millis() >= next_send_time {
-                            next_send_time = time::now().duration_since_epoch().to_millis() + 2000;
-                            
-                            // Создаем правильное SyncMessage с текущим временем
-                            let current_time_us = time::now().duration_since_epoch().to_micros() as u64;
-                            let sync_message = SyncMessage::new_sync_request(
-                                0x87654321, // ESP32-C6 node ID
-                                0, // broadcast
-                                current_time_us
-                            );
-                            let message_data = sync_message.to_bytes();
-                            
-                            let _status = esp_now
-                                .send(&BROADCAST_ADDRESS, &message_data)
-                                .unwrap()
-                                .wait();
-                        }
-                NEXT_SEND_TIME = Some(next_send_time);
+            let mut next_send_time = NEXT_SEND_TIME.take().expect("Next send time error in main");
+            if time::now().duration_since_epoch().to_millis() >= next_send_time {
+                next_send_time = time::now().duration_since_epoch().to_millis() + 2000;
+                
+                // Создаем правильное SyncMessage с скорректированным временем
+                let corrected_time_us = sync_manager.get_corrected_time_us();
+                let sync_message = SyncMessage::new_sync_request(
+                    0x87654321, // ESP32-C6 node ID
+                    0, // broadcast
+                    corrected_time_us
+                );
+                let message_data = sync_message.to_bytes();
+                
+                if let Some(ref mut esp_now_protocol) = sync_manager.esp_now_protocol {
+                    let esp_now = &mut esp_now_protocol.esp_now;
+                    let _status = esp_now
+                        .send(&BROADCAST_ADDRESS, &message_data)
+                        .unwrap()
+                        .wait();
+                }
             }
+            NEXT_SEND_TIME = Some(next_send_time);
         }
     }
 }

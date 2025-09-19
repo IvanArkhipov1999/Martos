@@ -30,7 +30,7 @@ pub struct SyncEvent {
 impl SyncAlgorithm {
     /// Create a new synchronization algorithm instance
     pub fn new(config: SyncConfig) -> Self {
-        let convergence_threshold = config.max_correction_threshold_us as i64 / 10; // 10% of max threshold
+        let convergence_threshold = config.max_correction_threshold_us as i64 / 2; // 50% of max threshold
         Self {
             config,
             peers: BTreeMap::new(),
@@ -73,16 +73,17 @@ impl SyncAlgorithm {
         Ok(correction)
     }
 
-    /// Calculate time correction using dynamic acceleration/deceleration algorithm
-    fn calculate_dynamic_correction(&mut self, peer_id: u32, _time_diff: i64) -> SyncResult<i64> {
+    /// Calculate time correction using Local Voting Protocol
+    fn calculate_dynamic_correction(&mut self, peer_id: u32, time_diff: i64) -> SyncResult<i64> {
         let _peer = self.peers.get(&peer_id).ok_or(SyncError::PeerNotFound)?;
 
-        // Calculate weighted average of time differences from all peers
+        // Local Voting Protocol: Calculate weighted average of time differences from all peers
         let weighted_diff = self.calculate_weighted_average_diff();
 
-        // Apply dynamic acceleration/deceleration based on convergence
-        let acceleration_factor = self.calculate_acceleration_factor(weighted_diff);
-        let correction = (weighted_diff as f64 * acceleration_factor) as i64;
+        // Apply Local Voting Protocol correction
+        // If our time is ahead (positive diff), we should slow down
+        // If our time is behind (negative diff), we should speed up
+        let correction = self.calculate_local_voting_correction(weighted_diff);
 
         // Apply bounds checking
         let bounded_correction = self.apply_correction_bounds(correction);
@@ -115,6 +116,37 @@ impl SyncAlgorithm {
             (weighted_sum / total_weight) as i64
         } else {
             0
+        }
+    }
+
+    /// Calculate Local Voting Protocol correction
+    fn calculate_local_voting_correction(&self, weighted_diff: i64) -> i64 {
+        let abs_diff = weighted_diff.abs() as f64;
+        let max_threshold = self.config.max_correction_threshold_us as f64;
+
+        // Local Voting Protocol: Apply correction based on weighted difference
+        let correction_factor = if abs_diff <= self.convergence_threshold as f64 {
+            // Close to convergence - use deceleration factor
+            self.config.deceleration_factor as f64
+        } else if abs_diff <= max_threshold {
+            // Moderate difference - use acceleration factor
+            self.config.acceleration_factor as f64
+        } else {
+            // Large difference - use reduced acceleration to prevent instability
+            self.config.acceleration_factor as f64 * 0.5
+        };
+
+        // Apply correction: if we're ahead (positive), slow down (negative correction)
+        // If we're behind (negative), speed up (positive correction)
+        let correction = (weighted_diff as f64 * correction_factor) as i64;
+        
+        // For Local Voting Protocol, we want to slow down when ahead, speed up when behind
+        // But we never want to go backwards in time, so we limit negative corrections
+        if correction < 0 {
+            // When slowing down, limit the slowdown to prevent time going backwards
+            correction.max(-(max_threshold as i64 / 10))
+        } else {
+            correction
         }
     }
 

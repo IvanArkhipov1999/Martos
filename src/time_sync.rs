@@ -313,6 +313,8 @@ impl<'a> TimeSyncManager<'a> {
         let sync_algorithm = Some(crate::time_sync::sync_algorithm::SyncAlgorithm::new(
             config.clone(),
         ));
+        #[cfg(not(feature = "network"))]
+        let sync_algorithm = None;
 
         Self {
             config,
@@ -404,13 +406,46 @@ impl<'a> TimeSyncManager<'a> {
     /// Handle synchronization request from a peer
     #[cfg(all(feature = "network", any(target_arch = "riscv32", target_arch = "xtensa")))]
     fn handle_sync_request(&mut self, message: SyncMessage) {
-        // Send a response with current timestamp
-        if let Some(ref mut protocol) = self.esp_now_protocol {
-            let current_time_us = time::now().duration_since_epoch().to_micros() as u64;
-            // Find peer MAC address by node_id
-            if let Some(peer) = self.peers.get(&message.source_node_id) {
-                let _ = protocol.send_sync_response(&peer.mac_address, message.source_node_id, current_time_us);
+        // Treat sync request as time broadcast for synchronization
+        let corrected_time_us = self.get_corrected_time_us();
+        let time_diff_us = message.timestamp_us as i64 - corrected_time_us as i64;
+        
+        // Update peer information
+        if let Some(peer) = self.peers.get_mut(&message.source_node_id) {
+            peer.time_diff_us = time_diff_us;
+            peer.sync_count += 1;
+            
+            // Update quality score based on consistency
+            if time_diff_us.abs() < 1000 {
+                peer.quality_score = (peer.quality_score * 0.9 + 1.0 * 0.1).min(1.0);
+            } else {
+                peer.quality_score = (peer.quality_score * 0.95 + 0.5 * 0.05).max(0.1);
             }
+        } else {
+            // Add new peer if not exists
+            let mut new_peer = SyncPeer::new(message.source_node_id, [0; 6]);
+            new_peer.time_diff_us = time_diff_us;
+            new_peer.sync_count = 1;
+            new_peer.quality_score = 0.5;
+            self.peers.insert(message.source_node_id, new_peer);
+        }
+        
+        // Use sync algorithm to calculate correction
+        if let Some(ref mut algorithm) = self.sync_algorithm {
+            if let Ok(correction) = algorithm.process_sync_message(message.source_node_id, message.timestamp_us, corrected_time_us) {
+                // Apply correction to time offset
+                self.apply_time_correction(correction as i32);
+                // Debug: print correction applied
+                #[cfg(all(feature = "network", any(target_arch = "riscv32", target_arch = "xtensa")))]
+                {
+                    let offset = self.time_offset_us.load(Ordering::Acquire);
+                    // esp_println::println!("Applied correction: {}μs, new offset: {}μs", correction, offset);
+                }
+            } else {
+                // esp_println::println!("Sync algorithm failed to process message");
+            }
+        } else {
+            // esp_println::println!("Sync algorithm is None!");
         }
     }
 
@@ -424,8 +459,8 @@ impl<'a> TimeSyncManager<'a> {
     #[cfg(all(feature = "network", any(target_arch = "riscv32", target_arch = "xtensa")))]
     fn handle_sync_response(&mut self, message: SyncMessage) {
         // Calculate time difference and update peer info
-        let current_time_us = time::now().duration_since_epoch().to_micros() as u64;
-        let time_diff_us = current_time_us as i64 - message.timestamp_us as i64;
+        let corrected_time_us = self.get_corrected_time_us();
+        let time_diff_us = message.timestamp_us as i64 - corrected_time_us as i64;
         
         // Update peer information
         if let Some(peer) = self.peers.get_mut(&message.source_node_id) {
@@ -438,9 +473,31 @@ impl<'a> TimeSyncManager<'a> {
             } else {
                 peer.quality_score = (peer.quality_score * 0.95 + 0.5 * 0.05).max(0.1);
             }
-            
-            // Update global time offset
-            self.time_offset_us.store(time_diff_us as i32, Ordering::Release);
+        } else {
+            // Add new peer if not exists
+            let mut new_peer = SyncPeer::new(message.source_node_id, [0; 6]);
+            new_peer.time_diff_us = time_diff_us;
+            new_peer.sync_count = 1;
+            new_peer.quality_score = 0.5;
+            self.peers.insert(message.source_node_id, new_peer);
+        }
+        
+        // Use sync algorithm to calculate correction
+        if let Some(ref mut algorithm) = self.sync_algorithm {
+            if let Ok(correction) = algorithm.process_sync_message(message.source_node_id, message.timestamp_us, corrected_time_us) {
+                // Apply correction to time offset
+                self.apply_time_correction(correction as i32);
+                // Debug: print correction applied
+                #[cfg(all(feature = "network", any(target_arch = "riscv32", target_arch = "xtensa")))]
+                {
+                    let offset = self.time_offset_us.load(Ordering::Acquire);
+                    // esp_println::println!("Applied correction: {}μs, new offset: {}μs", correction, offset);
+                }
+            } else {
+                // esp_println::println!("Sync algorithm failed to process message");
+            }
+        } else {
+            // esp_println::println!("Sync algorithm is None!");
         }
     }
 
@@ -469,9 +526,32 @@ impl<'a> TimeSyncManager<'a> {
             return; // Skip correction if too large
         }
 
+        // For Local Voting Protocol, we apply correction directly to offset
+        // This represents how much we need to adjust our time perception
         let current_offset = self.time_offset_us.load(Ordering::Acquire);
         let new_offset = current_offset + correction_us;
         self.time_offset_us.store(new_offset, Ordering::Release);
+        
+        // Update last sync time
+        #[cfg(all(feature = "network", any(target_arch = "riscv32", target_arch = "xtensa")))]
+        {
+            let current_time_us = time::now().duration_since_epoch().to_micros() as u32;
+            self.last_sync_time.store(current_time_us, Ordering::Release);
+        }
+    }
+
+    /// Get corrected time (real time + offset)
+    pub fn get_corrected_time_us(&self) -> u64 {
+        #[cfg(all(feature = "network", any(target_arch = "riscv32", target_arch = "xtensa")))]
+        {
+            let real_time_us = time::now().duration_since_epoch().to_micros() as u64;
+            let offset_us = self.time_offset_us.load(Ordering::Acquire) as i64;
+            (real_time_us as i64 + offset_us) as u64
+        }
+        #[cfg(not(all(feature = "network", any(target_arch = "riscv32", target_arch = "xtensa"))))]
+        {
+            0
+        }
     }
 
     /// Update peer quality score based on synchronization results
