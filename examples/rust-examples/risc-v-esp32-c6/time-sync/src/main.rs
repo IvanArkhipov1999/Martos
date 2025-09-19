@@ -1,3 +1,55 @@
+//! ESP32-C6 Time Synchronization Example
+//!
+//! This example demonstrates the Local Voting Protocol time synchronization
+//! system running on ESP32-C6. It shows how to set up and use the time
+//! synchronization manager with ESP-NOW communication on RISC-V architecture.
+//!
+//! # Overview
+//!
+//! The example implements a complete time synchronization system that:
+//!
+//! - Initializes ESP-NOW communication on ESP32-C6
+//! - Sets up the time synchronization manager
+//! - Sends periodic time broadcasts every 2 seconds
+//! - Receives and processes time synchronization messages
+//! - Applies Local Voting Protocol corrections
+//! - Displays synchronization progress and offset information
+//!
+//! # Hardware Requirements
+//!
+//! - ESP32-C6 development board
+//! - USB cable for programming and monitoring
+//!
+//! # Usage
+//!
+//! 1. Flash this example to your ESP32-C6
+//! 2. Connect another ESP32 or ESP32-C6 running the same example
+//! 3. Monitor serial output to see synchronization progress
+//! 4. Observe how time differences decrease over time
+//!
+//! # Expected Output
+//!
+//! ```
+//! ESP32-C6: Setup time synchronization!
+//! ESP32-C6: Time synchronization setup complete!
+//! ESP32-C6: Received timestamp: 2090005μs, corrected time: 19677537μs, diff: 17587532μs
+//! ESP32-C6: Current offset: 100000μs
+//! ```
+//!
+//! # Configuration
+//!
+//! The synchronization parameters can be adjusted in the `SyncConfig`:
+//!
+//! - `sync_interval_ms`: How often to send sync messages (2000ms)
+//! - `max_correction_threshold_us`: Max correction per cycle (100000μs)
+//! - `acceleration_factor`: Aggressiveness for large differences (0.8)
+//! - `deceleration_factor`: Conservativeness for small differences (0.6)
+//!
+//! # Cross-Platform Compatibility
+//!
+//! This example is compatible with ESP32-C6 and can synchronize with
+//! ESP32 examples running the same time synchronization system.
+
 #![no_std]
 #![no_main]
 
@@ -12,14 +64,19 @@ use martos::{
     time_sync::{TimeSyncManager, SyncConfig, SyncMessage},
 };
 
-/// Esp-now object for network
+/// ESP-NOW communication instance for network operations
 static mut ESP_NOW: Option<EspNow> = None;
-/// Variable for saving time to send broadcast message
+/// Next scheduled time to send broadcast message (milliseconds)
 static mut NEXT_SEND_TIME: Option<u64> = None;
-/// Time synchronization manager
+/// Time synchronization manager instance
 static mut SYNC_MANAGER: Option<TimeSyncManager<'static>> = None;
 
-/// Setup function for task to execute.
+/// Setup function for time synchronization task.
+///
+/// This function initializes the ESP-NOW communication and sets up the
+/// time synchronization manager with appropriate configuration parameters.
+/// It configures the Local Voting Protocol with aggressive correction
+/// factors for rapid convergence on ESP32-C6.
 fn setup_fn() {
     println!("ESP32-C6: Setup time synchronization!");
     unsafe {
@@ -46,7 +103,19 @@ fn setup_fn() {
     println!("ESP32-C6: Time synchronization setup complete!");
 }
 
-/// Loop function for task to execute.
+/// Main loop function for time synchronization task.
+///
+/// This function handles the continuous operation of the time synchronization
+/// system on ESP32-C6. It processes incoming ESP-NOW messages, applies Local Voting
+/// Protocol corrections, and sends periodic time broadcasts.
+///
+/// # Operations Performed
+///
+/// 1. **Message Reception**: Receives and processes ESP-NOW broadcast messages
+/// 2. **Time Calculation**: Calculates time differences using corrected time
+/// 3. **Synchronization**: Applies Local Voting Protocol corrections
+/// 4. **Message Transmission**: Sends periodic time broadcasts every 2 seconds
+/// 5. **Progress Display**: Shows synchronization progress and offset information
 fn loop_fn() {
     unsafe {
         // Получаем ESP-NOW из sync_manager
@@ -106,7 +175,15 @@ fn loop_fn() {
     }
 }
 
-/// Stop condition function for task to execute.
+/// Stop condition function for time synchronization task.
+///
+/// This function determines when the time synchronization task should stop.
+/// In this example, it always returns `false`, meaning the task runs indefinitely
+/// for continuous time synchronization on ESP32-C6.
+///
+/// # Returns
+///
+/// * `false` - Task continues running (infinite loop)
 fn stop_condition_fn() -> bool {
     return false;
 }
