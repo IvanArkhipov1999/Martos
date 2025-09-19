@@ -265,7 +265,7 @@ impl SyncAlgorithm {
         // Apply correction: if we're ahead (positive), slow down (negative correction)
         // If we're behind (negative), speed up (positive correction)
         let correction = (weighted_diff as f64 * correction_factor) as i64;
-        
+
         // For Local Voting Protocol, we want to slow down when ahead, speed up when behind
         // But we never want to go backwards in time, so we limit negative corrections
         if correction < 0 {

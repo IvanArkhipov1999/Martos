@@ -48,7 +48,12 @@
 use crate::time_sync::{SyncError, SyncMessage, SyncMessageType, SyncResult};
 use alloc::vec::Vec;
 
-#[cfg(all(feature = "network", feature = "esp-wifi", not(test), any(target_arch = "riscv32", target_arch = "xtensa")))]
+#[cfg(all(
+    feature = "network",
+    feature = "esp-wifi",
+    not(test),
+    any(target_arch = "riscv32", target_arch = "xtensa")
+))]
 pub use esp_wifi::esp_now::{EspNow, EspNowReceiver, PeerInfo, ReceivedData, BROADCAST_ADDRESS};
 
 #[cfg(any(not(feature = "network"), not(feature = "esp-wifi"), test))]

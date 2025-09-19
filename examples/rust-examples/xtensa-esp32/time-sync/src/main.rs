@@ -56,7 +56,7 @@ use martos::get_esp_now;
 use martos::{
     init_system,
     task_manager::{TaskManager, TaskManagerTrait},
-    time_sync::{TimeSyncManager, SyncConfig, SyncMessage},
+    time_sync::{SyncConfig, SyncMessage, TimeSyncManager},
 };
 
 /// ESP-NOW communication instance for network operations
@@ -77,7 +77,7 @@ fn setup_fn() {
     unsafe {
         ESP_NOW = Some(get_esp_now());
         NEXT_SEND_TIME = Some(time::now().duration_since_epoch().to_millis() + 2000);
-        
+
         // Initialize time sync manager
         let esp_now = ESP_NOW.take().unwrap();
         let local_mac = [0x40, 0x4C, 0xCA, 0x57, 0x5A, 0xA4]; // ESP32 MAC
@@ -85,8 +85,8 @@ fn setup_fn() {
             node_id: 0x12345678,
             sync_interval_ms: 2000,
             max_correction_threshold_us: 100000, // 100ms instead of 1ms
-            acceleration_factor: 0.8,           // Much higher acceleration
-            deceleration_factor: 0.6,           // Much higher deceleration
+            acceleration_factor: 0.8,            // Much higher acceleration
+            deceleration_factor: 0.6,            // Much higher deceleration
             max_peers: 10,
             adaptive_frequency: true,
         };
@@ -116,13 +116,14 @@ fn loop_fn() {
         // Получаем ESP-NOW из sync_manager
         if let Some(ref mut sync_manager) = SYNC_MANAGER {
             // Сначала получаем сообщения
-            let received_message = if let Some(ref mut esp_now_protocol) = sync_manager.esp_now_protocol {
-                let esp_now = &mut esp_now_protocol.esp_now;
-                esp_now.receive()
-            } else {
-                None
-            };
-            
+            let received_message =
+                if let Some(ref mut esp_now_protocol) = sync_manager.esp_now_protocol {
+                    let esp_now = &mut esp_now_protocol.esp_now;
+                    esp_now.receive()
+                } else {
+                    None
+                };
+
             // Обрабатываем полученное сообщение
             if let Some(r) = received_message {
                 // Обрабатываем broadcast сообщения для синхронизации времени
@@ -130,33 +131,37 @@ fn loop_fn() {
                     // Пытаемся создать SyncMessage из полученных данных
                     if let Some(received_sync_message) = SyncMessage::from_bytes(&r.data) {
                         let corrected_time_us = sync_manager.get_corrected_time_us();
-                        let time_diff = received_sync_message.timestamp_us as i64 - corrected_time_us as i64;
-                        println!("ESP32: Received timestamp: {}μs, corrected time: {}μs, diff: {}μs", received_sync_message.timestamp_us, corrected_time_us, time_diff);
-                        
+                        let time_diff =
+                            received_sync_message.timestamp_us as i64 - corrected_time_us as i64;
+                        println!(
+                            "ESP32: Received timestamp: {}μs, corrected time: {}μs, diff: {}μs",
+                            received_sync_message.timestamp_us, corrected_time_us, time_diff
+                        );
+
                         // Обрабатываем сообщение для синхронизации
                         sync_manager.handle_sync_message(received_sync_message);
-                        
+
                         // Показываем текущий offset
                         let offset = sync_manager.get_time_offset_us();
                         println!("ESP32: Current offset: {}μs", offset);
                     }
                 }
             }
-            
+
             // Отправляем broadcast каждые 2 секунды
             let mut next_send_time = NEXT_SEND_TIME.take().expect("Next send time error in main");
             if time::now().duration_since_epoch().to_millis() >= next_send_time {
                 next_send_time = time::now().duration_since_epoch().to_millis() + 2000;
-                
+
                 // Создаем SyncMessage с скорректированным временем
                 let corrected_time_us = sync_manager.get_corrected_time_us();
                 let sync_message = SyncMessage::new_sync_request(
                     0x12345678, // ESP32 node ID
-                    0, // broadcast
-                    corrected_time_us
+                    0,          // broadcast
+                    corrected_time_us,
                 );
                 let message_data = sync_message.to_bytes();
-                
+
                 if let Some(ref mut esp_now_protocol) = sync_manager.esp_now_protocol {
                     let esp_now = &mut esp_now_protocol.esp_now;
                     let _status = esp_now
