@@ -1,14 +1,15 @@
-# ESP32 Time Synchronization Example
+# ESP32-C6 Time Synchronization Example
 
-This example demonstrates the time synchronization system implemented in Martos RTOS using ESP-NOW communication protocol.
+This example demonstrates the time synchronization system implemented in Martos RTOS using ESP-NOW communication protocol. The system implements a **Local Voting Protocol** that allows time to accelerate but prevents it from going backwards, ensuring monotonic time progression.
 
 ## Features
 
-- **Time Synchronization**: Synchronizes time across multiple ESP32 nodes
+- **Time Synchronization**: Synchronizes time across multiple ESP32-C6 nodes using broadcast messages
 - **ESP-NOW Communication**: Uses ESP-NOW for low-latency peer-to-peer communication
-- **Dynamic Algorithm**: Implements dynamic time acceleration/deceleration algorithm
+- **Local Voting Protocol**: Implements dynamic time acceleration algorithm with monotonic time guarantee
+- **Broadcast-based Sync**: Uses broadcast messages for efficient multi-node synchronization
 - **Quality Monitoring**: Tracks synchronization quality and peer performance
-- **Statistics**: Provides detailed synchronization statistics
+- **Cross-platform**: Compatible with ESP32 (Xtensa) and ESP32-C6 (RISC-V) platforms
 
 ## Architecture
 
@@ -24,10 +25,10 @@ The example consists of several key components:
 The synchronization system is configured with the following parameters:
 
 - **Node ID**: `0x12345678` (unique identifier for this node)
-- **Sync Interval**: 2000ms (synchronization frequency)
-- **Max Correction**: 1000μs (maximum time correction per cycle)
-- **Acceleration Factor**: 0.1 (rate of time acceleration)
-- **Deceleration Factor**: 0.05 (rate of time deceleration)
+- **Sync Interval**: 2000ms (broadcast frequency)
+- **Max Correction**: 100000μs (maximum time correction per cycle)
+- **Acceleration Factor**: 0.8 (rate of time acceleration)
+- **Deceleration Factor**: 0.6 (rate of time deceleration)
 - **Max Peers**: 10 (maximum number of synchronized peers)
 
 ## Usage
@@ -46,46 +47,57 @@ espflash flash --release --example time-sync /dev/ttyUSB0
 
 To test synchronization between multiple nodes:
 
-1. Flash the example to multiple ESP32 devices
+1. Flash the example to multiple ESP32-C6 devices (ESP32 and ESP32-C6)
 2. Ensure devices are within ESP-NOW communication range
-3. Monitor serial output to see synchronization statistics
+3. Monitor serial output to see synchronization progress
+4. Watch the `diff` value decrease as synchronization improves
 
 ### Expected Output
 
 ```
-=== ESP32 Time Synchronization Example ===
-Time synchronization setup complete!
-Node ID: 0x12345678
-Sync interval: 2000ms
-Max correction: 1000μs
-
-Tick: 1000, Local: 1.000s, Sync: 1.001s, Offset: 1000μs
-Tick: 2000, Local: 2.000s, Sync: 2.001s, Offset: 1000μs
-
-=== Synchronization Statistics ===
-Sync enabled: true
-Sync quality: 0.85
-Time offset: 500μs
-Active peers: 2
-  Peer 0x11111111: quality=0.90, diff=200μs, syncs=5
-  Peer 0x22222222: quality=0.80, diff=-300μs, syncs=3
-Algorithm stats:
-  Avg time diff: 50.0μs
-  Max time diff: 200μs
-  Min time diff: -300μs
-  Current correction: 100μs
-  Converged: true
-=====================================
+ESP32-C6: Setup time synchronization!
+ESP32-C6: Time synchronization setup complete!
+ESP32-C6: Received timestamp: 30288013μs, corrected time: 936751μs, diff: 29351262μs
+ESP32-C6: Current offset: 100000μs
+ESP32-C6: Received timestamp: 32278010μs, corrected time: 3036532μs, diff: 29241478μs
+ESP32-C6: Current offset: 200000μs
+ESP32-C6: Received timestamp: 34268014μs, corrected time: 5136548μs, diff: 29131466μs
+ESP32-C6: Current offset: 200000μs
+ESP32-C6: Received timestamp: 36258013μs, corrected time: 7136562μs, diff: 29121451μs
+ESP32-C6: Current offset: 300000μs
+ESP32-C6: Received timestamp: 38248009μs, corrected time: 9236609μs, diff: 29011400μs
+ESP32-C6: Current offset: 400000μs
+ESP32-C6: Received timestamp: 40238008μs, corrected time: 11336665μs, diff: 28901343μs
+ESP32-C6: Current offset: 400000μs
+ESP32-C6: Received timestamp: 42228012μs, corrected time: 13336653μs, diff: 28891359μs
+ESP32-C6: Current offset: 500000μs
+ESP32-C6: Received timestamp: 44218013μs, corrected time: 15436722μs, diff: 28781291μs
+ESP32-C6: Current offset: 600000μs
+ESP32-C6: Received timestamp: 46208013μs, corrected time: 17538108μs, diff: 28669905μs
 ```
+
+**Key observations:**
+- `Received timestamp`: Time from the remote node
+- `corrected time`: Local time adjusted by the synchronization offset
+- `diff`: Time difference between remote and local (should decrease over time)
+- `Current offset`: Virtual time offset applied to local time
 
 ## Synchronization Algorithm
 
-The example implements a dynamic time synchronization algorithm based on:
+The example implements a **Local Voting Protocol** algorithm with the following characteristics:
 
-1. **Time Difference Calculation**: Compares local and remote timestamps
-2. **Weighted Averaging**: Uses peer quality scores for weighted time difference calculation
-3. **Dynamic Correction**: Applies acceleration/deceleration based on convergence state
-4. **Quality Tracking**: Monitors peer performance and adjusts synchronization accordingly
+1. **Broadcast Communication**: Nodes send time broadcasts every 2 seconds
+2. **Time Difference Calculation**: Compares received timestamps with local corrected time
+3. **Monotonic Time**: Time can only accelerate, never go backwards
+4. **Dynamic Correction**: Applies corrections based on weighted peer consensus
+5. **Convergence Detection**: Algorithm detects when nodes are synchronized
+
+### Algorithm Details
+
+- **Acceleration Factor**: 0.8 (aggressive time acceleration)
+- **Deceleration Factor**: 0.6 (moderate time deceleration)
+- **Max Correction**: 100000μs (large corrections allowed for initial sync)
+- **Convergence Threshold**: 50% of max correction threshold
 
 ## Customization
 
@@ -100,9 +112,10 @@ sync_manager.add_peer(peer3);
 
 ```rust
 let sync_config = SyncConfig {
-    sync_interval_ms: 1000,        // More frequent sync
-    max_correction_threshold_us: 500, // Smaller corrections
-    acceleration_factor: 0.2,       // Faster convergence
+    sync_interval_ms: 1000,        // More frequent broadcasts
+    max_correction_threshold_us: 50000, // Smaller corrections
+    acceleration_factor: 0.9,      // More aggressive acceleration
+    deceleration_factor: 0.7,      // More aggressive deceleration
     // ... other parameters
 };
 ```
@@ -143,6 +156,22 @@ if sync_manager.is_synchronized(100) { // Within 100μs tolerance
 - **CPU Usage**: Synchronization processing is lightweight
 - **Network Traffic**: Minimal ESP-NOW traffic (few bytes per sync cycle)
 - **Power Consumption**: ESP-NOW is power-efficient for IoT applications
+
+## Cross-Platform Compatibility
+
+This example is designed to work seamlessly between ESP32 (Xtensa) and ESP32-C6 (RISC-V) platforms:
+
+- **ESP-NOW Compatibility**: ESP-NOW works between different ESP chipset architectures
+- **Shared Protocol**: Both platforms use the same synchronization message format
+- **Automatic Detection**: The system automatically detects and adapts to the target platform
+- **Unified API**: Same Martos API works on both platforms
+
+### Testing Cross-Platform Synchronization
+
+1. Flash ESP32 example to an ESP32 device
+2. Flash ESP32-C6 example to an ESP32-C6 device
+3. Both devices will automatically discover and synchronize with each other
+4. Monitor both serial outputs to see synchronization progress
 
 ## Future Enhancements
 
