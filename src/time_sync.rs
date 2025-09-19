@@ -294,8 +294,6 @@ pub struct TimeSyncManager<'a> {
     last_sync_time: AtomicU32,
     /// Synchronized peers
     peers: BTreeMap<u32, SyncPeer>,
-    /// Message sequence counter
-    sequence_counter: AtomicU32,
     /// Current synchronization quality score
     sync_quality: AtomicU32, // Stored as fixed-point (0.0-1.0 * 1000)
     /// ESP-NOW protocol handler (only available with network feature)
@@ -322,7 +320,6 @@ impl<'a> TimeSyncManager<'a> {
             time_offset_us: AtomicI32::new(0),
             last_sync_time: AtomicU32::new(0),
             peers: BTreeMap::new(),
-            sequence_counter: AtomicU32::new(0),
             sync_quality: AtomicU32::new(1000), // Start with perfect quality
             #[cfg(feature = "network")]
             esp_now_protocol: None,
@@ -398,7 +395,7 @@ impl<'a> TimeSyncManager<'a> {
                 self.handle_sync_response(message);
             }
             SyncMessageType::TimeBroadcast => {
-                self.handle_time_broadcast(message);
+                self.handle_sync_request(message);
             }
         }
     }
@@ -435,12 +432,6 @@ impl<'a> TimeSyncManager<'a> {
             if let Ok(correction) = algorithm.process_sync_message(message.source_node_id, message.timestamp_us, corrected_time_us) {
                 // Apply correction to time offset
                 self.apply_time_correction(correction as i32);
-                // Debug: print correction applied
-                #[cfg(all(feature = "network", any(target_arch = "riscv32", target_arch = "xtensa")))]
-                {
-                    let offset = self.time_offset_us.load(Ordering::Acquire);
-                    // esp_println::println!("Applied correction: {}μs, new offset: {}μs", correction, offset);
-                }
             } else {
                 // esp_println::println!("Sync algorithm failed to process message");
             }
@@ -487,12 +478,6 @@ impl<'a> TimeSyncManager<'a> {
             if let Ok(correction) = algorithm.process_sync_message(message.source_node_id, message.timestamp_us, corrected_time_us) {
                 // Apply correction to time offset
                 self.apply_time_correction(correction as i32);
-                // Debug: print correction applied
-                #[cfg(all(feature = "network", any(target_arch = "riscv32", target_arch = "xtensa")))]
-                {
-                    let offset = self.time_offset_us.load(Ordering::Acquire);
-                    // esp_println::println!("Applied correction: {}μs, new offset: {}μs", correction, offset);
-                }
             } else {
                 // esp_println::println!("Sync algorithm failed to process message");
             }
@@ -505,19 +490,6 @@ impl<'a> TimeSyncManager<'a> {
     #[cfg(not(all(feature = "network", any(target_arch = "riscv32", target_arch = "xtensa"))))]
     fn handle_sync_response(&mut self, _message: SyncMessage) {
         // Mock implementation for non-ESP targets
-    }
-
-    /// Handle time broadcast from a peer
-    fn handle_time_broadcast(&mut self, _message: SyncMessage) {
-        // TODO: Implement time broadcast handling
-        // This should update peer time information
-    }
-
-    /// Calculate time correction based on peer data
-    fn calculate_time_correction(&self, _peer: &SyncPeer) -> i64 {
-        // TODO: Implement time correction calculation
-        // This should use the dynamic acceleration/deceleration algorithm
-        0
     }
 
     /// Apply time correction to the system
@@ -551,20 +523,6 @@ impl<'a> TimeSyncManager<'a> {
         #[cfg(not(all(feature = "network", any(target_arch = "riscv32", target_arch = "xtensa"))))]
         {
             0
-        }
-    }
-
-    /// Update peer quality score based on synchronization results
-    fn update_peer_quality(&mut self, node_id: u32, success: bool) {
-        if let Some(peer) = self.peers.get_mut(&node_id) {
-            if success {
-                peer.quality_score =
-                    (peer.quality_score + self.config.acceleration_factor).min(1.0);
-                peer.sync_count += 1;
-            } else {
-                peer.quality_score =
-                    (peer.quality_score - self.config.deceleration_factor).max(0.0);
-            }
         }
     }
 
@@ -630,48 +588,6 @@ impl<'a> TimeSyncManager<'a> {
                 if peer.quality_score > 0.1 {
                     // Only sync with good quality peers
                     let _ = protocol.send_sync_request(&peer.mac_address, current_time_us as u64);
-                }
-            }
-        }
-    }
-
-    /// Handle incoming synchronization message with algorithm integration
-    #[cfg(feature = "network")]
-    fn handle_sync_message_with_algorithm(&mut self, message: SyncMessage, current_time_us: u64) {
-        if let Some(ref mut algorithm) = self.sync_algorithm {
-            match message.msg_type {
-                SyncMessageType::SyncRequest => {
-                    // Send response
-                    if let Some(ref mut protocol) = self.esp_now_protocol {
-                        // Convert node_id to MAC address (simplified - in real app you'd have a mapping)
-                        let mut mac = [0u8; 6];
-                        mac[0..4].copy_from_slice(&message.source_node_id.to_le_bytes());
-                        let _ = protocol.send_sync_response(
-                            &mac,
-                            message.source_node_id,
-                            current_time_us,
-                        );
-                    }
-                }
-                SyncMessageType::SyncResponse => {
-                    // Process response and calculate correction
-                    if let Ok(correction) = algorithm.process_sync_message(
-                        message.source_node_id,
-                        message.timestamp_us,
-                        current_time_us,
-                    ) {
-                        self.apply_time_correction(correction as i32);
-                    }
-                }
-                SyncMessageType::TimeBroadcast => {
-                    // Process broadcast and calculate correction
-                    if let Ok(correction) = algorithm.process_sync_message(
-                        message.source_node_id,
-                        message.timestamp_us,
-                        current_time_us,
-                    ) {
-                        self.apply_time_correction(correction as i32);
-                    }
                 }
             }
         }

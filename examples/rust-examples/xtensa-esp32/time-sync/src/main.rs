@@ -63,23 +63,19 @@ fn loop_fn() {
             if let Some(r) = received_message {
                 // Обрабатываем broadcast сообщения для синхронизации времени
                 if r.info.dst_address == BROADCAST_ADDRESS {
-                    
-                    // Парсим время из ESP-NOW сообщения
-                    let current_time_us = time::now().duration_since_epoch().to_micros() as u64;
-                    
-                             // Пытаемся создать SyncMessage из полученных данных
-                             if let Some(received_sync_message) = SyncMessage::from_bytes(&r.data) {
-                                 let corrected_time_us = sync_manager.get_corrected_time_us();
-                                 let time_diff = received_sync_message.timestamp_us as i64 - corrected_time_us as i64;
-                                 println!("ESP32: Received timestamp: {}μs, corrected time: {}μs, diff: {}μs", received_sync_message.timestamp_us, corrected_time_us, time_diff);
-                                 
-                                 // Обрабатываем сообщение для синхронизации
-                                 sync_manager.handle_sync_message(received_sync_message);
-                                 
-                                 // Показываем текущий offset
-                                 let offset = sync_manager.get_time_offset_us();
-                                 println!("ESP32: Current offset: {}μs", offset);
-                             }
+                    // Пытаемся создать SyncMessage из полученных данных
+                    if let Some(received_sync_message) = SyncMessage::from_bytes(&r.data) {
+                        let corrected_time_us = sync_manager.get_corrected_time_us();
+                        let time_diff = received_sync_message.timestamp_us as i64 - corrected_time_us as i64;
+                        println!("ESP32: Received timestamp: {}μs, corrected time: {}μs, diff: {}μs", received_sync_message.timestamp_us, corrected_time_us, time_diff);
+                        
+                        // Обрабатываем сообщение для синхронизации
+                        sync_manager.handle_sync_message(received_sync_message);
+                        
+                        // Показываем текущий offset
+                        let offset = sync_manager.get_time_offset_us();
+                        println!("ESP32: Current offset: {}μs", offset);
+                    }
                 }
             }
             
@@ -88,7 +84,7 @@ fn loop_fn() {
             if time::now().duration_since_epoch().to_millis() >= next_send_time {
                 next_send_time = time::now().duration_since_epoch().to_millis() + 2000;
                 
-                // Создаем правильное SyncMessage с скорректированным временем
+                // Создаем SyncMessage с скорректированным временем
                 let corrected_time_us = sync_manager.get_corrected_time_us();
                 let sync_message = SyncMessage::new_sync_request(
                     0x12345678, // ESP32 node ID

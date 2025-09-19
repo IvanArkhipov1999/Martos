@@ -235,10 +235,7 @@ pub mod utils {
             return false;
         }
 
-        // Check if sequence number is reasonable (basic validation)
-        if message.sequence > 0xFFFF_FFFF {
-            return false;
-        }
+        // Sequence number validation is not needed for u32 type
 
         // Additional validation can be added here
         true

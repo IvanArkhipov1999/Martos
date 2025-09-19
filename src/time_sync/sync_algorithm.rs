@@ -74,7 +74,7 @@ impl SyncAlgorithm {
     }
 
     /// Calculate time correction using Local Voting Protocol
-    fn calculate_dynamic_correction(&mut self, peer_id: u32, time_diff: i64) -> SyncResult<i64> {
+    fn calculate_dynamic_correction(&mut self, peer_id: u32, _time_diff: i64) -> SyncResult<i64> {
         let _peer = self.peers.get(&peer_id).ok_or(SyncError::PeerNotFound)?;
 
         // Local Voting Protocol: Calculate weighted average of time differences from all peers
@@ -147,23 +147,6 @@ impl SyncAlgorithm {
             correction.max(-(max_threshold as i64 / 10))
         } else {
             correction
-        }
-    }
-
-    /// Calculate acceleration factor based on convergence state
-    fn calculate_acceleration_factor(&self, time_diff: i64) -> f64 {
-        let abs_diff = time_diff.abs() as f64;
-        let max_threshold = self.config.max_correction_threshold_us as f64;
-
-        if abs_diff <= self.convergence_threshold as f64 {
-            // Close to convergence - use deceleration factor
-            self.config.deceleration_factor as f64
-        } else if abs_diff <= max_threshold {
-            // Moderate difference - use acceleration factor
-            self.config.acceleration_factor as f64
-        } else {
-            // Large difference - use reduced acceleration to prevent instability
-            self.config.acceleration_factor as f64 * 0.5
         }
     }
 
