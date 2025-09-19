@@ -4,7 +4,7 @@
 use esp_backtrace as _;
 use esp_hal::{entry, time};
 use esp_println::println;
-use esp_wifi::esp_now::{EspNow, PeerInfo, BROADCAST_ADDRESS};
+use esp_wifi::esp_now::{EspNow, BROADCAST_ADDRESS};
 use martos::get_esp_now;
 use martos::{
     init_system,
@@ -59,22 +59,12 @@ fn loop_fn() {
                 if let Some(r) = r {
                     println!("ESP32-C6: Received {:?}", r);
                     
+                    // Просто получаем broadcast сообщения, никаких ответов не отправляем
                     if r.info.dst_address == BROADCAST_ADDRESS {
-                        if !esp_now.peer_exists(&r.info.src_address) {
-                            esp_now
-                                .add_peer(PeerInfo {
-                                    peer_address: r.info.src_address,
-                                    lmk: None,
-                                    channel: None,
-                                    encrypt: false,
-                                })
-                                .unwrap();
-                        }
-                        let status = esp_now
-                            .send(&r.info.src_address, b"Time Sync Response")
-                            .unwrap()
-                            .wait();
-                        println!("ESP32-C6: Send time sync response status: {:?}", status);
+                        println!("ESP32-C6: Received broadcast message from {:02X}:{:02X}:{:02X}:{:02X}:{:02X}:{:02X}", 
+                            r.info.src_address[0], r.info.src_address[1], r.info.src_address[2],
+                            r.info.src_address[3], r.info.src_address[4], r.info.src_address[5]);
+                        println!("ESP32-C6: Data: {:?}", r.data);
                     }
                 }
                 
