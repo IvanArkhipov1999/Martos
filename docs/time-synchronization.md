@@ -12,10 +12,9 @@ Martos RTOS implements a distributed time synchronization system using ESP-NOW b
 4. [Message Flow](#message-flow)
 5. [Implementation Details](#implementation-details)
 6. [Configuration](#configuration)
-7. [Performance Characteristics](#performance-characteristics)
-8. [Cross-Platform Compatibility](#cross-platform-compatibility)
-9. [Usage Examples](#usage-examples)
-10. [Troubleshooting](#troubleshooting)
+7. [Cross-Platform Compatibility](#cross-platform-compatibility)
+8. [Usage Examples](#usage-examples)
+9. [Troubleshooting](#troubleshooting)
 
 ## Architecture
 
@@ -319,60 +318,6 @@ SyncConfig {
 | `max_correction_threshold_us` | Max correction | 1000-100000μs | Higher = faster initial sync, less stability |
 | `acceleration_factor` | Acceleration rate | 0.1-0.9 | Higher = faster convergence, more instability |
 | `deceleration_factor` | Deceleration rate | 0.1-0.9 | Higher = more aggressive corrections |
-
-## Performance Characteristics
-
-### Memory Usage
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    Memory Footprint                            │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  Component                │ Size (bytes)                       │
-│  ─────────────────────────┼─────────────────────────────────────┤
-│  TimeSyncManager          │ ~200                               │
-│  SyncAlgorithm            │ ~150                               │
-│  ESP-NOW Protocol         │ ~100                               │
-│  Per Peer                 │ ~50                                │
-│  ─────────────────────────┼─────────────────────────────────────┤
-│  Total (10 peers)         │ ~900                               │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-### Network Traffic
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    Network Traffic Analysis                     │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  Message Type          │ Size │ Frequency │ Total Traffic       │
-│  ──────────────────────┼──────┼───────────┼─────────────────────┤
-│  SyncRequest           │ 23B  │ 0.5 Hz    │ 11.5 B/s per node   │
-│  ──────────────────────┼──────┼───────────┼─────────────────────┤
-│  Total (10 nodes)      │ -    │ -         │ 115 B/s             │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-### Synchronization Accuracy
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    Synchronization Accuracy                     │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  Scenario                │ Accuracy │ Convergence Time         │
-│  ────────────────────────┼──────────┼───────────────────────────┤
-│  Initial Sync            │ ±100ms   │ 10-30 seconds            │
-│  Stable Network          │ ±1ms     │ 5-10 seconds             │
-│  Network Interference    │ ±10ms    │ 15-30 seconds             │
-│  Node Addition           │ ±5ms     │ 5-15 seconds             │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
-```
 
 ## Cross-Platform Compatibility
 
