@@ -61,14 +61,8 @@ fn loop_fn() {
             
             // Обрабатываем полученное сообщение
             if let Some(r) = received_message {
-                println!("ESP32: Received {:?}", r);
-                
                 // Обрабатываем broadcast сообщения для синхронизации времени
                 if r.info.dst_address == BROADCAST_ADDRESS {
-                    println!("ESP32: Received broadcast message from {:02X}:{:02X}:{:02X}:{:02X}:{:02X}:{:02X}", 
-                        r.info.src_address[0], r.info.src_address[1], r.info.src_address[2],
-                        r.info.src_address[3], r.info.src_address[4], r.info.src_address[5]);
-                    println!("ESP32: Data: {:?}", r.data);
                     
                     // Парсим время из ESP-NOW сообщения
                     let current_time_us = time::now().duration_since_epoch().to_micros() as u64;
@@ -78,14 +72,7 @@ fn loop_fn() {
                         println!("ESP32: Received timestamp: {}μs, current time: {}μs", received_sync_message.timestamp_us, current_time_us);
                         
                         // Обрабатываем сообщение для синхронизации
-                        let time_before = time::now().duration_since_epoch().to_micros() as u64;
                         sync_manager.handle_sync_message(received_sync_message);
-                        let time_after = time::now().duration_since_epoch().to_micros() as u64;
-                        let offset = sync_manager.get_time_offset_us();
-                        println!("ESP32: Processed sync message for time synchronization");
-                        println!("ESP32: Time before: {}μs, after: {}μs, offset: {}μs", time_before, time_after, offset);
-                    } else {
-                        println!("ESP32: Failed to parse sync message from ESP-NOW data");
                     }
                 }
             }
@@ -96,7 +83,6 @@ fn loop_fn() {
                 let mut next_send_time = NEXT_SEND_TIME.take().expect("Next send time error in main");
                         if time::now().duration_since_epoch().to_millis() >= next_send_time {
                             next_send_time = time::now().duration_since_epoch().to_millis() + 2000;
-                            println!("ESP32: Send");
                             
                             // Создаем правильное SyncMessage с текущим временем
                             let current_time_us = time::now().duration_since_epoch().to_micros() as u64;
@@ -107,11 +93,10 @@ fn loop_fn() {
                             );
                             let message_data = sync_message.to_bytes();
                             
-                            let status = esp_now
+                            let _status = esp_now
                                 .send(&BROADCAST_ADDRESS, &message_data)
                                 .unwrap()
                                 .wait();
-                            println!("ESP32: Send broadcast status: {:?}", status);
                         }
                 NEXT_SEND_TIME = Some(next_send_time);
             }
