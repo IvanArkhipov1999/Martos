@@ -7,38 +7,38 @@
 use crate::time_sync::{SyncError, SyncMessage, SyncMessageType, SyncResult};
 use alloc::vec::Vec;
 
-#[cfg(all(feature = "network", not(test)))]
+#[cfg(all(feature = "network", feature = "esp-wifi", not(test), any(target_arch = "riscv32", target_arch = "xtensa")))]
 pub use esp_wifi::esp_now::{EspNow, EspNowReceiver, PeerInfo, ReceivedData, BROADCAST_ADDRESS};
 
-#[cfg(any(not(feature = "network"), test))]
+#[cfg(any(not(feature = "network"), not(feature = "esp-wifi"), test))]
 pub struct EspNow {}
-#[cfg(any(not(feature = "network"), test))]
+#[cfg(any(not(feature = "network"), not(feature = "esp-wifi"), test))]
 pub struct PeerInfo {
     pub peer_address: [u8; 6],
     pub lmk: Option<[u8; 16]>,
     pub channel: Option<u8>,
     pub encrypt: bool,
 }
-#[cfg(any(not(feature = "network"), test))]
+#[cfg(any(not(feature = "network"), not(feature = "esp-wifi"), test))]
 pub const BROADCAST_ADDRESS: [u8; 6] = [0xFF; 6];
-#[cfg(any(not(feature = "network"), test))]
+#[cfg(any(not(feature = "network"), not(feature = "esp-wifi"), test))]
 pub struct EspNowReceive {
     pub data: Vec<u8>,
 }
-#[cfg(any(not(feature = "network"), test))]
+#[cfg(any(not(feature = "network"), not(feature = "esp-wifi"), test))]
 pub struct EspNowReceiveInfo {
     pub src_address: [u8; 6],
     pub dst_address: [u8; 6],
 }
-#[cfg(any(not(feature = "network"), test))]
+#[cfg(any(not(feature = "network"), not(feature = "esp-wifi"), test))]
 pub struct EspNowReceiver {}
-#[cfg(any(not(feature = "network"), test))]
+#[cfg(any(not(feature = "network"), not(feature = "esp-wifi"), test))]
 pub struct ReceivedData {
     pub info: EspNowReceiveInfo,
     pub data: Vec<u8>,
 }
 
-#[cfg(any(not(feature = "network"), test))]
+#[cfg(any(not(feature = "network"), not(feature = "esp-wifi"), test))]
 impl EspNow {
     pub fn peer_exists(&self, _mac: &[u8; 6]) -> bool {
         false
@@ -70,7 +70,7 @@ pub struct EspNowReceiveInfo {
 /// ESP-NOW protocol handler for time synchronization
 #[cfg(feature = "network")]
 pub struct EspNowTimeSyncProtocol<'a> {
-    esp_now: EspNow<'a>,
+    pub esp_now: EspNow<'a>,
     local_node_id: u32,
     local_mac: [u8; 6],
 }
@@ -89,6 +89,7 @@ impl<'a> EspNowTimeSyncProtocol<'a> {
     /// Send a time synchronization request to a specific peer
     pub fn send_sync_request(&mut self, target_mac: &[u8; 6], timestamp_us: u64) -> SyncResult<()> {
         let message = SyncMessage::new_sync_request(self.local_node_id, 0, timestamp_us);
+        // Note: Debug info would be added here in real implementation
         self.send_message(&message, target_mac)
     }
 
