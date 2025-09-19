@@ -113,9 +113,9 @@ fn setup_fn() {
 /// 5. **Progress Display**: Shows synchronization progress and offset information
 fn loop_fn() {
     unsafe {
-        // Получаем ESP-NOW из sync_manager
+        // Get ESP-NOW from sync_manager
         if let Some(ref mut sync_manager) = SYNC_MANAGER {
-            // Сначала получаем сообщения
+            // First, receive messages
             let received_message =
                 if let Some(ref mut esp_now_protocol) = sync_manager.esp_now_protocol {
                     let esp_now = &mut esp_now_protocol.esp_now;
@@ -124,11 +124,11 @@ fn loop_fn() {
                     None
                 };
 
-            // Обрабатываем полученное сообщение
+            // Process received message
             if let Some(r) = received_message {
-                // Обрабатываем broadcast сообщения для синхронизации времени
+                // Process broadcast messages for time synchronization
                 if r.info.dst_address == BROADCAST_ADDRESS {
-                    // Пытаемся создать SyncMessage из полученных данных
+                    // Try to create SyncMessage from received data
                     if let Some(received_sync_message) = SyncMessage::from_bytes(&r.data) {
                         let corrected_time_us = sync_manager.get_corrected_time_us();
                         let time_diff =
@@ -138,22 +138,22 @@ fn loop_fn() {
                             received_sync_message.timestamp_us, corrected_time_us, time_diff
                         );
 
-                        // Обрабатываем сообщение для синхронизации
+                        // Process message for synchronization
                         sync_manager.handle_sync_message(received_sync_message);
 
-                        // Показываем текущий offset
+                        // Show current offset
                         let offset = sync_manager.get_time_offset_us();
                         println!("ESP32: Current offset: {}μs", offset);
                     }
                 }
             }
 
-            // Отправляем broadcast каждые 2 секунды
+            // Send broadcast every 2 seconds
             let mut next_send_time = NEXT_SEND_TIME.take().expect("Next send time error in main");
             if time::now().duration_since_epoch().to_millis() >= next_send_time {
                 next_send_time = time::now().duration_since_epoch().to_millis() + 2000;
 
-                // Создаем SyncMessage с скорректированным временем
+                // Create SyncMessage with corrected time
                 let corrected_time_us = sync_manager.get_corrected_time_us();
                 let sync_message = SyncMessage::new_sync_request(
                     0x12345678, // ESP32 node ID
