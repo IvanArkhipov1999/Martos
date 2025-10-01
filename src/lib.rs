@@ -15,6 +15,12 @@ use esp_wifi::esp_now::EspNow;
 pub fn init_system() {
     // Memory initialization.
     ports::Port::init_heap();
+    // Initialize peripherals for ESP32 platforms
+    #[cfg(any(target_arch = "riscv32", target_arch = "xtensa"))]
+    {
+        use ports::xtensa_esp32::peripherals::init_peripherals;
+        init_peripherals();
+    }
     // Hardware timer setup.
     ports::Port::setup_hardware_timer();
     #[cfg(feature = "network")]

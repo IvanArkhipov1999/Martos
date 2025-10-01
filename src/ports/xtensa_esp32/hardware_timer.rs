@@ -1,4 +1,3 @@
-use super::peripherals::init_peripherals;
 use super::peripherals::{PERIFERALS_TIMG0, PERIFERALS_TIMG1};
 use core::sync::atomic::{AtomicBool, Ordering};
 use core::time::Duration;
@@ -13,7 +12,6 @@ static TIMER_BUSY: AtomicBool = AtomicBool::new(false);
 
 /// Esp32 hardware timer setup.
 pub fn setup_hardware_timer() {
-    init_peripherals();
     let (timg0, timg1) = unsafe {
         (
             PERIFERALS_TIMG0.take().expect("TIMG0 peripherals error"),
