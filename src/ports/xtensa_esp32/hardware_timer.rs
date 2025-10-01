@@ -1,5 +1,4 @@
 use super::peripherals::init_peripherals;
-use super::peripherals::{PERIFERALS_RADIO_CLK, PERIFERALS_RNG, PERIFERALS_WIFI};
 use super::peripherals::{PERIFERALS_TIMG0, PERIFERALS_TIMG1};
 use core::sync::atomic::{AtomicBool, Ordering};
 use core::time::Duration;

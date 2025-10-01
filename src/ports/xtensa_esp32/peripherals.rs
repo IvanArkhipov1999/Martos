@@ -10,7 +10,13 @@ pub static mut PERIFERALS_TIMG1: Option<TIMG1> = None;
 pub static mut PERIFERALS_RNG: Option<RNG> = None;
 pub static mut PERIFERALS_RADIO_CLK: Option<RADIO_CLK> = None;
 pub static mut PERIFERALS_WIFI: Option<WIFI> = None;
-pub static mut PERIFERALS_UART2: Option<UART2> = None;
+// Select UART peripheral depending on the target architecture
+#[cfg(target_arch = "xtensa")]
+pub type UartPeriph = UART2;
+#[cfg(target_arch = "riscv32")]
+pub type UartPeriph = UART0;
+
+pub static mut PERIFERALS_UART: Option<UartPeriph> = None;
 pub static mut PERIFERALS_GPIO: Option<GPIO> = None;
 pub static mut PERIFERALS_IO_MUX: Option<IO_MUX> = None;
 
@@ -28,7 +34,14 @@ pub fn init_peripherals() {
             PERIFERALS_RNG = Some(peripherals.RNG);
             PERIFERALS_RADIO_CLK = Some(peripherals.RADIO_CLK);
             PERIFERALS_WIFI = Some(peripherals.WIFI);
-            PERIFERALS_UART2 = Some(peripherals.UART2);
+            #[cfg(target_arch = "xtensa")]
+            {
+                PERIFERALS_UART = Some(peripherals.UART2);
+            }
+            #[cfg(target_arch = "riscv32")]
+            {
+                PERIFERALS_UART = Some(peripherals.UART0);
+            }
             PERIFERALS_GPIO = Some(peripherals.GPIO);
             PERIFERALS_IO_MUX = Some(peripherals.IO_MUX);
         }

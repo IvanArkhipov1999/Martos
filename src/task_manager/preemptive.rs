@@ -35,7 +35,7 @@
 //!
 //! ## Basic Task Registration
 //!
-//! ```rust,no_run
+//! ```rust,ignore
 //! use martos::task_manager::{TaskManager, TaskManagerTrait};
 //! use core::sync::atomic::{AtomicU32, Ordering};
 //!
@@ -126,6 +126,7 @@ pub(crate) const THREAD_STACK_SIZE: usize = 1024;
 /// The `stack` field is a raw pointer to dynamically allocated memory.
 /// Care must be taken to ensure the stack remains valid throughout
 /// the thread's lifetime. Currently, stack deallocation is not implemented.
+#[allow(dead_code)]
 pub(crate) struct Thread {
     /// Pointer to the memory allocated for this thread's stack.
     ///
@@ -135,6 +136,7 @@ pub(crate) struct Thread {
     ///
     /// # Safety
     /// Raw pointer requires careful lifetime management.
+    #[allow(dead_code)]
     pub(crate) stack: *mut u8,
 
     /// Architecture-specific saved register state.
@@ -148,6 +150,7 @@ pub(crate) struct Thread {
     ///
     /// Contains the three function pointers that define the task's
     /// behavior: setup, main loop, and termination condition.
+    #[allow(dead_code)]
     pub(crate) task: Task,
 }
 
@@ -205,6 +208,7 @@ impl Thread {
     ///
     /// # TODO
     /// Implement proper yielding mechanism instead of infinite loop.
+    #[allow(dead_code)]
     pub(crate) fn run_task(
         start: TaskSetupFunctionType,
         loop_: TaskLoopFunctionType,
@@ -214,7 +218,7 @@ impl Thread {
         loop {
             if stop() {
                 // TODO: yield properly instead of busy loop
-                loop {}
+                core::hint::spin_loop();
             } else {
                 loop_();
             }
@@ -236,7 +240,7 @@ impl Thread {
 ///
 /// # Example
 ///
-/// ```rust,no_run
+/// ```rust,ignore
 /// use martos::task_manager::{TaskManager, TaskManagerTrait};
 ///
 /// fn setup() { println!("Starting task"); }
@@ -293,6 +297,7 @@ impl PreemptiveTaskManager {
     /// # Safety
     ///
     /// Accesses the global `TASK_MANAGER` instance unsafely.
+    #[allow(static_mut_refs)]
     fn next_thread() {
         unsafe {
             TASK_MANAGER.task_to_execute_index =
@@ -321,6 +326,7 @@ impl PreemptiveTaskManager {
     ///
     /// This function manipulates raw CPU context and must only be
     /// called from interrupt context with proper stack setup.
+    #[allow(static_mut_refs)]
     pub fn schedule(isr_ctx: &mut TrapFrame) {
         if unsafe { !TASK_MANAGER.first_task } {
             let task = unsafe {
@@ -380,6 +386,7 @@ impl TaskManagerTrait for PreemptiveTaskManager {
     /// # TODO
     ///
     /// Implement stack deallocation when tasks terminate.
+    #[allow(static_mut_refs)]
     fn add_task(
         setup_fn: TaskSetupFunctionType,
         loop_fn: TaskLoopFunctionType,

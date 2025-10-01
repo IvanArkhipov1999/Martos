@@ -1,7 +1,7 @@
 //! UART module for ESP32 - handles UART2 and IO peripherals
 
 use super::peripherals::init_peripherals;
-use super::peripherals::{PERIFERALS_GPIO, PERIFERALS_IO_MUX, PERIFERALS_UART2};
+use super::peripherals::{UartPeriph, PERIFERALS_GPIO, PERIFERALS_IO_MUX, PERIFERALS_UART};
 use core::sync::atomic::{AtomicBool, Ordering};
 use esp_hal::{gpio::*, peripherals::*};
 
@@ -11,8 +11,8 @@ pub static mut IO: Option<Io> = None;
 // Flag to ensure UART is initialized only once
 static UART_INITIALIZED: AtomicBool = AtomicBool::new(false);
 
-/// ESP32 UART2 type alias
-pub type Uart2Type = UART2;
+/// ESP32 UART type alias (depends on arch)
+pub type Uart2Type = UartPeriph;
 
 /// ESP32 IO type alias  
 pub type IoType = Io;
@@ -40,9 +40,9 @@ pub fn setup_uart() {
 /// Get UART2 peripheral instance
 ///
 /// Returns the UART2 peripheral for configuration. Can only be called once.
-pub fn get_uart2() -> UART2 {
+pub fn get_uart2() -> UartPeriph {
     unsafe {
-        PERIFERALS_UART2
+        PERIFERALS_UART
             .take()
             .expect("UART2 not available - call setup_uart first")
     }
