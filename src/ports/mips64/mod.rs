@@ -26,11 +26,7 @@ impl PortTrait for Mips64 {
     }
 
     fn valid_timer_index(timer_index: u8) -> bool {
-        if timer_index <= 4 {
-            true
-        } else {
-            false
-        }
+        timer_index <= 4
     }
 
     fn try_acquire_timer(timer_index: u8) -> bool {

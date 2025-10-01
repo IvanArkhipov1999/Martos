@@ -8,8 +8,6 @@ pub mod c_api;
 pub mod task_manager;
 pub mod timer;
 #[cfg(any(target_arch = "riscv32", target_arch = "xtensa"))]
-use crate::ports::xtensa_esp32::XtensaEsp32;
-#[cfg(any(target_arch = "riscv32", target_arch = "xtensa"))]
 #[cfg(feature = "network")]
 use esp_wifi::esp_now::EspNow;
 
@@ -34,11 +32,11 @@ pub fn get_esp_now() -> EspNow<'static> {
 }
 
 #[cfg(feature = "uart")]
-pub fn get_uart2() -> <XtensaEsp32 as PortTrait>::Uart2Type {
+pub fn get_uart2() -> ports::Uart2Type {
     ports::Port::get_uart2()
 }
 
 #[cfg(feature = "uart")]
-pub fn get_io() -> <XtensaEsp32 as PortTrait>::IoType {
+pub fn get_io() -> ports::IoType {
     ports::Port::get_io()
 }

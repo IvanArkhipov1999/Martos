@@ -1,10 +1,11 @@
 //! UART module for ESP32 - handles UART2 and IO peripherals
 
+use super::peripherals::init_peripherals;
+use super::peripherals::{PERIFERALS_GPIO, PERIFERALS_IO_MUX, PERIFERALS_UART2};
 use core::sync::atomic::{AtomicBool, Ordering};
 use esp_hal::{gpio::*, peripherals::*};
 
 // Static variables for UART peripherals
-pub static mut PERIFERALS_UART2: Option<UART2> = None;
 pub static mut IO: Option<Io> = None;
 
 // Flag to ensure UART is initialized only once
@@ -26,12 +27,11 @@ pub fn setup_uart() {
         .compare_exchange(false, true, Ordering::Acquire, Ordering::Relaxed)
         .is_ok()
     {
-        // Initialize ESP-HAL to get peripheral instances
-        let peripherals = esp_hal::init(esp_hal::Config::default());
-
+        init_peripherals();
         unsafe {
-            PERIFERALS_UART2 = Some(peripherals.UART2);
-            let io = Io::new(peripherals.GPIO, peripherals.IO_MUX);
+            let gpio = PERIFERALS_GPIO.take().expect("GPIO peripherals error");
+            let io_mux = PERIFERALS_IO_MUX.take().expect("IO_MUX peripherals error");
+            let io = Io::new(gpio, io_mux);
             IO = Some(io);
         }
     }

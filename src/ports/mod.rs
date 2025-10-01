@@ -102,13 +102,14 @@ pub trait PortTrait {
 
     // TODO: split to separate trait?
     #[cfg(feature = "preemptive")]
-    fn setup_interrupt();
+    fn setup_interrupt() {}
     #[cfg(feature = "preemptive")]
-    fn setup_stack(thread: &mut crate::task_manager::preemptive::Thread);
+    #[allow(private_interfaces)]
+    fn setup_stack(_thread: &mut crate::task_manager::preemptive::Thread) {}
     #[cfg(feature = "preemptive")]
-    fn save_ctx(thread_ctx: &mut TrapFrame, isr_ctx: &TrapFrame);
+    fn save_ctx(_thread_ctx: &mut TrapFrame, _isr_ctx: &TrapFrame) {}
     #[cfg(feature = "preemptive")]
-    fn load_ctx(thread_ctx: &TrapFrame, isr_ctx: &mut TrapFrame);
+    fn load_ctx(_thread_ctx: &TrapFrame, _isr_ctx: &mut TrapFrame) {}
 }
 
 /// Port is an alias of PortTrait implementation for a current platform
@@ -156,3 +157,8 @@ mod arch {
 }
 
 pub use arch::*;
+
+#[cfg(feature = "uart")]
+pub type Uart2Type = <Port as PortTrait>::Uart2Type;
+#[cfg(feature = "uart")]
+pub type IoType = <Port as PortTrait>::IoType;

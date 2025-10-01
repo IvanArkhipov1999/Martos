@@ -8,12 +8,15 @@ use core::alloc::Layout;
 
 pub(crate) const THREAD_STACK_SIZE: usize = 1024; // TODO:
 
+#[allow(dead_code)]
 pub(crate) struct Thread {
     /// Pointer to the memory allocated for stack
+    #[allow(dead_code)]
     pub(crate) stack: *mut u8,
     /// **Arch specific** state of the registers at the moment of context switch
     pub(crate) context: TrapFrame,
     /// Task that is executed by this thread
+    #[allow(dead_code)]
     pub(crate) task: Task,
 }
 
@@ -34,6 +37,7 @@ impl Thread {
             },
         }
     }
+    #[allow(dead_code)]
     pub(crate) fn run_task(
         start: TaskSetupFunctionType,
         loop_: TaskLoopFunctionType,
@@ -43,7 +47,7 @@ impl Thread {
         loop {
             if stop() {
                 // TODO: yield
-                loop {}
+                core::hint::spin_loop();
             } else {
                 loop_();
             }
@@ -66,6 +70,7 @@ impl PreemptiveTaskManager {
         }
     }
 
+    #[allow(static_mut_refs)]
     fn next_thread() {
         unsafe {
             TASK_MANAGER.task_to_execute_index =
@@ -73,6 +78,7 @@ impl PreemptiveTaskManager {
         }
     }
 
+    #[allow(static_mut_refs)]
     pub fn schedule(isr_ctx: &mut TrapFrame) {
         if unsafe { !TASK_MANAGER.first_task } {
             let task = unsafe {
@@ -100,6 +106,7 @@ impl PreemptiveTaskManager {
 }
 
 impl TaskManagerTrait for PreemptiveTaskManager {
+    #[allow(static_mut_refs)]
     fn add_task(
         setup_fn: TaskSetupFunctionType,
         loop_fn: TaskLoopFunctionType,
@@ -116,6 +123,14 @@ impl TaskManagerTrait for PreemptiveTaskManager {
     fn start_task_manager() -> ! {
         // todo!("idle task?");
         Port::setup_interrupt();
-        loop {}
+        loop {
+            core::hint::spin_loop();
+        }
+    }
+}
+
+impl Default for PreemptiveTaskManager {
+    fn default() -> Self {
+        Self::new()
     }
 }
