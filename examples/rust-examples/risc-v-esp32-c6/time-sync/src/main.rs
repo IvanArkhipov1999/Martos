@@ -10,7 +10,7 @@
 //!
 //! - Initializes ESP-NOW communication on ESP32-C6
 //! - Sets up the time synchronization manager
-//! - Sends periodic time broadcasts every 2 seconds
+//! - Sends periodic time broadcasts every 500ms
 //! - Receives and processes time synchronization messages
 //! - Applies Local Voting Protocol corrections
 //! - Displays synchronization progress and offset information
@@ -40,7 +40,7 @@
 //!
 //! The synchronization parameters can be adjusted in the `SyncConfig`:
 //!
-//! - `sync_interval_ms`: How often to send sync messages (2000ms)
+//! - `sync_interval_ms`: How often to send sync messages (500ms)
 //! - `max_correction_threshold_us`: Max correction per cycle (100000μs)
 //! - `acceleration_factor`: Aggressiveness for large differences (0.8)
 //! - `deceleration_factor`: Conservativeness for small differences (0.6)
@@ -81,14 +81,14 @@ fn setup_fn() {
     println!("ESP32-C6: Setup time synchronization!");
     unsafe {
         ESP_NOW = Some(get_esp_now());
-        NEXT_SEND_TIME = Some(time::now().duration_since_epoch().to_millis() + 2000);
+        NEXT_SEND_TIME = Some(time::now().duration_since_epoch().to_millis() + 500);
 
         // Initialize time sync manager
         let esp_now = ESP_NOW.take().unwrap();
         let local_mac = [0x24, 0xDC, 0xC3, 0x9F, 0xD3, 0xD0]; // ESP32-C6 MAC
         let config = SyncConfig {
             node_id: 0x87654321,
-            sync_interval_ms: 2000,
+            sync_interval_ms: 500,
             max_correction_threshold_us: 100000, // 100ms instead of 1ms
             acceleration_factor: 0.8,            // Much higher acceleration
             deceleration_factor: 0.6,            // Much higher deceleration
@@ -114,7 +114,7 @@ fn setup_fn() {
 /// 1. **Message Reception**: Receives and processes ESP-NOW broadcast messages
 /// 2. **Time Calculation**: Calculates time differences using corrected time
 /// 3. **Synchronization**: Applies Local Voting Protocol corrections
-/// 4. **Message Transmission**: Sends periodic time broadcasts every 2 seconds
+/// 4. **Message Transmission**: Sends periodic time broadcasts every 500ms
 /// 5. **Progress Display**: Shows synchronization progress and offset information
 fn loop_fn() {
     unsafe {
@@ -153,10 +153,10 @@ fn loop_fn() {
                 }
             }
 
-            // Send broadcast every 2 seconds
+            // Send broadcast every 500ms
             let mut next_send_time = NEXT_SEND_TIME.take().expect("Next send time error in main");
             if time::now().duration_since_epoch().to_millis() >= next_send_time {
-                next_send_time = time::now().duration_since_epoch().to_millis() + 2000;
+                next_send_time = time::now().duration_since_epoch().to_millis() + 500;
 
                 // Create SyncMessage with corrected time
                 let corrected_time_us = sync_manager.get_corrected_time_us();

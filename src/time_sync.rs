@@ -101,7 +101,7 @@ pub mod sync_algorithm;
 /// # Parameters
 ///
 /// - `node_id`: Unique identifier for this node in the network
-/// - `sync_interval_ms`: How often to send synchronization messages (milliseconds)
+/// - `sync_interval_ms`: How often to send synchronization messages (milliseconds, default: 500ms)
 /// - `max_correction_threshold_us`: Maximum time correction per cycle (microseconds)
 /// - `acceleration_factor`: How aggressively to correct large time differences (0.0-1.0)
 /// - `deceleration_factor`: How conservatively to correct small time differences (0.0-1.0)
@@ -115,7 +115,7 @@ pub mod sync_algorithm;
 ///
 /// let config = SyncConfig {
 ///     node_id: 0x12345678,
-///     sync_interval_ms: 2000,        // Sync every 2 seconds
+///     sync_interval_ms: 500,         // Sync every 500ms
 ///     max_correction_threshold_us: 100000,  // Max 100ms correction per cycle
 ///     acceleration_factor: 0.8,       // Aggressive correction for large differences
 ///     deceleration_factor: 0.6,      // Conservative correction for small differences
@@ -149,7 +149,7 @@ impl Default for SyncConfig {
     fn default() -> Self {
         Self {
             node_id: 0,
-            sync_interval_ms: 1000,            // 1 second
+            sync_interval_ms: 500,             // 500ms
             max_correction_threshold_us: 1000, // 1ms
             acceleration_factor: 0.1,
             deceleration_factor: 0.05,
