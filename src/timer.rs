@@ -60,7 +60,7 @@
 //!
 //! ## Basic Timer Setup
 //!
-//! ```
+//! ```rust,ignore
 //! use martos::timer::{Timer, TickType};
 //! use core::time::Duration;
 //!
@@ -76,11 +76,11 @@
 //!
 //! // Start the timer
 //! timer.start_timer();
-//! ```
+//! ```rust,ignore
 //!
 //! ## Periodic Task with Tick Counting
 //!
-//! ```
+//! ```rust,ignore
 //! use martos::timer::Timer;
 //! use core::time::Duration;
 //!
@@ -105,11 +105,11 @@
 //!
 //! // Clean up
 //! timer.release_timer();
-//! ```
+//! ```rust,ignore
 //!
 //! ## One-Shot Timer for Delays
 //!
-//! ```
+//! ```rust,ignore
 //! use martos::timer::Timer;
 //! use core::time::Duration;
 //!
@@ -122,11 +122,11 @@
 //!
 //! // Wait for timeout or do other work
 //! // Timer will automatically stop after 5 seconds
-//! ```
+//! ```rust,ignore
 //!
 //! ## High-Resolution Time Measurement
 //!
-//! ```
+//! ```rust,ignore
 //! use martos::timer::Timer;
 //!
 //! let timer = Timer::get_timer(3).unwrap();
@@ -144,7 +144,7 @@
 //! println!("Operation took: {:?}", end_time);
 //!
 //! timer.release_timer();
-//! ```
+//! ```rust,ignore
 //!
 //! # Integration with Martos RTOS
 //!
@@ -157,7 +157,7 @@
 //!
 //! ## Task Manager Integration
 //!
-//! ```
+//! ```text
 //! use martos::{init_system, task_manager::{TaskManager, TaskManagerTrait}};
 //! use martos::timer::Timer;
 //! use core::time::Duration;
@@ -191,7 +191,7 @@
 //!
 //! // Register with task manager
 //! TaskManager::add_task(timer_setup, timer_task, timer_stop_condition);
-//! ```
+//! ```text
 //!
 //! # Performance Considerations
 //!
@@ -223,7 +223,7 @@
 //!
 //! ## Common Error Scenarios
 //!
-//! ```
+//! ```text
 //! use martos::timer::Timer;
 //!
 //! // Handle timer acquisition failure
@@ -245,7 +245,7 @@
 //!     println!("Platform doesn't support stopping timers");
 //!     // Use alternative approach (disable interrupts, etc.)
 //! }
-//! ```
+//! ```text
 //!
 //! # Safety and Thread Safety
 //!

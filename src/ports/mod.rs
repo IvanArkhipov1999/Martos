@@ -33,16 +33,83 @@ pub trait PortTrait {
     #[cfg(feature = "network")]
     /// Function for getting esp-now object for network.
     fn get_esp_now() -> EspNow<'static>;
+    #[cfg(feature = "uart")]
+    type Uart2Type;
+    #[cfg(feature = "uart")]
+    type IoType;
+    /// Initializes the UART subsystem for the current platform.
+    ///
+    /// This function performs platform-specific initialization of UART peripherals,
+    /// including clock setup and basic port configuration.
+    ///
+    /// # Safety
+    ///
+    /// This function should be called only once during system initialization.
+    /// Multiple calls may result in undefined behavior.
+    ///
+    /// # Availability
+    ///
+    /// Available only on ESP32 architectures (xtensa, riscv32) and only when
+    /// the "uart" feature is enabled.
+    #[cfg(feature = "uart")]
+    fn setup_uart();
+    /// Returns a UART2 peripheral instance for configuration and use.
+    ///
+    /// This function transfers ownership of the UART2 peripheral from the system
+    /// pool to user code. After calling this function, attempting to retrieve
+    /// the same instance again will fail until system restart.
+    ///
+    /// # Returns
+    ///
+    /// Returns `esp_hal::peripherals::UART2` - a UART2 peripheral instance
+    /// ready for initialization with `esp_hal::uart::Uart::new()`.
+    ///
+    /// # Panics
+    ///
+    /// This function panics if:
+    /// - UART2 has already been retrieved previously
+    /// - The system was not initialized via `setup_uart()`
+    ///
+    /// # Availability
+    ///
+    /// Available only on ESP32 architectures (xtensa, riscv32) and only when
+    /// the "uart" feature is enabled.
+    #[cfg(feature = "uart")]
+    fn get_uart2() -> Self::Uart2Type;
+    /// Returns a GPIO/IO peripheral instance for pin configuration.
+    ///
+    /// This function transfers ownership of the GPIO peripheral from the system
+    /// pool to user code for configuring input/output pins. After calling this
+    /// function, attempting to retrieve the same instance again will fail.
+    ///
+    /// # Returns
+    ///
+    /// Returns `esp_hal::gpio::Io` - a GPIO peripheral instance that provides
+    /// access to individual pins through the `pins` field.
+    ///
+    /// # Panics
+    ///
+    /// This function panics if:
+    /// - The IO peripheral has already been retrieved previously
+    /// - The system was not initialized via `setup_uart()`
+    ///
+    /// # Availability
+    ///
+    /// Available only on ESP32 architectures (xtensa, riscv32) and only when
+    /// the "uart" feature is enabled.
+    #[cfg(feature = "uart")]
+    fn get_io() -> Self::IoType;
 
     // TODO: split to separate trait?
     #[cfg(feature = "preemptive")]
-    fn setup_interrupt();
+    fn setup_interrupt() {}
     #[cfg(feature = "preemptive")]
-    fn setup_stack(thread: &mut crate::task_manager::preemptive::Thread);
+    #[allow(private_interfaces)]
+    fn setup_stack(_thread: &mut crate::task_manager::preemptive::Thread) {}
     #[cfg(feature = "preemptive")]
-    fn save_ctx(thread_ctx: &mut TrapFrame, isr_ctx: &TrapFrame);
+    fn save_ctx(_thread_ctx: &mut TrapFrame, _isr_ctx: &TrapFrame) {}
     #[cfg(feature = "preemptive")]
-    fn load_ctx(thread_ctx: &TrapFrame, isr_ctx: &mut TrapFrame);
+    fn load_ctx(_thread_ctx: &TrapFrame, _isr_ctx: &mut TrapFrame) {}
 }
 
 /// Port is an alias of PortTrait implementation for a current platform
@@ -90,3 +157,8 @@ mod arch {
 }
 
 pub use arch::*;
+
+#[cfg(feature = "uart")]
+pub type Uart2Type = <Port as PortTrait>::Uart2Type;
+#[cfg(feature = "uart")]
+pub type IoType = <Port as PortTrait>::IoType;
