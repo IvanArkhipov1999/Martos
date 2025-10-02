@@ -10,7 +10,7 @@
 //!
 //! - Initializes ESP-NOW communication
 //! - Sets up the time synchronization manager
-//! - Sends periodic time broadcasts every 500ms
+//! - Sends periodic time broadcasts every 100ms
 //! - Receives and processes time synchronization messages
 //! - Applies Local Voting Protocol corrections
 //! - Displays synchronization progress and offset information
@@ -40,7 +40,7 @@
 //!
 //! The synchronization parameters can be adjusted in the `SyncConfig`:
 //!
-//! - `sync_interval_ms`: How often to send sync messages (500ms)
+//! - `sync_interval_ms`: How often to send sync messages (100ms)
 //! - `max_correction_threshold_us`: Max correction per cycle (100000μs)
 //! - `acceleration_factor`: Aggressiveness for large differences (0.8)
 //! - `deceleration_factor`: Conservativeness for small differences (0.6)
@@ -76,14 +76,14 @@ fn setup_fn() {
     println!("ESP32: Setup time synchronization!");
     unsafe {
         ESP_NOW = Some(get_esp_now());
-        NEXT_SEND_TIME = Some(time::now().duration_since_epoch().to_millis() + 500);
+        NEXT_SEND_TIME = Some(time::now().duration_since_epoch().to_millis() + 100);
 
         // Initialize time sync manager
         let esp_now = ESP_NOW.take().unwrap();
         let local_mac = [0x40, 0x4C, 0xCA, 0x57, 0x5A, 0xA4]; // ESP32 MAC
         let config = SyncConfig {
             node_id: 0x12345678,
-            sync_interval_ms: 500,
+            sync_interval_ms: 100,
             max_correction_threshold_us: 100000, // 100ms instead of 1ms
             acceleration_factor: 0.8,            // Much higher acceleration
             deceleration_factor: 0.6,            // Much higher deceleration
@@ -109,7 +109,7 @@ fn setup_fn() {
 /// 1. **Message Reception**: Receives and processes ESP-NOW broadcast messages
 /// 2. **Time Calculation**: Calculates time differences using corrected time
 /// 3. **Synchronization**: Applies Local Voting Protocol corrections
-/// 4. **Message Transmission**: Sends periodic time broadcasts every 500ms
+/// 4. **Message Transmission**: Sends periodic time broadcasts every 100ms
 /// 5. **Progress Display**: Shows synchronization progress and offset information
 fn loop_fn() {
     unsafe {
@@ -140,18 +140,14 @@ fn loop_fn() {
 
                         // Process message for synchronization
                         sync_manager.handle_sync_message(received_sync_message);
-
-                        // Show current offset
-                        let offset = sync_manager.get_time_offset_us();
-                        println!("ESP32: Current offset: {}μs", offset);
                     }
                 }
             }
 
-            // Send broadcast every 500ms
+            // Send broadcast every 100ms
             let mut next_send_time = NEXT_SEND_TIME.take().expect("Next send time error in main");
             if time::now().duration_since_epoch().to_millis() >= next_send_time {
-                next_send_time = time::now().duration_since_epoch().to_millis() + 500;
+                next_send_time = time::now().duration_since_epoch().to_millis() + 100;
 
                 // Create SyncMessage with corrected time
                 let corrected_time_us = sync_manager.get_corrected_time_us();
