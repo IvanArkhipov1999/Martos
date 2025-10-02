@@ -81,14 +81,14 @@ fn setup_fn() {
     println!("ESP32-C6: Setup time synchronization!");
     unsafe {
         ESP_NOW = Some(get_esp_now());
-        NEXT_SEND_TIME = Some(time::now().duration_since_epoch().to_millis() + 100);
+        NEXT_SEND_TIME = Some(time::now().duration_since_epoch().to_millis() + 10);
 
         // Initialize time sync manager
         let esp_now = ESP_NOW.take().unwrap();
         let local_mac = [0x24, 0xDC, 0xC3, 0x9F, 0xD3, 0xD0]; // ESP32-C6 MAC
         let config = SyncConfig {
             node_id: 0x87654321,
-            sync_interval_ms: 100,
+            sync_interval_ms: 10,
             max_correction_threshold_us: 100000, // 100ms instead of 1ms
             acceleration_factor: 0.8,            // Much higher acceleration
             deceleration_factor: 0.6,            // Much higher deceleration
@@ -152,7 +152,7 @@ fn loop_fn() {
             // Send broadcast every 100ms
             let mut next_send_time = NEXT_SEND_TIME.take().expect("Next send time error in main");
             if time::now().duration_since_epoch().to_millis() >= next_send_time {
-                next_send_time = time::now().duration_since_epoch().to_millis() + 100;
+                next_send_time = time::now().duration_since_epoch().to_millis() + 10;
 
                 // Create SyncMessage with corrected time
                 let corrected_time_us = sync_manager.get_corrected_time_us();
