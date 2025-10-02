@@ -15,7 +15,7 @@ use martos::{
 /// Counter to track processed bytes
 static BYTE_COUNTER: AtomicU32 = AtomicU32::new(0);
 
-/// UART instance (initialized in setup) - исправленная сигнатура для ESP32-C6
+/// UART instance (initialized in setup)
 static mut UART_INSTANCE: Option<Uart<'static, esp_hal::peripherals::UART0, Blocking>> = None;
 
 /// Setup function for task to execute.
