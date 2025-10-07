@@ -86,8 +86,12 @@ pub struct ReceivedData {
 
 #[cfg(any(not(feature = "network"), not(feature = "esp-wifi"), test))]
 impl EspNow {
-    pub fn send(&self, _mac: &[u8; 6], _data: &[u8]) -> Result<(), ()> { Ok(()) }
-    pub fn receive(&self) -> Option<EspNowReceive> { None }
+    pub fn send(&self, _mac: &[u8; 6], _data: &[u8]) -> Result<(), ()> {
+        Ok(())
+    }
+    pub fn receive(&self) -> Option<EspNowReceive> {
+        None
+    }
 }
 
 #[cfg(not(feature = "network"))]
@@ -269,7 +273,9 @@ impl<'a> EspNowTimeSyncProtocol<'a> {
     /// # Returns
     ///
     /// The MAC address of this device
-    pub fn get_local_mac(&self) -> [u8; 6] { self.local_mac }
+    pub fn get_local_mac(&self) -> [u8; 6] {
+        self.local_mac
+    }
 
     // Broadcast-only: peer existence/removal/count APIs removed
 }

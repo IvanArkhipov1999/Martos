@@ -388,7 +388,12 @@ impl SyncMessage {
         // Payload
         let payload = data[offset..offset + payload_len].to_vec();
 
-        Some(Self { msg_type, timestamp_us, sequence, payload })
+        Some(Self {
+            msg_type,
+            timestamp_us,
+            sequence,
+            payload,
+        })
     }
 }
 
@@ -790,10 +795,7 @@ impl<'a> TimeSyncManager<'a> {
         local_mac: [u8; 6],
     ) {
         self.esp_now_protocol = Some(
-            crate::time_sync::esp_now_protocol::EspNowTimeSyncProtocol::new(
-                esp_now,
-                local_mac,
-            ),
+            crate::time_sync::esp_now_protocol::EspNowTimeSyncProtocol::new(esp_now, local_mac),
         );
     }
 
