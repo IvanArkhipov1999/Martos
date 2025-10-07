@@ -366,19 +366,6 @@ impl SyncAlgorithm {
         }
     }
 
-    /// Check if the synchronization algorithm has converged.
-    ///
-    /// Determines whether the algorithm has reached a stable state where
-    /// time corrections are within the convergence threshold.
-    ///
-    /// # Returns
-    ///
-    /// * `true` - Algorithm has converged (stable state)
-    /// * `false` - Algorithm is still adjusting (unstable state)
-    pub fn is_converged(&self) -> bool {
-        self.current_correction.abs() <= self.convergence_threshold
-    }
-
     /// Get the current synchronization quality score.
     ///
     /// Calculates the overall quality of the synchronization process based on
@@ -400,90 +387,9 @@ impl SyncAlgorithm {
         total_quality / self.peers.len() as f32
     }
 
-    /// Get synchronization statistics.
-    ///
-    /// Returns detailed statistics about the algorithm's performance including
-    /// convergence metrics, peer quality, and correction history.
-    ///
-    /// # Returns
-    ///
-    /// `SyncStats` structure containing performance metrics
-    pub fn get_sync_stats(&self) -> SyncStats {
-        let mut avg_time_diff = 0.0;
-        let mut max_time_diff = 0i64;
-        let mut min_time_diff = 0i64;
-
-        if !self.peers.is_empty() {
-            let mut time_diffs: Vec<i64> = self.peers.values().map(|p| p.time_diff_us).collect();
-            time_diffs.sort();
-
-            avg_time_diff = time_diffs.iter().sum::<i64>() as f32 / time_diffs.len() as f32;
-            max_time_diff = *time_diffs.last().unwrap_or(&0);
-            min_time_diff = *time_diffs.first().unwrap_or(&0);
-        }
-
-        SyncStats {
-            peer_count: self.peers.len(),
-            avg_time_diff_us: avg_time_diff,
-            max_time_diff_us: max_time_diff,
-            min_time_diff_us: min_time_diff,
-            current_correction_us: self.current_correction,
-            sync_quality: self.get_sync_quality(),
-            is_converged: self.is_converged(),
-        }
-    }
-
     // Broadcast-only: peer management API removed
 
-    /// Get all peers.
-    ///
-    /// Returns a copy of all currently tracked peers.
-    ///
-    /// # Returns
-    ///
-    /// Vector containing all active `SyncPeer` instances
-    pub fn get_peers(&self) -> Vec<SyncPeer> {
-        self.peers.values().cloned().collect()
-    }
-
     // Broadcast-only: peer lookup API removed
-
-    /// Reset synchronization state.
-    ///
-    /// Clears all peer information, synchronization history, and resets
-    /// the algorithm to its initial state. Useful for restarting synchronization
-    /// or clearing accumulated state.
-    pub fn reset(&mut self) {
-        self.current_correction = 0;
-        self.sync_history.clear();
-        for peer in self.peers.values_mut() {
-            peer.quality_score = 1.0;
-            peer.sync_count = 0;
-        }
-    }
-}
-
-/// Synchronization statistics for algorithm performance analysis.
-///
-/// This structure contains comprehensive metrics about the synchronization
-/// algorithm's performance, including peer statistics, convergence state,
-/// and quality metrics.
-#[derive(Debug, Clone)]
-pub struct SyncStats {
-    /// Number of active peers in the synchronization network
-    pub peer_count: usize,
-    /// Average time difference across all peers (microseconds)
-    pub avg_time_diff_us: f32,
-    /// Maximum time difference observed (microseconds)
-    pub max_time_diff_us: i64,
-    /// Minimum time difference observed (microseconds)
-    pub min_time_diff_us: i64,
-    /// Current correction value being applied (microseconds)
-    pub current_correction_us: i64,
-    /// Overall synchronization quality score (0.0-1.0)
-    pub sync_quality: f32,
-    /// Whether the algorithm has converged to a stable state
-    pub is_converged: bool,
 }
 
 #[cfg(test)]

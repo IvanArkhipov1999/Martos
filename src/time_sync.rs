@@ -217,8 +217,6 @@ impl SyncPeer {
 pub enum SyncMessageType {
     /// Request for time synchronization
     SyncRequest = 0x01,
-    /// Response with current timestamp
-    SyncResponse = 0x02,
     /// Broadcast time announcement
     TimeBroadcast = 0x03,
 }
@@ -264,24 +262,6 @@ impl SyncMessage {
     pub fn new_sync_request(timestamp_us: u64) -> Self {
         Self {
             msg_type: SyncMessageType::SyncRequest,
-            timestamp_us,
-            sequence: 0,
-            payload: Vec::new(),
-        }
-    }
-
-    /// Create a new synchronization response message.
-    ///
-    /// # Arguments
-    ///
-    /// * `timestamp_us` - Timestamp when the response was created (microseconds)
-    ///
-    /// # Returns
-    ///
-    /// A new `SyncMessage` with `SyncResponse` type and empty payload.
-    pub fn new_sync_response(timestamp_us: u64) -> Self {
-        Self {
-            msg_type: SyncMessageType::SyncResponse,
             timestamp_us,
             sequence: 0,
             payload: Vec::new(),
@@ -348,7 +328,6 @@ impl SyncMessage {
         // Message type
         let msg_type = match data[offset] {
             0x01 => SyncMessageType::SyncRequest,
-            0x02 => SyncMessageType::SyncResponse,
             0x03 => SyncMessageType::TimeBroadcast,
             _ => return None,
         };
@@ -566,9 +545,6 @@ impl<'a> TimeSyncManager<'a> {
             SyncMessageType::SyncRequest => {
                 self.handle_sync_request(message);
             }
-            SyncMessageType::SyncResponse => {
-                self.handle_sync_response(message);
-            }
             SyncMessageType::TimeBroadcast => {
                 self.handle_sync_request(message);
             }
@@ -645,76 +621,6 @@ impl<'a> TimeSyncManager<'a> {
         // Mock implementation for non-ESP targets
     }
 
-    /// Handle synchronization response from a peer.
-    ///
-    /// Processes incoming synchronization responses and applies Local Voting Protocol
-    /// corrections based on the received timestamp.
-    ///
-    /// # Arguments
-    ///
-    /// * `message` - Synchronization response message to process
-    #[cfg(all(
-        feature = "network",
-        any(target_arch = "riscv32", target_arch = "xtensa")
-    ))]
-    fn handle_sync_response(&mut self, message: SyncMessage) {
-        // Calculate time difference and update peer info
-        let corrected_time_us = self.get_corrected_time_us();
-        let time_diff_us = message.timestamp_us as i64 - corrected_time_us as i64;
-
-        // Use single anonymous peer (broadcast-only mode)
-        let anon_peer_id: u32 = 0;
-        if let Some(peer) = self.peers.get_mut(&anon_peer_id) {
-            peer.time_diff_us = time_diff_us;
-            peer.sync_count += 1;
-
-            // Update quality score based on consistency
-            if time_diff_us.abs() < 1000 {
-                peer.quality_score = (peer.quality_score * 0.9 + 1.0 * 0.1).min(1.0);
-            } else {
-                peer.quality_score = (peer.quality_score * 0.95 + 0.5 * 0.05).max(0.1);
-            }
-        } else {
-            // Create anonymous peer if not exists
-            let mut new_peer = SyncPeer::new([0; 6]);
-            new_peer.time_diff_us = time_diff_us;
-            new_peer.sync_count = 1;
-            new_peer.quality_score = 0.5;
-            self.peers.insert(anon_peer_id, new_peer);
-        }
-
-        // Use sync algorithm to calculate correction
-        if let Some(ref mut algorithm) = self.sync_algorithm {
-            if let Ok(correction) = algorithm.process_sync_message(
-                anon_peer_id,
-                message.timestamp_us,
-                corrected_time_us,
-            ) {
-                // Apply correction to time offset
-                self.apply_time_correction(correction as i32);
-            } else {
-                // esp_println::println!("Sync algorithm failed to process message");
-            }
-        } else {
-            // esp_println::println!("Sync algorithm is None!");
-        }
-    }
-
-    /// Handle synchronization response from a peer (mock implementation).
-    ///
-    /// Mock implementation for non-ESP targets that does nothing.
-    ///
-    /// # Arguments
-    ///
-    /// * `_message` - Synchronization response message (ignored)
-    #[cfg(not(all(
-        feature = "network",
-        any(target_arch = "riscv32", target_arch = "xtensa")
-    )))]
-    fn handle_sync_response(&mut self, _message: SyncMessage) {
-        // Mock implementation for non-ESP targets
-    }
-
     /// Apply time correction to the system.
     ///
     /// Updates the virtual time offset based on the calculated correction.
@@ -766,17 +672,6 @@ impl<'a> TimeSyncManager<'a> {
         }
     }
 
-    /// Get list of active peers.
-    ///
-    /// Returns a copy of all currently tracked peers in the synchronization network.
-    ///
-    /// # Returns
-    ///
-    /// Vector containing all active `SyncPeer` instances
-    pub fn get_peers(&self) -> Vec<SyncPeer> {
-        self.peers.values().cloned().collect()
-    }
-
     // Broadcast-only: peer lookup API removed
 
     /// Initialize ESP-NOW protocol handler.
@@ -787,85 +682,13 @@ impl<'a> TimeSyncManager<'a> {
     /// # Arguments
     ///
     /// * `esp_now` - ESP-NOW communication instance
-    /// * `local_mac` - Local MAC address for ESP-NOW communication
     #[cfg(feature = "network")]
     pub fn init_esp_now_protocol(
         &mut self,
         esp_now: crate::time_sync::esp_now_protocol::EspNow<'static>,
-        local_mac: [u8; 6],
     ) {
-        self.esp_now_protocol = Some(
-            crate::time_sync::esp_now_protocol::EspNowTimeSyncProtocol::new(esp_now, local_mac),
-        );
-    }
-
-    /// Process one synchronization cycle with ESP-NOW.
-    ///
-    /// Handles periodic synchronization operations including sending
-    /// synchronization requests to peers.
-    ///
-    /// # Arguments
-    ///
-    /// * `current_time_us` - Current time in microseconds
-    #[cfg(feature = "network")]
-    pub fn process_sync_cycle_with_esp_now(&mut self, current_time_us: u32) {
-        if !self.is_sync_enabled() {
-            return;
-        }
-
-        // Receive and process incoming messages
-        let messages = if let Some(ref mut protocol) = self.esp_now_protocol {
-            protocol.receive_messages()
-        } else {
-            Vec::new()
-        };
-
-        for message in messages {
-            self.handle_sync_message(message);
-        }
-
-        // Send periodic sync requests
-        if current_time_us - self.last_sync_time.load(Ordering::Acquire)
-            >= self.config.sync_interval_ms as u32 * 1000
-        {
-            self.send_periodic_sync_requests(current_time_us);
-            self.last_sync_time
-                .store(current_time_us, Ordering::Release);
-        }
-    }
-
-    /// Send periodic synchronization requests to all peers.
-    ///
-    /// Sends synchronization requests to all tracked peers based on
-    /// their quality scores and synchronization intervals.
-    ///
-    /// # Arguments
-    ///
-    /// * `current_time_us` - Current time in microseconds
-    #[cfg(feature = "network")]
-    fn send_periodic_sync_requests(&mut self, current_time_us: u32) {
-        if let Some(ref mut protocol) = self.esp_now_protocol {
-            for peer in self.peers.values() {
-                if peer.quality_score > 0.1 {
-                    // Only sync with good quality peers
-                    let _ = protocol.send_sync_request(&peer.mac_address, current_time_us as u64);
-                }
-            }
-        }
-    }
-
-    /// Get synchronization statistics.
-    ///
-    /// Returns detailed statistics about the synchronization algorithm performance
-    /// including convergence metrics, peer quality, and correction history.
-    ///
-    /// # Returns
-    ///
-    /// * `Some(stats)` - Synchronization statistics if available
-    /// * `None` - Statistics not available (network feature disabled)
-    #[cfg(feature = "network")]
-    pub fn get_sync_stats(&self) -> Option<crate::time_sync::sync_algorithm::SyncStats> {
-        self.sync_algorithm.as_ref().map(|alg| alg.get_sync_stats())
+        self.esp_now_protocol =
+            Some(crate::time_sync::esp_now_protocol::EspNowTimeSyncProtocol::new(esp_now));
     }
 }
 

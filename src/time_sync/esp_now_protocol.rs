@@ -45,7 +45,7 @@
 //! }
 //! ```
 
-use crate::time_sync::{SyncError, SyncMessage, SyncMessageType, SyncResult};
+use crate::time_sync::{SyncError, SyncMessage, SyncResult};
 use alloc::vec::Vec;
 
 #[cfg(all(
@@ -123,27 +123,23 @@ pub struct EspNowReceiveInfo {
 pub struct EspNowTimeSyncProtocol<'a> {
     /// ESP-NOW communication instance
     pub esp_now: EspNow<'a>,
-    /// Local MAC address for ESP-NOW communication
-    local_mac: [u8; 6],
 }
 
 #[cfg(feature = "network")]
 impl<'a> EspNowTimeSyncProtocol<'a> {
     /// Create a new ESP-NOW time synchronization protocol handler.
     ///
-    /// Initializes the protocol handler with ESP-NOW communication instance
-    /// and local device information.
+    /// Initializes the protocol handler with ESP-NOW communication instance.
     ///
     /// # Arguments
     ///
     /// * `esp_now` - ESP-NOW communication instance
-    /// * `local_mac` - MAC address of this device
     ///
     /// # Returns
     ///
     /// A new `EspNowTimeSyncProtocol` instance ready for use.
-    pub fn new(esp_now: EspNow<'a>, local_mac: [u8; 6]) -> Self {
-        Self { esp_now, local_mac }
+    pub fn new(esp_now: EspNow<'a>) -> Self {
+        Self { esp_now }
     }
 
     /// Send a time synchronization request to a specific peer.
@@ -164,52 +160,6 @@ impl<'a> EspNowTimeSyncProtocol<'a> {
         let message = SyncMessage::new_sync_request(timestamp_us);
         // Note: Debug info would be added here in real implementation
         self.send_message(&message, target_mac)
-    }
-
-    /// Send a time synchronization response to a specific peer.
-    ///
-    /// Sends a synchronization response message to the specified peer
-    /// containing the current timestamp.
-    ///
-    /// # Arguments
-    ///
-    /// * `target_mac` - MAC address of the target peer
-    /// * `timestamp_us` - Current timestamp in microseconds
-    ///
-    /// # Returns
-    ///
-    /// * `Ok(())` - Message sent successfully
-    /// * `Err(SyncError)` - Communication error occurred
-    pub fn send_sync_response(
-        &mut self,
-        target_mac: &[u8; 6],
-        timestamp_us: u64,
-    ) -> SyncResult<()> {
-        let message = SyncMessage::new_sync_response(timestamp_us);
-        self.send_message(&message, target_mac)
-    }
-
-    /// Broadcast time announcement to all peers.
-    ///
-    /// Sends a time broadcast message to all peers in the network
-    /// for synchronization purposes.
-    ///
-    /// # Arguments
-    ///
-    /// * `timestamp_us` - Current timestamp in microseconds
-    ///
-    /// # Returns
-    ///
-    /// * `Ok(())` - Broadcast sent successfully
-    /// * `Err(SyncError)` - Communication error occurred
-    pub fn broadcast_time(&mut self, timestamp_us: u64) -> SyncResult<()> {
-        let message = SyncMessage {
-            msg_type: SyncMessageType::TimeBroadcast,
-            timestamp_us,
-            sequence: 0,
-            payload: Vec::new(),
-        };
-        self.send_message(&message, &BROADCAST_ADDRESS)
     }
 
     /// Send a synchronization message to a specific MAC address.
@@ -268,111 +218,7 @@ impl<'a> EspNowTimeSyncProtocol<'a> {
         messages
     }
 
-    /// Get the local MAC address.
-    ///
-    /// # Returns
-    ///
-    /// The MAC address of this device
-    pub fn get_local_mac(&self) -> [u8; 6] {
-        self.local_mac
-    }
-
     // Broadcast-only: peer existence/removal/count APIs removed
-}
-
-/// Utility functions for ESP-NOW time synchronization
-#[cfg(all(feature = "network", not(test)))]
-pub mod utils {
-    use super::*;
-
-    /// Extract MAC address from ESP-NOW received data.
-    ///
-    /// # Arguments
-    ///
-    /// * `received` - ESP-NOW received data structure
-    ///
-    /// # Returns
-    ///
-    /// MAC address of the sender
-    pub fn extract_sender_mac(received: &ReceivedData) -> [u8; 6] {
-        received.info.src_address
-    }
-
-    /// Extract destination MAC address from ESP-NOW received data.
-    ///
-    /// # Arguments
-    ///
-    /// * `received` - ESP-NOW received data structure
-    ///
-    /// # Returns
-    ///
-    /// MAC address of the destination
-    pub fn extract_dest_mac(received: &ReceivedData) -> [u8; 6] {
-        received.info.dst_address
-    }
-
-    /// Check if a received message is a broadcast.
-    ///
-    /// # Arguments
-    ///
-    /// * `received` - ESP-NOW received data structure
-    ///
-    /// # Returns
-    ///
-    /// * `true` - Message is a broadcast
-    /// * `false` - Message is unicast
-    pub fn is_broadcast(received: &ReceivedData) -> bool {
-        received.info.dst_address == BROADCAST_ADDRESS
-    }
-
-    /// Calculate network delay estimation based on message timestamps.
-    ///
-    /// Estimates the network delay by comparing message timestamps.
-    ///
-    /// # Arguments
-    ///
-    /// * `send_time` - When the message was sent
-    /// * `receive_time` - When the message was received
-    /// * `_remote_timestamp` - Remote timestamp (currently unused)
-    ///
-    /// # Returns
-    ///
-    /// Estimated network delay in microseconds
-    pub fn estimate_network_delay(
-        send_time: u64,
-        receive_time: u64,
-        _remote_timestamp: u64,
-    ) -> u64 {
-        // Simple delay estimation: half of round-trip time
-        let round_trip_time = receive_time - send_time;
-        round_trip_time / 2
-    }
-
-    /// Validate synchronization message integrity.
-    ///
-    /// Checks if a synchronization message is valid and not too old.
-    ///
-    /// # Arguments
-    ///
-    /// * `message` - Message to validate
-    /// * `max_age_us` - Maximum allowed message age in microseconds
-    /// * `current_time` - Current time for age calculation
-    ///
-    /// # Returns
-    ///
-    /// * `true` - Message is valid
-    /// * `false` - Message is invalid or too old
-    pub fn validate_message(message: &SyncMessage, max_age_us: u64, current_time: u64) -> bool {
-        // Check if message is not too old
-        if current_time - message.timestamp_us > max_age_us {
-            return false;
-        }
-
-        // Sequence number validation is not needed for u32 type
-
-        // Additional validation can be added here
-        true
-    }
 }
 
 #[cfg(test)]
@@ -393,46 +239,5 @@ mod tests {
     fn test_invalid_message_deserialization() {
         let invalid_data = vec![0xFF; 10]; // Invalid data
         assert!(SyncMessage::from_bytes(&invalid_data).is_none());
-    }
-
-    #[test]
-    fn test_message_validation() {
-        let message = SyncMessage::new_sync_request(1000);
-
-        // Valid message
-        assert!(utils::validate_message(&message, 10000, 5000));
-
-        // Message too old
-        assert!(!utils::validate_message(&message, 1000, 5000));
-    }
-}
-
-#[cfg(any(not(feature = "network"), test))]
-pub mod utils {
-    use super::*;
-
-    /// Extract MAC address from ESP-NOW received data (mock)
-    pub fn extract_sender_mac(_received: &[u8]) -> [u8; 6] {
-        [0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
-    }
-
-    /// Extract destination MAC address from ESP-NOW received data (mock)
-    pub fn extract_dest_mac(_received: &[u8]) -> [u8; 6] {
-        [0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
-    }
-
-    /// Check if a received message is a broadcast (mock)
-    pub fn is_broadcast(_received: &[u8]) -> bool {
-        false
-    }
-
-    /// Calculate network delay estimation based on message timestamps (mock)
-    pub fn estimate_network_delay(_send_time: u64, _receive_time: u64, _local_time: u64) -> u64 {
-        0
-    }
-
-    /// Validate synchronization message (mock)
-    pub fn validate_message(_message: &SyncMessage, _current_time: u64, _max_age: u64) -> bool {
-        true
     }
 }

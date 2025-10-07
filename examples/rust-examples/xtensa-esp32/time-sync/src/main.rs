@@ -80,7 +80,6 @@ fn setup_fn() {
 
         // Initialize time sync manager
         let esp_now = ESP_NOW.take().unwrap();
-        let local_mac = [0x40, 0x4C, 0xCA, 0x57, 0x5A, 0xA4]; // ESP32 MAC
         let config = SyncConfig {
             sync_interval_ms: 10,
             max_correction_threshold_us: 100000, // 100ms instead of 1ms
@@ -90,7 +89,7 @@ fn setup_fn() {
             adaptive_frequency: true,
         };
         let mut sync_manager = TimeSyncManager::new(config);
-        sync_manager.init_esp_now_protocol(esp_now, local_mac);
+        sync_manager.init_esp_now_protocol(esp_now);
         sync_manager.enable_sync();
         SYNC_MANAGER = Some(sync_manager);
     }
