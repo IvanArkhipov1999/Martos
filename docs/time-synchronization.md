@@ -67,7 +67,7 @@ The system uses ESP-NOW for low-latency, broadcast communication. Unlike traditi
 ├─────────────────────────────────────────────────────────────────┤
 │ Field           │ Size │ Description                            │
 ├─────────────────┼──────┼────────────────────────────────────────┤
-│ message_type    │ 1    │ SyncRequest (0x01) or SyncResponse (0x02) │
+│ message_type    │ 1    │ SyncRequest (0x01) or TimeBroadcast (0x03) │
 │ timestamp_us    │ 8    │ Current time in microseconds           |
 │ sequence        │ 4    │ Message sequence number                │
 │ payload         │ var  │ Additional data (currently empty)      │
@@ -298,10 +298,10 @@ The system uses a virtual time offset approach:
 
 ```rust
 SyncConfig {
-    sync_interval_ms: 2000,                 // Broadcast frequency
-    max_correction_threshold_us: 100000,    // Max correction per cycle
-    acceleration_factor: 0.8,              // Time acceleration rate
-    deceleration_factor: 0.6,              // Time deceleration rate
+    sync_interval_ms: 500,                  // Broadcast frequency (default)
+    max_correction_threshold_us: 1_000,     // Max correction per cycle (default)
+    acceleration_factor: 0.1,               // Time acceleration rate (default)
+    deceleration_factor: 0.05,              // Time deceleration rate (default)
     max_peers: 10,                          // Maximum nodes to track
     adaptive_frequency: true,               // Enable adaptive sync
 }
@@ -363,18 +363,8 @@ SyncConfig {
 ```rust
 use martos::time_sync::{TimeSyncManager, SyncConfig};
 
-// Create configuration
-let config = SyncConfig {
-    sync_interval_ms: 2000,
-    max_correction_threshold_us: 100000,
-    acceleration_factor: 0.8,
-    deceleration_factor: 0.6,
-    max_peers: 10,
-    adaptive_frequency: true,
-};
-
-// Initialize sync manager
-let mut sync_manager = TimeSyncManager::new(config);
+// Initialize sync manager with defaults
+let mut sync_manager = TimeSyncManager::new(SyncConfig::default());
 
 // Enable synchronization
 sync_manager.enable_sync();
@@ -385,16 +375,16 @@ sync_manager.enable_sync();
 ```rust
 // Custom configuration for high-precision applications
 let config = SyncConfig {
-    sync_interval_ms: 1000,        // More frequent sync
-    max_correction_threshold_us: 1000, // Smaller corrections
-    acceleration_factor: 0.9,      // Aggressive acceleration
-    deceleration_factor: 0.7,      // Aggressive deceleration
-    max_peers: 20,                 // More peers
+    sync_interval_ms: 1_000,            // More frequent sync
+    max_correction_threshold_us: 1_000, // Smaller corrections
+    acceleration_factor: 0.9,           // Aggressive acceleration
+    deceleration_factor: 0.7,           // Aggressive deceleration
+    max_peers: 20,                      // More peers
     adaptive_frequency: true,
 };
 
-// Initialize with ESP-NOW
-sync_manager.init_esp_now_protocol(esp_now, local_mac);
+// Initialize with ESP-NOW (no MAC required)
+sync_manager.init_esp_now_protocol(esp_now);
 
 // Monitor synchronization quality
 let quality = sync_manager.get_sync_quality();
@@ -418,13 +408,12 @@ if quality > 0.8 {
 
 **Solutions**:
 ```rust
-// Check synchronization status
-if !sync_manager.is_synchronized(1000) {
-    println!("Synchronization not working");
+// Check whether sync process is enabled
+if !sync_manager.is_sync_enabled() {
+    println!("Synchronization disabled");
 }
 
-// Verify peer configuration
-// Broadcast-only: no peer management
+// Broadcast-only: no explicit peer management required
 ```
 
 #### 2. Poor Synchronization Quality
@@ -465,9 +454,10 @@ let config = SyncConfig {
     // ... other parameters
 };
 
-// Monitor correction history
-let stats = sync_manager.get_sync_stats();
-println!("Max correction: {}μs", stats.max_correction);
+// Monitor current quality and offset
+let quality = sync_manager.get_sync_quality();
+let offset = sync_manager.get_time_offset_us();
+println!("Quality: {:.2}, Offset: {}μs", quality, offset);
 ```
 
 ### Debugging Tools
@@ -475,13 +465,9 @@ println!("Max correction: {}μs", stats.max_correction);
 #### 1. Synchronization Statistics
 
 ```rust
-let stats = sync_manager.get_sync_stats();
-println!("Sync Statistics:");
-println!("  Average time diff: {}μs", stats.avg_time_diff);
-println!("  Max time diff: {}μs", stats.max_time_diff);
-println!("  Min time diff: {}μs", stats.min_time_diff);
-println!("  Current correction: {}μs", stats.current_correction);
-println!("  Converged: {}", stats.converged);
+println!("Sync State:");
+println!("  Quality: {:.2}", sync_manager.get_sync_quality());
+println!("  Offset: {}μs", sync_manager.get_time_offset_us());
 ```
 
 #### 2. Peer Information
@@ -498,15 +484,15 @@ loop {
     let corrected_time = sync_manager.get_corrected_time_us();
     let offset = sync_manager.get_time_offset_us();
     let quality = sync_manager.get_sync_quality();
-    
+
     println!("Time: {}μs, Offset: {}μs, Quality: {:.2}",
              corrected_time, offset, quality);
-    
-    // Process synchronization cycle
+
+    // Process synchronization cycle (call periodically in your loop)
     sync_manager.process_sync_cycle();
-    
-    // Wait before next cycle
-    delay_ms(1000);
+
+    // Wait before next cycle (pseudo-code)
+    // delay_ms(1000);
 }
 ```
 

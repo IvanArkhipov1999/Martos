@@ -24,10 +24,10 @@ The example consists of several key components:
 
 The synchronization system is configured with the following parameters:
 
-- **Sync Interval**: 2000ms (broadcast frequency)
-- **Max Correction**: 100000μs (maximum time correction per cycle)
-- **Acceleration Factor**: 0.8 (rate of time acceleration)
-- **Deceleration Factor**: 0.6 (rate of time deceleration)
+- **Sync Interval**: 500ms (default broadcast frequency)
+- **Max Correction**: 1000μs (default maximum time correction per cycle)
+- **Acceleration Factor**: 0.1 (default acceleration rate)
+- **Deceleration Factor**: 0.05 (default deceleration rate)
 - **Max Peers**: 10 (maximum number of participants considered in consensus)
 
 ## Usage
@@ -93,9 +93,9 @@ The example implements a **Local Voting Protocol** algorithm with the following 
 
 ### Algorithm Details
 
-- **Acceleration Factor**: 0.8 (aggressive time acceleration)
-- **Deceleration Factor**: 0.6 (moderate time deceleration)
-- **Max Correction**: 100000μs (large corrections allowed for initial sync)
+- **Acceleration Factor**: 0.1 (default; tune for convergence)
+- **Deceleration Factor**: 0.05 (default; tune for stability)
+- **Max Correction**: 1000μs (default; increase carefully for faster initial sync)
 - **Convergence Threshold**: 50% of max correction threshold
 
 ## Customization
@@ -117,11 +117,9 @@ let sync_config = SyncConfig {
 ### Monitoring Synchronization Quality
 
 ```rust
-if sync_manager.is_synchronized(100) { // Within 100μs tolerance
-    println!("Time is well synchronized");
-} else {
-    println!("Time synchronization needs improvement");
-}
+println!("Quality: {:.2}, Offset: {}μs", 
+    sync_manager.get_sync_quality(), 
+    sync_manager.get_time_offset_us());
 ```
 
 ## Troubleshooting
