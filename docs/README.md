@@ -22,11 +22,10 @@ The Martos RTOS implements a sophisticated distributed time synchronization syst
 ### Quick Start
 
 ```rust
-use martos::time_sync::{TimeSyncManager, SyncConfig, SyncPeer};
+use martos::time_sync::{TimeSyncManager, SyncConfig};
 
 // Create configuration
 let config = SyncConfig {
-    node_id: 0x12345678,
     sync_interval_ms: 2000,
     max_correction_threshold_us: 100000,
     acceleration_factor: 0.8,
@@ -37,10 +36,6 @@ let config = SyncConfig {
 
 // Initialize sync manager
 let mut sync_manager = TimeSyncManager::new(config);
-
-// Add peers
-let peer = SyncPeer::new(0x87654321, [0x24, 0x6F, 0x28, 0x12, 0x34, 0x56]);
-sync_manager.add_peer(peer);
 
 // Enable synchronization
 sync_manager.enable_sync();

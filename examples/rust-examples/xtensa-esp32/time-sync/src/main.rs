@@ -82,7 +82,6 @@ fn setup_fn() {
         let esp_now = ESP_NOW.take().unwrap();
         let local_mac = [0x40, 0x4C, 0xCA, 0x57, 0x5A, 0xA4]; // ESP32 MAC
         let config = SyncConfig {
-            node_id: 0x12345678,
             sync_interval_ms: 10,
             max_correction_threshold_us: 100000, // 100ms instead of 1ms
             acceleration_factor: 0.8,            // Much higher acceleration
@@ -151,11 +150,7 @@ fn loop_fn() {
 
                 // Create SyncMessage with corrected time
                 let corrected_time_us = sync_manager.get_corrected_time_us();
-                let sync_message = SyncMessage::new_sync_request(
-                    0x12345678, // ESP32 node ID
-                    0,          // broadcast
-                    corrected_time_us,
-                );
+                let sync_message = SyncMessage::new_sync_request(corrected_time_us);
                 let message_data = sync_message.to_bytes();
 
                 if let Some(ref mut esp_now_protocol) = sync_manager.esp_now_protocol {

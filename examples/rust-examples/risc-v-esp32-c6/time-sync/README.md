@@ -24,12 +24,11 @@ The example consists of several key components:
 
 The synchronization system is configured with the following parameters:
 
-- **Node ID**: `0x12345678` (unique identifier for this node)
 - **Sync Interval**: 2000ms (broadcast frequency)
 - **Max Correction**: 100000μs (maximum time correction per cycle)
 - **Acceleration Factor**: 0.8 (rate of time acceleration)
 - **Deceleration Factor**: 0.6 (rate of time deceleration)
-- **Max Peers**: 10 (maximum number of synchronized peers)
+- **Max Peers**: 10 (maximum number of participants considered in consensus)
 
 ## Usage
 
@@ -101,12 +100,7 @@ The example implements a **Local Voting Protocol** algorithm with the following 
 
 ## Customization
 
-### Adding More Peers
-
-```rust
-let peer3 = SyncPeer::new(0x33333333, [0x33, 0x33, 0x33, 0x33, 0x33, 0x33]);
-sync_manager.add_peer(peer3);
-```
+// Broadcast-only: peers are not managed explicitly
 
 ### Adjusting Synchronization Parameters
 
@@ -135,7 +129,6 @@ if sync_manager.is_synchronized(100) { // Within 100μs tolerance
 ### No Synchronization
 
 - Check ESP-NOW communication range
-- Verify peer MAC addresses are correct
 - Ensure synchronization is enabled
 
 ### Poor Synchronization Quality
@@ -152,7 +145,6 @@ if sync_manager.is_synchronized(100) { // Within 100μs tolerance
 
 ## Performance Considerations
 
-- **Memory Usage**: Each peer consumes ~100 bytes of RAM
 - **CPU Usage**: Synchronization processing is lightweight
 - **Network Traffic**: Minimal ESP-NOW traffic (few bytes per sync cycle)
 - **Power Consumption**: ESP-NOW is power-efficient for IoT applications

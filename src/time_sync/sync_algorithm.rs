@@ -58,7 +58,7 @@ use alloc::vec::Vec;
 pub struct SyncAlgorithm {
     /// Configuration parameters for algorithm behavior
     config: SyncConfig,
-    /// Map of tracked peers (node_id -> SyncPeer)
+    /// Tracked peers (broadcast mode may use a single anonymous peer)
     peers: BTreeMap<u32, SyncPeer>,
     /// History of synchronization events for analysis
     sync_history: Vec<SyncEvent>,
@@ -152,7 +152,7 @@ impl SyncAlgorithm {
             peer.last_sync_time = local_timestamp;
         } else {
             // Add new peer if not exists
-            let mut new_peer = SyncPeer::new(peer_id, [0; 6]); // MAC will be set separately
+            let mut new_peer = SyncPeer::new([0; 6]); // MAC will be set separately
             new_peer.last_timestamp = remote_timestamp;
             new_peer.time_diff_us = time_diff;
             new_peer.last_sync_time = local_timestamp;
@@ -433,27 +433,7 @@ impl SyncAlgorithm {
         }
     }
 
-    /// Add or update a peer.
-    ///
-    /// Adds a new peer to the algorithm or updates an existing peer's information.
-    ///
-    /// # Arguments
-    ///
-    /// * `peer` - Peer information to add or update
-    pub fn add_peer(&mut self, peer: SyncPeer) {
-        self.peers.insert(peer.node_id, peer);
-    }
-
-    /// Remove a peer.
-    ///
-    /// Removes a peer from the algorithm's tracking.
-    ///
-    /// # Arguments
-    ///
-    /// * `peer_id` - ID of the peer to remove
-    pub fn remove_peer(&mut self, peer_id: u32) {
-        self.peers.remove(&peer_id);
-    }
+    // Broadcast-only: peer management API removed
 
     /// Get all peers.
     ///
@@ -466,21 +446,7 @@ impl SyncAlgorithm {
         self.peers.values().cloned().collect()
     }
 
-    /// Get peer by ID.
-    ///
-    /// Retrieves information about a specific peer.
-    ///
-    /// # Arguments
-    ///
-    /// * `peer_id` - ID of the peer to retrieve
-    ///
-    /// # Returns
-    ///
-    /// * `Some(peer)` - Reference to the peer if found
-    /// * `None` - Peer not found
-    pub fn get_peer(&self, peer_id: u32) -> Option<&SyncPeer> {
-        self.peers.get(&peer_id)
-    }
+    // Broadcast-only: peer lookup API removed
 
     /// Reset synchronization state.
     ///
@@ -551,16 +517,17 @@ mod tests {
         let mut algorithm = SyncAlgorithm::new(config);
 
         // Add peers with different quality scores
-        let mut peer1 = SyncPeer::new(1, [0; 6]);
+        let mut peer1 = SyncPeer::new([0; 6]);
         peer1.time_diff_us = 100;
         peer1.quality_score = 1.0;
 
-        let mut peer2 = SyncPeer::new(2, [0; 6]);
+        let mut peer2 = SyncPeer::new([0; 6]);
         peer2.time_diff_us = 200;
         peer2.quality_score = 0.5;
 
-        algorithm.add_peer(peer1);
-        algorithm.add_peer(peer2);
+        // Insert directly into internal map for test purposes
+        algorithm.peers.insert(1, peer1);
+        algorithm.peers.insert(2, peer2);
 
         let weighted_avg = algorithm.calculate_weighted_average_diff();
 

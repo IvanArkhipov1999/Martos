@@ -35,9 +35,9 @@
 //! // Initialize protocol with ESP-NOW instance
 //! let mut protocol = EspNowTimeSyncProtocol::new(esp_now_instance);
 //!
-//! // Send synchronization message
-//! let message = SyncMessage::new_sync_request(node_id, 0, timestamp);
-//! protocol.send_sync_request(&BROADCAST_ADDRESS, node_id, timestamp)?;
+//! // Send synchronization message (broadcast)
+//! let message = SyncMessage::new_sync_request(timestamp);
+//! protocol.send_sync_request(&BROADCAST_ADDRESS, timestamp)?;
 //!
 //! // Receive messages
 //! if let Some(received) = protocol.receive_message() {
@@ -86,25 +86,8 @@ pub struct ReceivedData {
 
 #[cfg(any(not(feature = "network"), not(feature = "esp-wifi"), test))]
 impl EspNow {
-    pub fn peer_exists(&self, _mac: &[u8; 6]) -> bool {
-        false
-    }
-
-    pub fn send(&self, _mac: &[u8; 6], _data: &[u8]) -> Result<(), ()> {
-        Ok(())
-    }
-
-    pub fn add_peer(&self, _peer: PeerInfo) -> Result<(), ()> {
-        Ok(())
-    }
-
-    pub fn receive(&self) -> Option<EspNowReceive> {
-        None
-    }
-
-    pub fn remove_peer(&self, _mac: &[u8; 6]) -> Result<(), ()> {
-        Ok(())
-    }
+    pub fn send(&self, _mac: &[u8; 6], _data: &[u8]) -> Result<(), ()> { Ok(()) }
+    pub fn receive(&self) -> Option<EspNowReceive> { None }
 }
 
 #[cfg(not(feature = "network"))]
@@ -136,8 +119,6 @@ pub struct EspNowReceiveInfo {
 pub struct EspNowTimeSyncProtocol<'a> {
     /// ESP-NOW communication instance
     pub esp_now: EspNow<'a>,
-    /// Local node identifier for this device
-    local_node_id: u32,
     /// Local MAC address for ESP-NOW communication
     local_mac: [u8; 6],
 }
@@ -152,18 +133,13 @@ impl<'a> EspNowTimeSyncProtocol<'a> {
     /// # Arguments
     ///
     /// * `esp_now` - ESP-NOW communication instance
-    /// * `local_node_id` - Unique identifier for this device
     /// * `local_mac` - MAC address of this device
     ///
     /// # Returns
     ///
     /// A new `EspNowTimeSyncProtocol` instance ready for use.
-    pub fn new(esp_now: EspNow<'a>, local_node_id: u32, local_mac: [u8; 6]) -> Self {
-        Self {
-            esp_now,
-            local_node_id,
-            local_mac,
-        }
+    pub fn new(esp_now: EspNow<'a>, local_mac: [u8; 6]) -> Self {
+        Self { esp_now, local_mac }
     }
 
     /// Send a time synchronization request to a specific peer.
@@ -181,7 +157,7 @@ impl<'a> EspNowTimeSyncProtocol<'a> {
     /// * `Ok(())` - Message sent successfully
     /// * `Err(SyncError)` - Communication error occurred
     pub fn send_sync_request(&mut self, target_mac: &[u8; 6], timestamp_us: u64) -> SyncResult<()> {
-        let message = SyncMessage::new_sync_request(self.local_node_id, 0, timestamp_us);
+        let message = SyncMessage::new_sync_request(timestamp_us);
         // Note: Debug info would be added here in real implementation
         self.send_message(&message, target_mac)
     }
@@ -194,7 +170,6 @@ impl<'a> EspNowTimeSyncProtocol<'a> {
     /// # Arguments
     ///
     /// * `target_mac` - MAC address of the target peer
-    /// * `target_node_id` - Node ID of the target peer
     /// * `timestamp_us` - Current timestamp in microseconds
     ///
     /// # Returns
@@ -204,11 +179,9 @@ impl<'a> EspNowTimeSyncProtocol<'a> {
     pub fn send_sync_response(
         &mut self,
         target_mac: &[u8; 6],
-        target_node_id: u32,
         timestamp_us: u64,
     ) -> SyncResult<()> {
-        let message =
-            SyncMessage::new_sync_response(self.local_node_id, target_node_id, timestamp_us);
+        let message = SyncMessage::new_sync_response(timestamp_us);
         self.send_message(&message, target_mac)
     }
 
@@ -228,8 +201,6 @@ impl<'a> EspNowTimeSyncProtocol<'a> {
     pub fn broadcast_time(&mut self, timestamp_us: u64) -> SyncResult<()> {
         let message = SyncMessage {
             msg_type: SyncMessageType::TimeBroadcast,
-            source_node_id: self.local_node_id,
-            target_node_id: 0, // Broadcast
             timestamp_us,
             sequence: 0,
             payload: Vec::new(),
@@ -252,13 +223,6 @@ impl<'a> EspNowTimeSyncProtocol<'a> {
     /// * `Err(SyncError)` - Communication error occurred
     fn send_message(&mut self, message: &SyncMessage, target_mac: &[u8; 6]) -> SyncResult<()> {
         let data = message.to_bytes();
-
-        // Ensure peer exists
-        if !self.esp_now.peer_exists(target_mac) {
-            self.add_peer(target_mac)?;
-        }
-
-        // Send the message
         match self.esp_now.send(target_mac, &data) {
             Ok(_) => Ok(()),
             Err(_) => Err(SyncError::NetworkError),
@@ -277,19 +241,7 @@ impl<'a> EspNowTimeSyncProtocol<'a> {
     ///
     /// * `Ok(())` - Peer added successfully
     /// * `Err(SyncError)` - Failed to add peer
-    fn add_peer(&mut self, mac_address: &[u8; 6]) -> SyncResult<()> {
-        let peer_info = PeerInfo {
-            peer_address: *mac_address,
-            lmk: None,
-            channel: None,
-            encrypt: false, // TODO: Add encryption support
-        };
-
-        match self.esp_now.add_peer(peer_info) {
-            Ok(_) => Ok(()),
-            Err(_) => Err(SyncError::NetworkError),
-        }
-    }
+    // Broadcast-only mode: peer management not required
 
     /// Receive and process incoming synchronization messages.
     ///
@@ -305,23 +257,11 @@ impl<'a> EspNowTimeSyncProtocol<'a> {
         // Process all available messages
         while let Some(received) = self.esp_now.receive() {
             if let Some(message) = SyncMessage::from_bytes(&received.data) {
-                // Filter out messages from ourselves
-                if message.source_node_id != self.local_node_id {
-                    messages.push(message);
-                }
+                messages.push(message);
             }
         }
 
         messages
-    }
-
-    /// Get the local node ID.
-    ///
-    /// # Returns
-    ///
-    /// The unique identifier of this device
-    pub fn get_local_node_id(&self) -> u32 {
-        self.local_node_id
     }
 
     /// Get the local MAC address.
@@ -329,54 +269,9 @@ impl<'a> EspNowTimeSyncProtocol<'a> {
     /// # Returns
     ///
     /// The MAC address of this device
-    pub fn get_local_mac(&self) -> [u8; 6] {
-        self.local_mac
-    }
+    pub fn get_local_mac(&self) -> [u8; 6] { self.local_mac }
 
-    /// Check if a peer exists in the ESP-NOW peer list.
-    ///
-    /// # Arguments
-    ///
-    /// * `mac_address` - MAC address to check
-    ///
-    /// # Returns
-    ///
-    /// * `true` - Peer exists in the list
-    /// * `false` - Peer not found
-    pub fn peer_exists(&self, mac_address: &[u8; 6]) -> bool {
-        self.esp_now.peer_exists(mac_address)
-    }
-
-    /// Remove a peer from the ESP-NOW peer list.
-    ///
-    /// # Arguments
-    ///
-    /// * `mac_address` - MAC address of the peer to remove
-    ///
-    /// # Returns
-    ///
-    /// * `Ok(())` - Peer removed successfully
-    /// * `Err(SyncError)` - Failed to remove peer
-    pub fn remove_peer(&mut self, mac_address: &[u8; 6]) -> SyncResult<()> {
-        match self.esp_now.remove_peer(mac_address) {
-            Ok(_) => Ok(()),
-            Err(_) => Err(SyncError::NetworkError),
-        }
-    }
-
-    /// Get the number of registered peers.
-    ///
-    /// Note: ESP-NOW doesn't provide a direct way to count peers,
-    /// so this returns 0 as a placeholder.
-    ///
-    /// # Returns
-    ///
-    /// Number of registered peers (currently always 0)
-    pub fn get_peer_count(&self) -> usize {
-        // Note: ESP-NOW doesn't provide a direct way to count peers
-        // This would need to be tracked separately if needed
-        0 // Placeholder implementation
-    }
+    // Broadcast-only: peer existence/removal/count APIs removed
 }
 
 /// Utility functions for ESP-NOW time synchronization
@@ -480,13 +375,11 @@ mod tests {
 
     #[test]
     fn test_sync_message_serialization() {
-        let message = SyncMessage::new_sync_request(123, 456, 789012345);
+        let message = SyncMessage::new_sync_request(789012345);
         let data = message.to_bytes();
         let deserialized = SyncMessage::from_bytes(&data).unwrap();
 
         assert_eq!(message.msg_type as u8, deserialized.msg_type as u8);
-        assert_eq!(message.source_node_id, deserialized.source_node_id);
-        assert_eq!(message.target_node_id, deserialized.target_node_id);
         assert_eq!(message.timestamp_us, deserialized.timestamp_us);
     }
 
@@ -498,7 +391,7 @@ mod tests {
 
     #[test]
     fn test_message_validation() {
-        let message = SyncMessage::new_sync_request(123, 456, 1000);
+        let message = SyncMessage::new_sync_request(1000);
 
         // Valid message
         assert!(utils::validate_message(&message, 10000, 5000));

@@ -87,7 +87,6 @@ fn setup_fn() {
         let esp_now = ESP_NOW.take().unwrap();
         let local_mac = [0x24, 0xDC, 0xC3, 0x9F, 0xD3, 0xD0]; // ESP32-C6 MAC
         let config = SyncConfig {
-            node_id: 0x87654321,
             sync_interval_ms: 10,
             max_correction_threshold_us: 100000, // 100ms instead of 1ms
             acceleration_factor: 0.8,            // Much higher acceleration
@@ -157,8 +156,6 @@ fn loop_fn() {
                 // Create SyncMessage with corrected time
                 let corrected_time_us = sync_manager.get_corrected_time_us();
                 let sync_message = SyncMessage::new_sync_request(
-                    0x87654321, // ESP32-C6 node ID
-                    0,          // broadcast
                     corrected_time_us,
                 );
                 let message_data = sync_message.to_bytes();

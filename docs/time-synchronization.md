@@ -68,9 +68,7 @@ The system uses ESP-NOW for low-latency, broadcast communication. Unlike traditi
 │ Field           │ Size │ Description                            │
 ├─────────────────┼──────┼────────────────────────────────────────┤
 │ message_type    │ 1    │ SyncRequest (0x01) or SyncResponse (0x02) │
-│ source_node_id  │ 4    │ Unique identifier of sender            │
-│ target_node_id  │ 4    │ Target node (0 for broadcast)          │
-│ timestamp_us    │ 8    │ Current time in microseconds           │
+│ timestamp_us    │ 8    │ Current time in microseconds           |
 │ sequence        │ 4    │ Message sequence number                │
 │ payload         │ var  │ Additional data (currently empty)      │
 └─────────────────┴──────┴────────────────────────────────────────┘
@@ -300,7 +298,6 @@ The system uses a virtual time offset approach:
 
 ```rust
 SyncConfig {
-    node_id: 0x12345678,                    // Unique node identifier
     sync_interval_ms: 2000,                 // Broadcast frequency
     max_correction_threshold_us: 100000,    // Max correction per cycle
     acceleration_factor: 0.8,              // Time acceleration rate
@@ -364,11 +361,10 @@ SyncConfig {
 ### Basic Setup
 
 ```rust
-use martos::time_sync::{TimeSyncManager, SyncConfig, SyncPeer};
+use martos::time_sync::{TimeSyncManager, SyncConfig};
 
 // Create configuration
 let config = SyncConfig {
-    node_id: 0x12345678,
     sync_interval_ms: 2000,
     max_correction_threshold_us: 100000,
     acceleration_factor: 0.8,
@@ -380,10 +376,6 @@ let config = SyncConfig {
 // Initialize sync manager
 let mut sync_manager = TimeSyncManager::new(config);
 
-// Add peers
-let peer = SyncPeer::new(0x87654321, [0x24, 0x6F, 0x28, 0x12, 0x34, 0x56]);
-sync_manager.add_peer(peer);
-
 // Enable synchronization
 sync_manager.enable_sync();
 ```
@@ -393,7 +385,6 @@ sync_manager.enable_sync();
 ```rust
 // Custom configuration for high-precision applications
 let config = SyncConfig {
-    node_id: 0x12345678,
     sync_interval_ms: 1000,        // More frequent sync
     max_correction_threshold_us: 1000, // Smaller corrections
     acceleration_factor: 0.9,      // Aggressive acceleration
@@ -433,14 +424,7 @@ if !sync_manager.is_synchronized(1000) {
 }
 
 // Verify peer configuration
-let peers = sync_manager.get_peers();
-println!("Active peers: {}", peers.len());
-
-// Check ESP-NOW connectivity
-if let Some(protocol) = &sync_manager.esp_now_protocol {
-    let peer_count = protocol.get_peer_count();
-    println!("ESP-NOW peers: {}", peer_count);
-}
+// Broadcast-only: no peer management
 ```
 
 #### 2. Poor Synchronization Quality
@@ -503,12 +487,7 @@ println!("  Converged: {}", stats.converged);
 #### 2. Peer Information
 
 ```rust
-let peers = sync_manager.get_peers();
-for peer in peers {
-    println!("Peer {}: quality={}, diff={}μs, syncs={}",
-             peer.node_id, peer.quality_score, 
-             peer.time_diff_us, peer.sync_count);
-}
+// Broadcast-only: peer details are not tracked by id
 ```
 
 #### 3. Real-time Monitoring

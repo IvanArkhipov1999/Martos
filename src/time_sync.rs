@@ -33,7 +33,6 @@
 //!
 //! // Create configuration
 //! let config = SyncConfig {
-//!     node_id: 0x12345678,
 //!     sync_interval_ms: 2000,
 //!     max_correction_threshold_us: 100000,
 //!     acceleration_factor: 0.8,
@@ -100,7 +99,6 @@ pub mod sync_algorithm;
 ///
 /// # Parameters
 ///
-/// - `node_id`: Unique identifier for this node in the network
 /// - `sync_interval_ms`: How often to send synchronization messages (milliseconds, default: 500ms)
 /// - `max_correction_threshold_us`: Maximum time correction per cycle (microseconds)
 /// - `acceleration_factor`: How aggressively to correct large time differences (0.0-1.0)
@@ -114,7 +112,6 @@ pub mod sync_algorithm;
 /// use martos::time_sync::SyncConfig;
 ///
 /// let config = SyncConfig {
-///     node_id: 0x12345678,
 ///     sync_interval_ms: 500,         // Sync every 500ms
 ///     max_correction_threshold_us: 100000,  // Max 100ms correction per cycle
 ///     acceleration_factor: 0.8,       // Aggressive correction for large differences
@@ -125,8 +122,6 @@ pub mod sync_algorithm;
 /// ```
 #[derive(Debug, Clone)]
 pub struct SyncConfig {
-    /// Unique node identifier for this device in the network
-    pub node_id: u32,
     /// Synchronization interval in milliseconds
     pub sync_interval_ms: u32,
     /// Maximum time difference threshold for correction (microseconds)
@@ -148,7 +143,6 @@ impl Default for SyncConfig {
     /// suitable for most use cases.
     fn default() -> Self {
         Self {
-            node_id: 0,
             sync_interval_ms: 500,             // 500ms
             max_correction_threshold_us: 1000, // 1ms
             acceleration_factor: 0.1,
@@ -182,9 +176,7 @@ impl Default for SyncConfig {
 /// negative values mean the peer is behind.
 #[derive(Debug, Clone)]
 pub struct SyncPeer {
-    /// Unique peer node identifier
-    pub node_id: u32,
-    /// MAC address of the peer for ESP-NOW communication
+    /// MAC address of the peer for ESP-NOW communication (optional in broadcast mode)
     pub mac_address: [u8; 6],
     /// Last received timestamp from this peer (microseconds)
     pub last_timestamp: u64,
@@ -203,15 +195,13 @@ impl SyncPeer {
     ///
     /// # Arguments
     ///
-    /// * `node_id` - Unique identifier for the peer node
     /// * `mac_address` - MAC address for ESP-NOW communication
     ///
     /// # Returns
     ///
     /// A new `SyncPeer` instance with default quality score and zero counters.
-    pub fn new(node_id: u32, mac_address: [u8; 6]) -> Self {
+    pub fn new(mac_address: [u8; 6]) -> Self {
         Self {
-            node_id,
             mac_address,
             last_timestamp: 0,
             time_diff_us: 0,
@@ -253,10 +243,6 @@ pub enum SyncMessageType {
 pub struct SyncMessage {
     /// Type of synchronization message
     pub msg_type: SyncMessageType,
-    /// Source node identifier
-    pub source_node_id: u32,
-    /// Target node identifier (0 for broadcast)
-    pub target_node_id: u32,
     /// Timestamp when message was sent (microseconds)
     pub timestamp_us: u64,
     /// Message sequence number for ordering
@@ -270,18 +256,14 @@ impl SyncMessage {
     ///
     /// # Arguments
     ///
-    /// * `source_node_id` - ID of the node sending the request
-    /// * `target_node_id` - ID of the target node (0 for broadcast)
     /// * `timestamp_us` - Timestamp when the message was created (microseconds)
     ///
     /// # Returns
     ///
     /// A new `SyncMessage` with `SyncRequest` type and empty payload.
-    pub fn new_sync_request(source_node_id: u32, target_node_id: u32, timestamp_us: u64) -> Self {
+    pub fn new_sync_request(timestamp_us: u64) -> Self {
         Self {
             msg_type: SyncMessageType::SyncRequest,
-            source_node_id,
-            target_node_id,
             timestamp_us,
             sequence: 0,
             payload: Vec::new(),
@@ -292,18 +274,14 @@ impl SyncMessage {
     ///
     /// # Arguments
     ///
-    /// * `source_node_id` - ID of the node sending the response
-    /// * `target_node_id` - ID of the target node
     /// * `timestamp_us` - Timestamp when the response was created (microseconds)
     ///
     /// # Returns
     ///
     /// A new `SyncMessage` with `SyncResponse` type and empty payload.
-    pub fn new_sync_response(source_node_id: u32, target_node_id: u32, timestamp_us: u64) -> Self {
+    pub fn new_sync_response(timestamp_us: u64) -> Self {
         Self {
             msg_type: SyncMessageType::SyncResponse,
-            source_node_id,
-            target_node_id,
             timestamp_us,
             sequence: 0,
             payload: Vec::new(),
@@ -326,16 +304,10 @@ impl SyncMessage {
     ///
     /// A `Vec<u8>` containing the serialized message data.
     pub fn to_bytes(&self) -> Vec<u8> {
-        let mut data = Vec::with_capacity(32);
+        let mut data = Vec::with_capacity(24);
 
         // Message type (1 byte)
         data.push(self.msg_type as u8);
-
-        // Source node ID (4 bytes)
-        data.extend_from_slice(&self.source_node_id.to_le_bytes());
-
-        // Target node ID (4 bytes)
-        data.extend_from_slice(&self.target_node_id.to_le_bytes());
 
         // Timestamp (8 bytes)
         data.extend_from_slice(&self.timestamp_us.to_le_bytes());
@@ -366,7 +338,7 @@ impl SyncMessage {
     /// * `Some(message)` - Successfully parsed `SyncMessage`
     /// * `None` - Invalid or incomplete data
     pub fn from_bytes(data: &[u8]) -> Option<Self> {
-        if data.len() < 23 {
+        if data.len() < 15 {
             // Minimum message size
             return None;
         }
@@ -381,24 +353,6 @@ impl SyncMessage {
             _ => return None,
         };
         offset += 1;
-
-        // Source node ID
-        let source_node_id = u32::from_le_bytes([
-            data[offset],
-            data[offset + 1],
-            data[offset + 2],
-            data[offset + 3],
-        ]);
-        offset += 4;
-
-        // Target node ID
-        let target_node_id = u32::from_le_bytes([
-            data[offset],
-            data[offset + 1],
-            data[offset + 2],
-            data[offset + 3],
-        ]);
-        offset += 4;
 
         // Timestamp
         let timestamp_us = u64::from_le_bytes([
@@ -434,14 +388,7 @@ impl SyncMessage {
         // Payload
         let payload = data[offset..offset + payload_len].to_vec();
 
-        Some(Self {
-            msg_type,
-            source_node_id,
-            target_node_id,
-            timestamp_us,
-            sequence,
-            payload,
-        })
+        Some(Self { msg_type, timestamp_us, sequence, payload })
     }
 }
 
@@ -478,7 +425,7 @@ pub struct TimeSyncManager<'a> {
     time_offset_us: AtomicI32,
     /// Last synchronization time in microseconds (atomic for thread safety)
     last_sync_time: AtomicU32,
-    /// Map of synchronized peers (node_id -> SyncPeer)
+    /// Map of synchronized peers (single anonymous peer in broadcast mode)
     peers: BTreeMap<u32, SyncPeer>,
     /// Current synchronization quality score (0.0-1.0 * 1000, atomic)
     sync_quality: AtomicU32,
@@ -552,32 +499,7 @@ impl<'a> TimeSyncManager<'a> {
         self.sync_enabled.load(Ordering::Acquire)
     }
 
-    /// Add a peer for synchronization.
-    ///
-    /// Adds a new peer to the synchronization network. The peer will be
-    /// included in Local Voting Protocol calculations if the maximum
-    /// peer limit hasn't been reached.
-    ///
-    /// # Arguments
-    ///
-    /// * `peer` - Peer information to add
-    pub fn add_peer(&mut self, peer: SyncPeer) {
-        if self.peers.len() < self.config.max_peers {
-            self.peers.insert(peer.node_id, peer);
-        }
-    }
-
-    /// Remove a peer from synchronization.
-    ///
-    /// Removes a peer from the synchronization network. The peer will no
-    /// longer be included in Local Voting Protocol calculations.
-    ///
-    /// # Arguments
-    ///
-    /// * `node_id` - ID of the peer to remove
-    pub fn remove_peer(&mut self, node_id: u32) {
-        self.peers.remove(&node_id);
-    }
+    // Broadcast-only: peer management API removed
 
     /// Get current time offset in microseconds.
     ///
@@ -665,8 +587,9 @@ impl<'a> TimeSyncManager<'a> {
         let corrected_time_us = self.get_corrected_time_us();
         let time_diff_us = message.timestamp_us as i64 - corrected_time_us as i64;
 
-        // Update peer information
-        if let Some(peer) = self.peers.get_mut(&message.source_node_id) {
+        // Use single anonymous peer (broadcast-only mode)
+        let anon_peer_id: u32 = 0;
+        if let Some(peer) = self.peers.get_mut(&anon_peer_id) {
             peer.time_diff_us = time_diff_us;
             peer.sync_count += 1;
 
@@ -677,18 +600,18 @@ impl<'a> TimeSyncManager<'a> {
                 peer.quality_score = (peer.quality_score * 0.95 + 0.5 * 0.05).max(0.1);
             }
         } else {
-            // Add new peer if not exists
-            let mut new_peer = SyncPeer::new(message.source_node_id, [0; 6]);
+            // Create anonymous peer if not exists
+            let mut new_peer = SyncPeer::new([0; 6]);
             new_peer.time_diff_us = time_diff_us;
             new_peer.sync_count = 1;
             new_peer.quality_score = 0.5;
-            self.peers.insert(message.source_node_id, new_peer);
+            self.peers.insert(anon_peer_id, new_peer);
         }
 
         // Use sync algorithm to calculate correction
         if let Some(ref mut algorithm) = self.sync_algorithm {
             if let Ok(correction) = algorithm.process_sync_message(
-                message.source_node_id,
+                anon_peer_id,
                 message.timestamp_us,
                 corrected_time_us,
             ) {
@@ -734,8 +657,9 @@ impl<'a> TimeSyncManager<'a> {
         let corrected_time_us = self.get_corrected_time_us();
         let time_diff_us = message.timestamp_us as i64 - corrected_time_us as i64;
 
-        // Update peer information
-        if let Some(peer) = self.peers.get_mut(&message.source_node_id) {
+        // Use single anonymous peer (broadcast-only mode)
+        let anon_peer_id: u32 = 0;
+        if let Some(peer) = self.peers.get_mut(&anon_peer_id) {
             peer.time_diff_us = time_diff_us;
             peer.sync_count += 1;
 
@@ -746,18 +670,18 @@ impl<'a> TimeSyncManager<'a> {
                 peer.quality_score = (peer.quality_score * 0.95 + 0.5 * 0.05).max(0.1);
             }
         } else {
-            // Add new peer if not exists
-            let mut new_peer = SyncPeer::new(message.source_node_id, [0; 6]);
+            // Create anonymous peer if not exists
+            let mut new_peer = SyncPeer::new([0; 6]);
             new_peer.time_diff_us = time_diff_us;
             new_peer.sync_count = 1;
             new_peer.quality_score = 0.5;
-            self.peers.insert(message.source_node_id, new_peer);
+            self.peers.insert(anon_peer_id, new_peer);
         }
 
         // Use sync algorithm to calculate correction
         if let Some(ref mut algorithm) = self.sync_algorithm {
             if let Ok(correction) = algorithm.process_sync_message(
-                message.source_node_id,
+                anon_peer_id,
                 message.timestamp_us,
                 corrected_time_us,
             ) {
@@ -848,21 +772,7 @@ impl<'a> TimeSyncManager<'a> {
         self.peers.values().cloned().collect()
     }
 
-    /// Get peer by node ID.
-    ///
-    /// Retrieves information about a specific peer in the synchronization network.
-    ///
-    /// # Arguments
-    ///
-    /// * `node_id` - Unique identifier of the peer to retrieve
-    ///
-    /// # Returns
-    ///
-    /// * `Some(peer)` - Reference to the peer if found
-    /// * `None` - Peer not found in the network
-    pub fn get_peer(&self, node_id: u32) -> Option<&SyncPeer> {
-        self.peers.get(&node_id)
-    }
+    // Broadcast-only: peer lookup API removed
 
     /// Initialize ESP-NOW protocol handler.
     ///
@@ -882,7 +792,6 @@ impl<'a> TimeSyncManager<'a> {
         self.esp_now_protocol = Some(
             crate::time_sync::esp_now_protocol::EspNowTimeSyncProtocol::new(
                 esp_now,
-                self.config.node_id,
                 local_mac,
             ),
         );
