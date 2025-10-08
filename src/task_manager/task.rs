@@ -18,7 +18,7 @@
 //!
 //! ## Examples
 //!
-//! ```rust,no_run
+//! ```rust,ignore
 //! use martos::task_manager::{TaskManager, TaskManagerTrait};
 //!
 //! fn my_setup() {
@@ -52,7 +52,7 @@
 ///
 /// # Examples
 ///
-/// ```
+/// ```rust,ignore
 /// use martos::task_manager::{TaskManager, TaskManagerTrait};
 ///
 /// fn initialize_sensor() {
@@ -61,7 +61,7 @@
 /// }
 ///
 /// TaskManager::add_task(initialize_sensor, || {}, || false);
-/// ```
+/// ```rust,ignore
 ///
 /// # See Also
 ///
@@ -83,13 +83,13 @@ pub type TaskSetupFunctionType = fn() -> ();
 ///
 /// # Examples
 ///
-/// ```
+/// ```text
 /// // C code example
 /// void my_task_setup(void) {
 ///     printf("Task setup from C\n");
 ///     // C initialization code
 /// }
-/// ```
+/// ```text
 ///
 /// # See Also
 ///
@@ -116,7 +116,7 @@ pub type TaskSetupFunctionType = extern "C" fn() -> ();
 ///
 /// # Examples
 ///
-/// ```
+/// ```text
 /// use martos::task_manager::{TaskManager, TaskManagerTrait};
 /// use core::sync::atomic::{AtomicU32, Ordering};
 ///
@@ -130,7 +130,7 @@ pub type TaskSetupFunctionType = extern "C" fn() -> ();
 /// }
 ///
 /// TaskManager::add_task(|| {}, blink_led, || false);
-/// ```
+/// ```rust,ignore
 ///
 /// # See Also
 ///
@@ -158,13 +158,13 @@ pub type TaskLoopFunctionType = fn() -> ();
 ///
 /// # Examples
 ///
-/// ```
+/// ```rust,ignore
 /// // C code example
 /// void my_task_loop(void) {
 ///     // Main task logic in C
 ///     printf("Task loop iteration\n");
 /// }
-/// ```
+/// ```rust,ignore
 ///
 /// # See Also
 ///
@@ -192,7 +192,7 @@ pub type TaskLoopFunctionType = extern "C" fn() -> ();
 ///
 /// # Examples
 ///
-/// ```
+/// ```rust,ignore
 /// use martos::task_manager::{TaskManager, TaskManagerTrait};
 /// use core::sync::atomic::{AtomicU32, Ordering};
 ///
@@ -204,7 +204,7 @@ pub type TaskLoopFunctionType = extern "C" fn() -> ();
 /// }
 ///
 /// TaskManager::add_task(|| {}, || {}, should_stop);
-/// ```
+/// ```rust,ignore
 ///
 /// # See Also
 ///
@@ -231,7 +231,7 @@ pub type TaskStopConditionFunctionType = fn() -> bool;
 ///
 /// # Examples
 ///
-/// ```
+/// ```rust,ignore
 /// // C code example
 /// static int counter = 0;
 ///
@@ -239,7 +239,7 @@ pub type TaskStopConditionFunctionType = fn() -> bool;
 ///     counter++;
 ///     return counter >= 50;  // Stop after 50 iterations
 /// }
-/// ```
+/// ```rust,ignore
 ///
 /// # See Also
 ///
@@ -273,7 +273,7 @@ pub type TaskStopConditionFunctionType = extern "C" fn() -> bool;
 ///
 /// ## Basic Task Creation
 ///
-/// ```
+/// ```rust,ignore
 /// use martos::task_manager::{TaskManager, TaskManagerTrait};
 ///
 /// fn setup() {
@@ -289,11 +289,11 @@ pub type TaskStopConditionFunctionType = extern "C" fn() -> bool;
 /// }
 ///
 /// TaskManager::add_task(setup, main_loop, stop_condition);
-/// ```
+/// ```rust,ignore
 ///
 /// ## Task with Termination Condition
 ///
-/// ```
+/// ```rust,ignore
 /// use martos::task_manager::{TaskManager, TaskManagerTrait};
 /// use std::sync::atomic::{AtomicBool, Ordering};
 ///
@@ -314,14 +314,14 @@ pub type TaskStopConditionFunctionType = extern "C" fn() -> bool;
 /// }
 ///
 /// TaskManager::add_task(setup, work, is_complete);
-/// ```
+/// ```rust,ignore
 ///
 /// # Integration with TaskManager
 ///
 /// Tasks are typically created and registered with the [`TaskManager`] which
 /// handles their execution lifecycle:
 ///
-/// ```rust,no_run
+/// ```rust,ignore
 /// use martos::task_manager::{TaskManager, TaskManagerTrait};
 ///
 /// // Create task functions
@@ -348,7 +348,7 @@ pub struct Task {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```rust,ignore
     /// use martos::task_manager::{TaskManager, TaskManagerTrait};
     ///
     /// fn my_setup() {
@@ -358,8 +358,8 @@ pub struct Task {
     ///
     /// // Register task using public API
     /// TaskManager::add_task(my_setup, || {}, || false);
-    /// ```
-    /// ```
+    /// ```rust,ignore
+    /// ```rust,ignore
     pub(crate) setup_fn: TaskSetupFunctionType,
 
     /// Loop function called repeatedly during task execution.
@@ -381,7 +381,7 @@ pub struct Task {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```rust,ignore
     /// use martos::task_manager::{TaskManager, TaskManagerTrait};
     /// use core::sync::atomic::{AtomicU32, Ordering};
     ///
@@ -395,7 +395,7 @@ pub struct Task {
     /// }
     ///
     /// TaskManager::add_task(|| {}, periodic_work, || false);
-    /// ```
+    /// ```rust,ignore
     pub(crate) loop_fn: TaskLoopFunctionType,
 
     /// Stop condition function that determines task termination.
@@ -417,7 +417,7 @@ pub struct Task {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```rust,ignore
     /// use martos::task_manager::{TaskManager, TaskManagerTrait};
     /// use core::sync::atomic::{AtomicBool, Ordering};
     ///

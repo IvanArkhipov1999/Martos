@@ -2,17 +2,26 @@ pub mod hardware_timer;
 pub mod memory_manager;
 #[cfg(feature = "network")]
 pub mod network;
+pub mod peripherals;
 #[cfg(feature = "preemptive")]
 mod preempt;
 
 use crate::ports::PortTrait;
 #[cfg(feature = "network")]
 use esp_wifi::esp_now::EspNow;
+#[cfg(feature = "uart")]
+pub mod uart;
 
 // TODO: make it port just for esp32, not only for XtensaEsp32
 /// PortTrait implementation for XtensaEsp32 platform
 pub struct XtensaEsp32;
 impl PortTrait for XtensaEsp32 {
+    #[cfg(feature = "uart")]
+    type Uart2Type = uart::Uart2Type;
+
+    #[cfg(feature = "uart")]
+    type IoType = uart::IoType;
+
     fn setup_hardware_timer() {
         hardware_timer::setup_hardware_timer();
     }
@@ -78,6 +87,21 @@ impl PortTrait for XtensaEsp32 {
     #[cfg(feature = "preemptive")]
     fn load_ctx(thread_ctx: &TrapFrame, isr_ctx: &mut TrapFrame) {
         preempt::load_ctx(thread_ctx, isr_ctx)
+    }
+
+    #[cfg(feature = "uart")]
+    fn setup_uart() {
+        uart::setup_uart();
+    }
+
+    #[cfg(feature = "uart")]
+    fn get_uart2() -> Self::Uart2Type {
+        uart::get_uart2()
+    }
+
+    #[cfg(feature = "uart")]
+    fn get_io() -> Self::IoType {
+        uart::get_io()
     }
 }
 

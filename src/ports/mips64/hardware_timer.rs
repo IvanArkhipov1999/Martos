@@ -257,8 +257,9 @@ pub fn setup_hardware_timer() {
 }
 
 /// Mips64 attempt to acquire timer.
+#[allow(static_mut_refs)]
 pub fn try_acquire_timer(timer_index: u8) -> bool {
-    if timer_index <= 4 as u8 {
+    if timer_index <= 4_u8 {
         unsafe {
             let timer_block = TIMER_BLOCK.take().expect("Timer block error");
 
@@ -270,15 +271,9 @@ pub fn try_acquire_timer(timer_index: u8) -> bool {
                 &timer_block.timer4.in_use,
             ];
 
-            let return_value = match timers[timer_index as usize].compare_exchange(
-                false,
-                true,
-                Ordering::Acquire,
-                Ordering::Relaxed,
-            ) {
-                Ok(_) => true,
-                Err(_) => false,
-            };
+            let return_value = timers[timer_index as usize]
+                .compare_exchange(false, true, Ordering::Acquire, Ordering::Relaxed)
+                .is_ok();
             TIMER_BLOCK = Some(timer_block);
 
             return_value
@@ -290,6 +285,7 @@ pub fn try_acquire_timer(timer_index: u8) -> bool {
 
 /// Mips64 start harware timer.
 pub fn start_hardware_timer(timer_index: u8) {
+    #[allow(static_mut_refs)]
     unsafe {
         let mut timer_block = TIMER_BLOCK.take().expect("Timer block error");
         match timer_index {
@@ -306,6 +302,7 @@ pub fn start_hardware_timer(timer_index: u8) {
 
 /// Mips64 change operating mode of hardware timer.
 pub fn set_reload_mode(timer_index: u8, auto_reload: bool) {
+    #[allow(static_mut_refs)]
     unsafe {
         let mut timer_block = TIMER_BLOCK.take().expect("Timer block error");
         match timer_index {
@@ -323,6 +320,7 @@ pub fn set_reload_mode(timer_index: u8, auto_reload: bool) {
 /// Mips64 change the period of hardware timer.
 /// If timer was in active state, function will restart timer with a new period.
 pub fn change_period_timer(timer_index: u8, period: Duration) {
+    #[allow(static_mut_refs)]
     unsafe {
         let mut timer_block = TIMER_BLOCK.take().expect("Timer block error");
         match timer_index {
@@ -339,6 +337,7 @@ pub fn change_period_timer(timer_index: u8, period: Duration) {
 
 /// Mips64 getting counter value of hardware timer.
 pub fn get_time(timer_index: u8) -> Duration {
+    #[allow(static_mut_refs)]
     unsafe {
         let timer_block = TIMER_BLOCK.take().expect("Timer block error");
         let tick_counter = match timer_index {
@@ -357,6 +356,7 @@ pub fn get_time(timer_index: u8) -> Duration {
 
 /// Mips64 stop hardware timer.
 pub fn stop_hardware_timer(timer_index: u8) -> bool {
+    #[allow(static_mut_refs)]
     unsafe {
         let mut timer_block = TIMER_BLOCK.take().expect("Timer block error");
         match timer_index {
@@ -375,6 +375,7 @@ pub fn stop_hardware_timer(timer_index: u8) -> bool {
 
 /// Mips64 release hardware timer.
 pub fn release_hardware_timer(timer_index: u8) {
+    #[allow(static_mut_refs)]
     unsafe {
         let timer_block = TIMER_BLOCK.take().expect("Timer block error");
         match timer_index {

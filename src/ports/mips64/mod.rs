@@ -3,11 +3,19 @@ pub mod hardware_timer;
 pub mod memory_manager;
 #[cfg(feature = "network")]
 pub mod network;
+#[cfg(feature = "uart")]
+pub mod uart;
 use crate::ports::PortTrait;
 
 /// PortTrait implementation for Mips64 platform
 pub struct Mips64;
 impl PortTrait for Mips64 {
+    #[cfg(feature = "uart")]
+    type Uart2Type = uart::Uart2Type;
+
+    #[cfg(feature = "uart")]
+    type IoType = uart::IoType;
+
     fn init_heap() {
         #[cfg(not(feature = "mips64_timer_tests"))]
         memory_manager::init_heap();
@@ -18,11 +26,7 @@ impl PortTrait for Mips64 {
     }
 
     fn valid_timer_index(timer_index: u8) -> bool {
-        if timer_index <= 4 {
-            true
-        } else {
-            false
-        }
+        timer_index <= 4
     }
 
     fn try_acquire_timer(timer_index: u8) -> bool {
@@ -56,5 +60,20 @@ impl PortTrait for Mips64 {
     #[cfg(feature = "network")]
     fn init_network() {
         network::init_network();
+    }
+
+    #[cfg(feature = "uart")]
+    fn setup_uart() {
+        uart::setup_uart();
+    }
+
+    #[cfg(feature = "uart")]
+    fn get_uart2() -> Self::Uart2Type {
+        uart::get_uart2()
+    }
+
+    #[cfg(feature = "uart")]
+    fn get_io() -> Self::IoType {
+        uart::get_io()
     }
 }

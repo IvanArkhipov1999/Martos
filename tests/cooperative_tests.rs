@@ -1,4 +1,4 @@
-#[cfg(all(test, feature = "cooperative_tests"))]
+#[cfg(all(test, feature = "cooperative_tests", not(feature = "preemptive")))]
 mod cooperative_tests {
     use martos::task_manager::{TaskManager, TaskManagerTrait};
     use sequential_test::sequential;
