@@ -1,0 +1,18 @@
+[package]
+name = "time-sync"
+version = "0.1.0"
+edition = "2021"
+
+[profile.release]
+debug = true
+
+[dependencies]
+martos = { path = "../../../../", features = ["network"] }
+esp-hal = "0.21.1"
+esp-backtrace = { version = "0.14.1", features = ["esp32c6", "panic-handler", "exception-handler", "println"] }
+esp-println = { version = "0.11.0", features = ["esp32c6"] }
+esp-wifi = { version = "0.10.1", features = ["wifi", "esp-now"] }
+static_cell = "2.0.0"
+
+[features]
+default = ["esp-hal/esp32c6", "esp-backtrace/esp32c6", "esp-println/esp32c6", "esp-wifi/esp32c6"]

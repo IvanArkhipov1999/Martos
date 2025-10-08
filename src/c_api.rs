@@ -43,6 +43,7 @@ pub extern "C" fn get_timer(timer_index: u8) -> TimerOption {
             timer: Timer {
                 timer_index: 0,
                 tick_counter: 0,
+                sync_offset_us: 0,
             },
         }
     }
