@@ -677,6 +677,8 @@ impl CooperativeTaskManager {
                         }
                         return;
                     }
+                    exec_task.status = TaskStatusType::Ready;
+                    CooperativeTaskManager::move_to_queue_end(exec_task);
                 }
                 TaskStatusType::Sleeping => {
                     CooperativeTaskManager::move_to_queue_end(exec_task);
