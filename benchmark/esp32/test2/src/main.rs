@@ -1,0 +1,181 @@
+#![no_std]
+#![no_main]
+
+use core::sync::atomic::{AtomicU32, Ordering};
+
+use esp_backtrace as _;
+use esp_hal::entry;
+use esp_println::println;
+use martos::{
+    init_system,
+    task_manager::{TaskManager, TaskManagerTrait},
+    timer::Timer,
+};
+
+/// Счётчики для 5 задач - каждая задача инкрементирует свой счётчик на 1024 в цикле
+static COUNTER1: AtomicU32 = AtomicU32::new(0);
+static COUNTER2: AtomicU32 = AtomicU32::new(0);
+static COUNTER3: AtomicU32 = AtomicU32::new(0);
+static COUNTER4: AtomicU32 = AtomicU32::new(0);
+static COUNTER5: AtomicU32 = AtomicU32::new(0);
+
+/// Setup функция для задачи счётчика 1
+fn counter1_task_setup_fn() {
+    println!("Counter1 task setup - будет делать 1024 итерации, прибавляя по 1");
+}
+
+/// Loop функция для задачи счётчика 1 - делает 1024 итерации, прибавляя по 1
+fn counter1_task_loop_fn() {
+    for _ in 0..1024 {
+        COUNTER1.fetch_add(1, Ordering::Relaxed);
+    }
+}
+
+/// Stop condition для задачи счётчика 1
+fn counter1_task_stop_condition_fn() -> bool {
+    COUNTER1.load(Ordering::Relaxed) >= 100000
+}
+
+/// Setup функция для задачи счётчика 2
+fn counter2_task_setup_fn() {
+    println!("Counter2 task setup - будет делать 1024 итерации, прибавляя по 1");
+}
+
+/// Loop функция для задачи счётчика 2 - делает 1024 итерации, прибавляя по 1
+fn counter2_task_loop_fn() {
+    for _ in 0..1024 {
+        COUNTER2.fetch_add(1, Ordering::Relaxed);
+    }
+}
+
+/// Stop condition для задачи счётчика 2
+fn counter2_task_stop_condition_fn() -> bool {
+    COUNTER2.load(Ordering::Relaxed) >= 100000
+}
+
+/// Setup функция для задачи счётчика 3
+fn counter3_task_setup_fn() {
+    println!("Counter3 task setup - будет делать 1024 итерации, прибавляя по 1");
+}
+
+/// Loop функция для задачи счётчика 3 - делает 1024 итерации, прибавляя по 1
+fn counter3_task_loop_fn() {
+    for _ in 0..1024 {
+        COUNTER3.fetch_add(1, Ordering::Relaxed);
+    }
+}
+
+/// Stop condition для задачи счётчика 3
+fn counter3_task_stop_condition_fn() -> bool {
+    COUNTER3.load(Ordering::Relaxed) >= 100000
+}
+
+/// Setup функция для задачи счётчика 4
+fn counter4_task_setup_fn() {
+    println!("Counter4 task setup - будет делать 1024 итерации, прибавляя по 1");
+}
+
+/// Loop функция для задачи счётчика 4 - делает 1024 итерации, прибавляя по 1
+fn counter4_task_loop_fn() {
+    for _ in 0..1024 {
+        COUNTER4.fetch_add(1, Ordering::Relaxed);
+    }
+}
+
+/// Stop condition для задачи счётчика 4
+fn counter4_task_stop_condition_fn() -> bool {
+    COUNTER4.load(Ordering::Relaxed) >= 100000
+}
+
+/// Setup функция для задачи счётчика 5
+fn counter5_task_setup_fn() {
+    println!("Counter5 task setup - будет делать 1024 итерации, прибавляя по 1");
+}
+
+/// Loop функция для задачи счётчика 5 - делает 1024 итерации, прибавляя по 1
+fn counter5_task_loop_fn() {
+    for _ in 0..1024 {
+        COUNTER5.fetch_add(1, Ordering::Relaxed);
+    }
+}
+
+/// Stop condition для задачи счётчика 5
+fn counter5_task_stop_condition_fn() -> bool {
+    COUNTER5.load(Ordering::Relaxed) >= 100000
+}
+
+/// Setup функция для задачи мониторинга
+fn monitor_task_setup_fn() {
+    println!("Monitor task setup - будет печатать значения аппаратного таймера и всех счётчиков");
+}
+
+/// Loop функция для задачи мониторинга - печатает значение аппаратного таймера и всех счётчиков
+fn monitor_task_loop_fn() {
+    if let Some(timer0) = Timer::get_timer(0) {
+        let time = timer0.get_time();
+        timer0.release_timer();
+        
+        let c1 = COUNTER1.load(Ordering::Relaxed);
+        let c2 = COUNTER2.load(Ordering::Relaxed);
+        let c3 = COUNTER3.load(Ordering::Relaxed);
+        let c4 = COUNTER4.load(Ordering::Relaxed);
+        let c5 = COUNTER5.load(Ordering::Relaxed);
+        
+        println!("Monitor: time = {}s {}μs, counters = [{}, {}, {}, {}, {}]", 
+                time.as_secs(), time.subsec_micros(), c1, c2, c3, c4, c5);
+    } else {
+        println!("Monitor task: timer 0 is busy");
+    }
+}
+
+/// Stop condition для задачи мониторинга - никогда не останавливается
+fn monitor_task_stop_condition_fn() -> bool {
+    false
+}
+
+#[entry]
+fn main() -> ! {
+    // Инициализация Martos
+    init_system();
+    
+    // Добавляем 5 задач счётчиков
+    TaskManager::add_task(
+        counter1_task_setup_fn,
+        counter1_task_loop_fn,
+        counter1_task_stop_condition_fn,
+    );
+    
+    TaskManager::add_task(
+        counter2_task_setup_fn,
+        counter2_task_loop_fn,
+        counter2_task_stop_condition_fn,
+    );
+    
+    TaskManager::add_task(
+        counter3_task_setup_fn,
+        counter3_task_loop_fn,
+        counter3_task_stop_condition_fn,
+    );
+    
+    TaskManager::add_task(
+        counter4_task_setup_fn,
+        counter4_task_loop_fn,
+        counter4_task_stop_condition_fn,
+    );
+    
+    TaskManager::add_task(
+        counter5_task_setup_fn,
+        counter5_task_loop_fn,
+        counter5_task_stop_condition_fn,
+    );
+    
+    // Добавляем задачу мониторинга (печатает таймер и счётчики)
+    TaskManager::add_task(
+        monitor_task_setup_fn,
+        monitor_task_loop_fn,
+        monitor_task_stop_condition_fn,
+    );
+    
+    // Запускаем планировщик задач
+    TaskManager::start_task_manager();
+}
