@@ -12,7 +12,7 @@ use martos::{
     timer::Timer,
 };
 
-/// Счётчики для 5 задач - каждая задача инкрементирует свой счётчик на 1024 в цикле
+/// Счётчики для 5 задач - каждая задача инкрементирует свой счётчик на 1000 в цикле
 static COUNTER1: AtomicU32 = AtomicU32::new(0);
 static COUNTER2: AtomicU32 = AtomicU32::new(0);
 static COUNTER3: AtomicU32 = AtomicU32::new(0);
@@ -21,12 +21,12 @@ static COUNTER5: AtomicU32 = AtomicU32::new(0);
 
 /// Setup функция для задачи счётчика 1
 fn counter1_task_setup_fn() {
-    println!("Counter1 task setup - будет делать 1024 итерации, прибавляя по 1");
+    println!("Counter1 task setup - будет делать 1000 итерации, прибавляя по 1");
 }
 
-/// Loop функция для задачи счётчика 1 - делает 1024 итерации, прибавляя по 1
+/// Loop функция для задачи счётчика 1 - делает 1000 итерации, прибавляя по 1
 fn counter1_task_loop_fn() {
-    for _ in 0..1024 {
+    for _ in 0..1000 {
         COUNTER1.fetch_add(1, Ordering::Relaxed);
     }
 }
@@ -38,12 +38,12 @@ fn counter1_task_stop_condition_fn() -> bool {
 
 /// Setup функция для задачи счётчика 2
 fn counter2_task_setup_fn() {
-    println!("Counter2 task setup - будет делать 1024 итерации, прибавляя по 1");
+    println!("Counter2 task setup - будет делать 1000 итерации, прибавляя по 1");
 }
 
-/// Loop функция для задачи счётчика 2 - делает 1024 итерации, прибавляя по 1
+/// Loop функция для задачи счётчика 2 - делает 1000 итерации, прибавляя по 1
 fn counter2_task_loop_fn() {
-    for _ in 0..1024 {
+    for _ in 0..1000 {
         COUNTER2.fetch_add(1, Ordering::Relaxed);
     }
 }
@@ -55,12 +55,12 @@ fn counter2_task_stop_condition_fn() -> bool {
 
 /// Setup функция для задачи счётчика 3
 fn counter3_task_setup_fn() {
-    println!("Counter3 task setup - будет делать 1024 итерации, прибавляя по 1");
+    println!("Counter3 task setup - будет делать 1000 итерации, прибавляя по 1");
 }
 
-/// Loop функция для задачи счётчика 3 - делает 1024 итерации, прибавляя по 1
+/// Loop функция для задачи счётчика 3 - делает 1000 итерации, прибавляя по 1
 fn counter3_task_loop_fn() {
-    for _ in 0..1024 {
+    for _ in 0..1000 {
         COUNTER3.fetch_add(1, Ordering::Relaxed);
     }
 }
@@ -72,12 +72,12 @@ fn counter3_task_stop_condition_fn() -> bool {
 
 /// Setup функция для задачи счётчика 4
 fn counter4_task_setup_fn() {
-    println!("Counter4 task setup - будет делать 1024 итерации, прибавляя по 1");
+    println!("Counter4 task setup - будет делать 1000 итерации, прибавляя по 1");
 }
 
-/// Loop функция для задачи счётчика 4 - делает 1024 итерации, прибавляя по 1
+/// Loop функция для задачи счётчика 4 - делает 1000 итерации, прибавляя по 1
 fn counter4_task_loop_fn() {
-    for _ in 0..1024 {
+    for _ in 0..1000 {
         COUNTER4.fetch_add(1, Ordering::Relaxed);
     }
 }
@@ -89,12 +89,12 @@ fn counter4_task_stop_condition_fn() -> bool {
 
 /// Setup функция для задачи счётчика 5
 fn counter5_task_setup_fn() {
-    println!("Counter5 task setup - будет делать 1024 итерации, прибавляя по 1");
+    println!("Counter5 task setup - будет делать 1000 итерации, прибавляя по 1");
 }
 
-/// Loop функция для задачи счётчика 5 - делает 1024 итерации, прибавляя по 1
+/// Loop функция для задачи счётчика 5 - делает 1000 итерации, прибавляя по 1
 fn counter5_task_loop_fn() {
-    for _ in 0..1024 {
+    for _ in 0..1000 {
         COUNTER5.fetch_add(1, Ordering::Relaxed);
     }
 }
