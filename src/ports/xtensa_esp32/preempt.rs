@@ -6,7 +6,7 @@ use esp_hal::{
     prelude::*,
 };
 
-const TIME_SLICE_MILLIS: u64 = 1000;
+const TIME_SLICE_MILLIS: u64 = 1;
 
 pub fn setup_interrupt() {
     let timer0 = unsafe { TIMER00.take().expect("Timer error") };

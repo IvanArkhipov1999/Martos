@@ -31,9 +31,6 @@ fn counter1_task_loop_fn() {
     for _ in 0..1000 {
         COUNTER1.fetch_add(1, Ordering::Relaxed);
     }
-    // Небольшая задержка для preemptive планировщика
-    // delay(1000);
-    println!("Counter1");
 }
 
 /// Stop condition для задачи счётчика 1
@@ -51,9 +48,6 @@ fn counter2_task_loop_fn() {
     for _ in 0..1000 {
         COUNTER2.fetch_add(1, Ordering::Relaxed);
     }
-    // Небольшая задержка для preemptive планировщика
-    // delay(1000);
-    println!("Counter2");
 }
 
 /// Stop condition для задачи счётчика 2
@@ -71,9 +65,6 @@ fn counter3_task_loop_fn() {
     for _ in 0..1000 {
         COUNTER3.fetch_add(1, Ordering::Relaxed);
     }
-    // Небольшая задержка для preemptive планировщика
-    // delay(1000);
-    println!("Counter3");
 }
 
 /// Stop condition для задачи счётчика 3
@@ -91,9 +82,6 @@ fn counter4_task_loop_fn() {
     for _ in 0..1000 {
         COUNTER4.fetch_add(1, Ordering::Relaxed);
     }
-    // Небольшая задержка для preemptive планировщика
-    // delay(1000);
-    println!("Counter4");
 }
 
 /// Stop condition для задачи счётчика 4
@@ -111,9 +99,6 @@ fn counter5_task_loop_fn() {
     for _ in 0..1000 {
         COUNTER5.fetch_add(1, Ordering::Relaxed);
     }
-    // Небольшая задержка для preemptive планировщика
-    // delay(1000);
-    println!("Counter5");
 }
 
 /// Stop condition для задачи счётчика 5
