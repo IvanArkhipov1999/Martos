@@ -44,17 +44,13 @@ mod context_switch {
     use crate::task_manager::preemptive::Thread;
 
     pub fn setup_stack(thread: &mut crate::task_manager::preemptive::Thread) {
-        // manual 8.1
-        thread.context.PC = Thread::run_task as u32;
-        thread.context.A0 = 0; // return address
-
-        // thread.context.A6 = (thread as *mut Thread) as u32; // A2 after `entry` instruction
-        thread.context.A6 = thread.task.setup_fn as u32; // A2 after `entry` instruction
-        thread.context.A7 = thread.task.loop_fn as u32; // A3
-        thread.context.A8 = thread.task.stop_condition_fn as u32; // A4
-
+        // In the new approach, we don't need to set up a specific entry point
+        // The scheduler will call the task functions directly
+        // Just initialize the stack pointer and basic context
         let stack_ptr = thread.stack as usize + crate::task_manager::preemptive::THREAD_STACK_SIZE;
         thread.context.A1 = stack_ptr as u32;
+        thread.context.PC = 0; // Will be set by the scheduler
+        thread.context.A0 = 0; // return address
 
         thread.context.PS = 0x00040000 | (1 & 3) << 16;
         unsafe {

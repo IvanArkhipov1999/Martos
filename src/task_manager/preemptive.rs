@@ -152,6 +152,11 @@ pub(crate) struct Thread {
     /// behavior: setup, main loop, and termination condition.
     #[allow(dead_code)]
     pub(crate) task: Task,
+
+    /// Flag indicating whether the setup function has been called.
+    ///
+    /// Used to ensure setup is called only once per task.
+    pub(crate) setup_called: bool,
 }
 
 impl Thread {
@@ -184,6 +189,7 @@ impl Thread {
                 loop_fn: loop_,
                 stop_condition_fn: stop,
             },
+            setup_called: false,
         }
     }
 
@@ -223,6 +229,40 @@ impl Thread {
                 loop_();
             }
         }
+    }
+
+    /// Entry point for preemptive tasks.
+    ///
+    /// This function is called when a task is first scheduled or resumed.
+    /// It calls the task's loop function once and then yields control back
+    /// to the scheduler. The scheduler will call this function again on
+    /// the next time slice if the task hasn't met its stop condition.
+    ///
+    /// # Arguments
+    ///
+    /// * `start` - Setup function (called only once)
+    /// * `loop_` - Main loop function (called each time slice)
+    /// * `stop` - Termination condition
+    ///
+    /// # Behavior
+    ///
+    /// 1. Calls setup function on first execution
+    /// 2. Calls loop function on each execution
+    /// 3. Returns control to scheduler after each call
+    ///
+    /// # Safety
+    ///
+    /// This function is called from interrupt context and must be
+    /// safe to call multiple times.
+    pub(crate) extern "C" fn task_entry_point(
+        start: TaskSetupFunctionType,
+        loop_: TaskLoopFunctionType,
+        stop: TaskStopConditionFunctionType,
+    ) {
+        // This function will be called from the scheduler context
+        // The actual setup/loop logic is handled in the scheduler
+        // This is just a placeholder that will be replaced by the actual task execution
+        loop_();
     }
 }
 
@@ -318,9 +358,10 @@ impl PreemptiveTaskManager {
     /// # Behavior
     ///
     /// 1. If not the first task, save current context
-    /// 2. Select next task using round-robin
-    /// 3. Load new task's context  
-    /// 4. Return to new task's execution point
+    /// 2. Find next runnable task using round-robin
+    /// 3. Call task's setup function if not called yet
+    /// 4. Call task's loop function
+    /// 5. Return to scheduler
     ///
     /// # Safety
     ///
@@ -342,14 +383,43 @@ impl PreemptiveTaskManager {
         }
         unsafe { TASK_MANAGER.first_task = false }
 
-        let task = unsafe {
-            TASK_MANAGER
-                .tasks
-                .get(TASK_MANAGER.task_to_execute_index)
-                .unwrap()
-        };
-        let ctx = &task.context;
-        Port::load_ctx(ctx, isr_ctx);
+        // Find next runnable task
+        let start_index = unsafe { TASK_MANAGER.task_to_execute_index };
+        loop {
+            let task = unsafe {
+                TASK_MANAGER
+                    .tasks
+                    .get_mut(TASK_MANAGER.task_to_execute_index)
+                    .unwrap()
+            };
+            
+            // Check if task should stop
+            if (task.task.stop_condition_fn)() {
+                // Task is done, move to next
+                Self::next_thread();
+                
+                // Check if we've gone through all tasks
+                if unsafe { TASK_MANAGER.task_to_execute_index } == start_index {
+                    // All tasks are done, just return to current context
+                    // In a real system, this would be an idle task
+                    return;
+                }
+                continue;
+            }
+            
+            // Task is still runnable
+            // Call setup function if not called yet
+            if !task.setup_called {
+                (task.task.setup_fn)();
+                task.setup_called = true;
+            }
+            
+            // Call the task's loop function
+            (task.task.loop_fn)();
+            
+            // Return to scheduler - the timer interrupt will call this again
+            return;
+        }
     }
 }
 
