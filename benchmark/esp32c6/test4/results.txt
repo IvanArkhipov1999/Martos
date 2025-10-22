@@ -1,0 +1,214 @@
+Counter task setup - будет создавать вектор 1000KB в каждой итерации
+Timer task setup - будет печатать значение аппаратного таймера
+Counter task: создан вектор 1000KB, итерация 1
+Timer task: time = 0 seconds, 604 microseconds
+Counter task: создан вектор 1000KB, итерация 2
+Timer task: time = 0 seconds, 876 microseconds
+Counter task: создан вектор 1000KB, итерация 3
+Timer task: time = 0 seconds, 1102 microseconds
+Counter task: создан вектор 1000KB, итерация 4
+Timer task: time = 0 seconds, 1343 microseconds
+Counter task: создан вектор 1000KB, итерация 5
+Timer task: time = 0 seconds, 1584 microseconds
+Counter task: создан вектор 1000KB, итерация 6
+Timer task: time = 0 seconds, 1891 microseconds
+Counter task: создан вектор 1000KB, итерация 7
+Timer task: time = 0 seconds, 2138 microseconds
+Counter task: создан вектор 1000KB, итерация 8
+Timer task: time = 0 seconds, 2373 microseconds
+Counter task: создан вектор 1000KB, итерация 9
+Timer task: time = 0 seconds, 2689 microseconds
+Counter task: создан вектор 1000KB, итерация 10
+Timer task: time = 0 seconds, 2936 microseconds
+Counter task: создан вектор 1000KB, итерация 11
+Timer task: time = 0 seconds, 3178 microseconds
+Counter task: создан вектор 1000KB, итерация 12
+Timer task: time = 0 seconds, 3419 microseconds
+Counter task: создан вектор 1000KB, итерация 13
+Timer task: time = 0 seconds, 3690 microseconds
+Counter task: создан вектор 1000KB, итерация 14
+Timer task: time = 0 seconds, 3932 microseconds
+Counter task: создан вектор 1000KB, итерация 15
+Timer task: time = 0 seconds, 4181 microseconds
+Counter task: создан вектор 1000KB, итерация 16
+Timer task: time = 0 seconds, 4428 microseconds
+Counter task: создан вектор 1000KB, итерация 17
+Timer task: time = 0 seconds, 4690 microseconds
+Counter task: создан вектор 1000KB, итерация 18
+Timer task: time = 0 seconds, 4906 microseconds
+Counter task: создан вектор 1000KB, итерация 19
+Timer task: time = 0 seconds, 5142 microseconds
+Counter task: создан вектор 1000KB, итерация 20
+Timer task: time = 0 seconds, 5384 microseconds
+Counter task: создан вектор 1000KB, итерация 21
+Timer task: time = 0 seconds, 5690 microseconds
+Counter task: создан вектор 1000KB, итерация 22
+Timer task: time = 0 seconds, 5931 microseconds
+Counter task: создан вектор 1000KB, итерация 23
+Timer task: time = 0 seconds, 6198 microseconds
+Counter task: создан вектор 1000KB, итерация 24
+Timer task: time = 0 seconds, 6440 microseconds
+Counter task: создан вектор 1000KB, итерация 25
+Timer task: time = 0 seconds, 6741 microseconds
+Counter task: создан вектор 1000KB, итерация 26
+Timer task: time = 0 seconds, 6988 microseconds
+Counter task: создан вектор 1000KB, итерация 27
+Timer task: time = 0 seconds, 7224 microseconds
+Counter task: создан вектор 1000KB, итерация 28
+Timer task: time = 0 seconds, 7473 microseconds
+Counter task: создан вектор 1000KB, итерация 29
+Timer task: time = 0 seconds, 7789 microseconds
+Counter task: создан вектор 1000KB, итерация 30
+Timer task: time = 0 seconds, 8043 microseconds
+Counter task: создан вектор 1000KB, итерация 31
+Timer task: time = 0 seconds, 8259 microseconds
+Counter task: создан вектор 1000KB, итерация 32
+Timer task: time = 0 seconds, 8482 microseconds
+Counter task: создан вектор 1000KB, итерация 33
+Timer task: time = 0 seconds, 8741 microseconds
+Counter task: создан вектор 1000KB, итерация 34
+Timer task: time = 0 seconds, 8962 microseconds
+Counter task: создан вектор 1000KB, итерация 35
+Timer task: time = 0 seconds, 9203 microseconds
+Counter task: создан вектор 1000KB, итерация 36
+Timer task: time = 0 seconds, 9445 microseconds
+Counter task: создан вектор 1000KB, итерация 37
+Timer task: time = 0 seconds, 9741 microseconds
+Counter task: создан вектор 1000KB, итерация 38
+Timer task: time = 0 seconds, 9982 microseconds
+Counter task: создан вектор 1000KB, итерация 39
+Timer task: time = 0 seconds, 10223 microseconds
+Counter task: создан вектор 1000KB, итерация 40
+Timer task: time = 0 seconds, 10485 microseconds
+Counter task: создан вектор 1000KB, итерация 41
+Timer task: time = 0 seconds, 10789 microseconds
+Counter task: создан вектор 1000KB, итерация 42
+Timer task: time = 0 seconds, 11030 microseconds
+Counter task: создан вектор 1000KB, итерация 43
+Timer task: time = 0 seconds, 11277 microseconds
+Counter task: создан вектор 1000KB, итерация 44
+Timer task: time = 0 seconds, 11520 microseconds
+Counter task: создан вектор 1000KB, итерация 45
+Timer task: time = 0 seconds, 11822 microseconds
+Counter task: создан вектор 1000KB, итерация 46
+Timer task: time = 0 seconds, 12058 microseconds
+Counter task: создан вектор 1000KB, итерация 47
+Timer task: time = 0 seconds, 12307 microseconds
+Counter task: создан вектор 1000KB, итерация 48
+Timer task: time = 0 seconds, 12569 microseconds
+Counter task: создан вектор 1000KB, итерация 49
+Timer task: time = 0 seconds, 12878 microseconds
+Counter task: создан вектор 1000KB, итерация 50
+Timer task: time = 0 seconds, 13139 microseconds
+Counter task: создан вектор 1000KB, итерация 51
+Timer task: time = 0 seconds, 13375 microseconds
+Counter task: создан вектор 1000KB, итерация 52
+Timer task: time = 0 seconds, 13690 microseconds
+Counter task: создан вектор 1000KB, итерация 53
+Timer task: time = 0 seconds, 13925 microseconds
+Counter task: создан вектор 1000KB, итерация 54
+Timer task: time = 0 seconds, 14172 microseconds
+Counter task: создан вектор 1000KB, итерация 55
+Timer task: time = 0 seconds, 14419 microseconds
+Counter task: создан вектор 1000KB, итерация 56
+Timer task: time = 0 seconds, 14690 microseconds
+Counter task: создан вектор 1000KB, итерация 57
+Timer task: time = 0 seconds, 14932 microseconds
+Counter task: создан вектор 1000KB, итерация 58
+Timer task: time = 0 seconds, 15181 microseconds
+Counter task: создан вектор 1000KB, итерация 59
+Timer task: time = 0 seconds, 15423 microseconds
+Counter task: создан вектор 1000KB, итерация 60
+Timer task: time = 0 seconds, 15690 microseconds
+Counter task: создан вектор 1000KB, итерация 61
+Timer task: time = 0 seconds, 15917 microseconds
+Counter task: создан вектор 1000KB, итерация 62
+Timer task: time = 0 seconds, 16173 microseconds
+Counter task: создан вектор 1000KB, итерация 63
+Timer task: time = 0 seconds, 16431 microseconds
+Counter task: создан вектор 1000KB, итерация 64
+Timer task: time = 0 seconds, 16741 microseconds
+Counter task: создан вектор 1000KB, итерация 65
+Timer task: time = 0 seconds, 16988 microseconds
+Counter task: создан вектор 1000KB, итерация 66
+Timer task: time = 0 seconds, 17232 microseconds
+Counter task: создан вектор 1000KB, итерация 67
+Timer task: time = 0 seconds, 17482 microseconds
+Counter task: создан вектор 1000KB, итерация 68
+Timer task: time = 0 seconds, 17790 microseconds
+Counter task: создан вектор 1000KB, итерация 69
+Timer task: time = 0 seconds, 18012 microseconds
+Counter task: создан вектор 1000KB, итерация 70
+Timer task: time = 0 seconds, 18249 microseconds
+Counter task: создан вектор 1000KB, итерация 71
+Timer task: time = 0 seconds, 18488 microseconds
+Counter task: создан вектор 1000KB, итерация 72
+Timer task: time = 0 seconds, 18801 microseconds
+Counter task: создан вектор 1000KB, итерация 73
+Timer task: time = 0 seconds, 19049 microseconds
+Counter task: создан вектор 1000KB, итерация 74
+Timer task: time = 0 seconds, 19291 microseconds
+Counter task: создан вектор 1000KB, итерация 75
+Timer task: time = 0 seconds, 19538 microseconds
+Counter task: создан вектор 1000KB, итерация 76
+Timer task: time = 0 seconds, 19857 microseconds
+Counter task: создан вектор 1000KB, итерация 77
+Timer task: time = 0 seconds, 20119 microseconds
+Counter task: создан вектор 1000KB, итерация 78
+Timer task: time = 0 seconds, 20361 microseconds
+Counter task: создан вектор 1000KB, итерация 79
+Timer task: time = 0 seconds, 20681 microseconds
+Counter task: создан вектор 1000KB, итерация 80
+Timer task: time = 0 seconds, 20908 microseconds
+Counter task: создан вектор 1000KB, итерация 81
+Timer task: time = 0 seconds, 21144 microseconds
+Counter task: создан вектор 1000KB, итерация 82
+Timer task: time = 0 seconds, 21367 microseconds
+Counter task: создан вектор 1000KB, итерация 83
+Timer task: time = 0 seconds, 21681 microseconds
+Counter task: создан вектор 1000KB, итерация 84
+Timer task: time = 0 seconds, 21943 microseconds
+Counter task: создан вектор 1000KB, итерация 85
+Timer task: time = 0 seconds, 22184 microseconds
+Counter task: создан вектор 1000KB, итерация 86
+Timer task: time = 0 seconds, 22425 microseconds
+Counter task: создан вектор 1000KB, итерация 87
+Timer task: time = 0 seconds, 22741 microseconds
+Counter task: создан вектор 1000KB, итерация 88
+Timer task: time = 0 seconds, 22963 microseconds
+Counter task: создан вектор 1000KB, итерация 89
+Timer task: time = 0 seconds, 23190 microseconds
+Counter task: создан вектор 1000KB, итерация 90
+Timer task: time = 0 seconds, 23452 microseconds
+Counter task: создан вектор 1000KB, итерация 91
+Timer task: time = 0 seconds, 23741 microseconds
+Counter task: создан вектор 1000KB, итерация 92
+Timer task: time = 0 seconds, 23988 microseconds
+Counter task: создан вектор 1000KB, итерация 93
+Timer task: time = 0 seconds, 24249 microseconds
+Counter task: создан вектор 1000KB, итерация 94
+Timer task: time = 0 seconds, 24488 microseconds
+Counter task: создан вектор 1000KB, итерация 95
+Timer task: time = 0 seconds, 24789 microseconds
+Counter task: создан вектор 1000KB, итерация 96
+Timer task: time = 0 seconds, 25025 microseconds
+Counter task: создан вектор 1000KB, итерация 97
+Timer task: time = 0 seconds, 25281 microseconds
+Counter task: создан вектор 1000KB, итерация 98
+Timer task: time = 0 seconds, 25523 microseconds
+Counter task: создан вектор 1000KB, итерация 99
+Timer task: time = 0 seconds, 25816 microseconds
+Counter task: создан вектор 1000KB, итерация 100
+Timer task: time = 0 seconds, 26108 microseconds
+Timer task: time = 0 seconds, 26208 microseconds
+Timer task: time = 0 seconds, 26315 microseconds
+Timer task: time = 0 seconds, 26408 microseconds
+Timer task: time = 0 seconds, 26539 microseconds
+Timer task: time = 0 seconds, 26699 microseconds
+Timer task: time = 0 seconds, 26810 microseconds
+Timer task: time = 0 seconds, 26922 microseconds
+Timer task: time = 0 seconds, 27034 microseconds
+Timer task: time = 0 seconds, 27126 microseconds
+Timer task: time = 0 seconds, 27218 microseconds
+Timer task: time = 0 seconds, 27351 microseconds
+
