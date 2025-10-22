@@ -12,22 +12,21 @@ use martos::{
     timer::Timer,
 };
 
-/// Counter для первой задачи - инкрементируется по 1 в цикле из 1024 итераций
+/// Counter для первой задачи - инкрементируется по 1 в цикле из 1000 итераций
 static COUNTER: AtomicU32 = AtomicU32::new(0);
 
 /// Setup функция для задачи счётчика
 fn counter_task_setup_fn() {
-    println!("Counter task setup - будет делать 1024 итерации, прибавляя по 1");
+    println!("Counter task setup - будет делать 1000 итерации, прибавляя по 1");
 }
 
-/// Loop функция для задачи счётчика - делает 1024 итерации, прибавляя по 1
+/// Loop функция для задачи счётчика - делает 1000 итерации, прибавляя по 1
 fn counter_task_loop_fn() {
-    for _ in 0..1024 {
+    for _ in 0..1000 {
         let current = COUNTER.fetch_add(1, Ordering::Relaxed);
-        if current % 1000 == 0 {
-            println!("Counter task: value = {}", current + 1);
-        }
     }
+    let current = COUNTER.load(Ordering::Relaxed);
+    println!("Counter task: value = {}", current);
 }
 
 /// Stop condition для задачи счётчика
