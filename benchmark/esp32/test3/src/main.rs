@@ -124,13 +124,25 @@ fn counter5_task_stop_condition_fn() -> bool {
 /// Setup функция для задачи мониторинга
 fn monitor_task_setup_fn() {
     println!("Monitor task setup - будет печатать значения аппаратного таймера и всех счётчиков");
+    
+    // Инициализируем Timer 1 для измерения времени
+    if let Some(timer1) = Timer::get_timer(1) {
+        timer1.set_reload_mode(true);  // Периодический режим
+        timer1.change_period_timer(core::time::Duration::from_millis(1));  // 1 мс период
+        timer1.start_timer();
+        timer1.release_timer();
+        println!("Timer 1 initialized for time measurement");
+    } else {
+        println!("Failed to acquire Timer 1 for time measurement");
+    }
 }
 
 /// Loop функция для задачи мониторинга - печатает значение аппаратного таймера и всех счётчиков
 fn monitor_task_loop_fn() {
-    if let Some(timer0) = Timer::get_timer(0) {
-        let time = timer0.get_time();
-        timer0.release_timer();
+    // Используем Timer 1 (TIMER10) для измерения времени, так как Timer 0 занят планировщиком
+    if let Some(timer1) = Timer::get_timer(1) {
+        let time = timer1.get_time();
+        timer1.release_timer();
         
         let c1 = COUNTER1.load(Ordering::Relaxed);
         let c2 = COUNTER2.load(Ordering::Relaxed);
@@ -141,7 +153,7 @@ fn monitor_task_loop_fn() {
         println!("Monitor: time = {}s {}μs, counters = [{}, {}, {}, {}, {}]", 
                 time.as_secs(), time.subsec_micros(), c1, c2, c3, c4, c5);
     } else {
-        println!("Monitor task: timer 0 is busy");
+        println!("Monitor task: timer 1 is busy");
     }
     // Задержка для preemptive планировщика
     // delay(10000);

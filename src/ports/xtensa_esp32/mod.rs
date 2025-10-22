@@ -30,32 +30,32 @@ impl PortTrait for XtensaEsp32 {
         true
     }
 
-    fn try_acquire_timer(_timer_index: u8) -> bool {
-        hardware_timer::try_acquire_timer()
+    fn try_acquire_timer(timer_index: u8) -> bool {
+        hardware_timer::try_acquire_timer(timer_index)
     }
 
-    fn start_hardware_timer(_timer_index: u8) {
-        hardware_timer::start_hardware_timer();
+    fn start_hardware_timer(timer_index: u8) {
+        hardware_timer::start_hardware_timer(timer_index);
     }
 
-    fn set_reload_mode(_timer_index: u8, auto_reload: bool) {
-        hardware_timer::set_reload_mode(auto_reload);
+    fn set_reload_mode(timer_index: u8, auto_reload: bool) {
+        hardware_timer::set_reload_mode(timer_index, auto_reload);
     }
 
-    fn change_period_timer(_timer_index: u8, period: core::time::Duration) {
-        hardware_timer::change_period_timer(period);
+    fn change_period_timer(timer_index: u8, period: core::time::Duration) {
+        hardware_timer::change_period_timer(timer_index, period);
     }
 
-    fn get_time(_timer_index: u8) -> core::time::Duration {
-        hardware_timer::get_time()
+    fn get_time(timer_index: u8) -> core::time::Duration {
+        hardware_timer::get_time(timer_index)
     }
 
     fn stop_hardware_timer(_timer_index: u8) -> bool {
         false
     }
 
-    fn release_hardware_timer(_timer_index: u8) {
-        hardware_timer::release_hardware_timer()
+    fn release_hardware_timer(timer_index: u8) {
+        hardware_timer::release_hardware_timer(timer_index)
     }
 
     fn init_heap() {
