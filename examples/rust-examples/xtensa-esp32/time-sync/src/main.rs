@@ -66,6 +66,8 @@ static mut ESP_NOW: Option<EspNow> = None;
 static mut NEXT_SEND_TIME: Option<u64> = None;
 /// Time synchronization manager instance
 static mut SYNC_MANAGER: Option<TimeSyncManager<'static>> = None;
+/// LED output pin instance
+static mut LED: Option<Output<'static>> = None;
 
 /// Setup function for time synchronization task.
 ///
@@ -95,7 +97,7 @@ fn setup_fn() {
         SYNC_MANAGER = Some(sync_manager);
 
         let io = get_io();
-        let mut led = Output::new(io.pins.gpio27, Level::High);
+        LED = Some(Output::new(io.pins.gpio27, Level::High));
     }
     println!("ESP32: Time synchronization setup complete!");
 }
@@ -139,6 +141,15 @@ fn loop_fn() {
                             "ESP32: Received timestamp: {}μs, corrected time: {}μs, diff: {}μs",
                             received_sync_message.timestamp_us, corrected_time_us, time_diff
                         );
+                        if time_diff.abs() < 20_000 {
+                            let mut led = LED.take().unwrap();
+                            led.set_high();
+                            LED = Some(led);
+                        } else {
+                            let mut led = LED.take().unwrap();
+                            led.set_low();
+                            LED = Some(led);
+                        }
 
                         // Process message for synchronization
                         sync_manager.handle_sync_message(received_sync_message);
