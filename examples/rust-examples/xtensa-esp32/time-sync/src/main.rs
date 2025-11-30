@@ -49,12 +49,13 @@
 #![no_main]
 
 use esp_backtrace as _;
-use esp_hal::{entry, time};
+use esp_hal::{entry, time, gpio::{Io, Level, Output},};
 use esp_println::println;
 use esp_wifi::esp_now::{EspNow, BROADCAST_ADDRESS};
 use martos::get_esp_now;
 use martos::{
     init_system,
+    get_io,
     task_manager::{TaskManager, TaskManagerTrait},
     time_sync::{SyncConfig, SyncMessage, TimeSyncManager},
 };
@@ -92,6 +93,9 @@ fn setup_fn() {
         sync_manager.init_esp_now_protocol(esp_now);
         sync_manager.enable_sync();
         SYNC_MANAGER = Some(sync_manager);
+
+        let io = get_io();
+        let mut led = Output::new(io.pins.gpio27, Level::High);
     }
     println!("ESP32: Time synchronization setup complete!");
 }
