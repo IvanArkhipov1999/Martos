@@ -425,6 +425,10 @@ pub struct TimeSyncManager<'a> {
     time_offset_us: AtomicI32,
     /// Last synchronization time in microseconds (atomic for thread safety)
     last_sync_time: AtomicU32,
+    /// Last corrected time to prevent time from going backwards (atomic for thread safety)
+    /// Stored as two u32 values (high and low) since AtomicU64 is not available on 32-bit platforms
+    last_corrected_time_us_high: AtomicU32,
+    last_corrected_time_us_low: AtomicU32,
     /// Map of synchronized peers (single anonymous peer in broadcast mode)
     peers: BTreeMap<u32, SyncPeer>,
     /// Current synchronization quality score (0.0-1.0 * 1000, atomic)
@@ -464,6 +468,8 @@ impl<'a> TimeSyncManager<'a> {
             sync_enabled: AtomicBool::new(false),
             time_offset_us: AtomicI32::new(0),
             last_sync_time: AtomicU32::new(0),
+            last_corrected_time_us_high: AtomicU32::new(0),
+            last_corrected_time_us_low: AtomicU32::new(0),
             peers: BTreeMap::new(),
             sync_quality: AtomicU32::new(1000), // Start with perfect quality
             #[cfg(feature = "network")]
@@ -669,6 +675,11 @@ impl<'a> TimeSyncManager<'a> {
     }
 
     /// Get corrected time (real time + offset)
+    /// 
+    /// This method ensures that corrected time never goes backwards by tracking
+    /// the last corrected time value and ensuring monotonicity. If the calculated
+    /// time would be less than the last time, it returns the last time to prevent
+    /// time from going backwards.
     pub fn get_corrected_time_us(&self) -> u64 {
         #[cfg(all(
             feature = "network",
@@ -677,7 +688,52 @@ impl<'a> TimeSyncManager<'a> {
         {
             let real_time_us = time::now().duration_since_epoch().to_micros() as u64;
             let offset_us = self.time_offset_us.load(Ordering::Acquire) as i64;
-            (real_time_us as i64 + offset_us) as u64
+            let calculated_time = (real_time_us as i64 + offset_us) as u64;
+            
+            // Ensure time never goes backwards - read last time from two u32 values
+            // We need to read both values in a way that ensures consistency
+            loop {
+                // Read high word first, then low word, then verify high word hasn't changed
+                let last_high1 = self.last_corrected_time_us_high.load(Ordering::Acquire);
+                let last_low = self.last_corrected_time_us_low.load(Ordering::Acquire);
+                let last_high2 = self.last_corrected_time_us_high.load(Ordering::Acquire);
+                
+                // If high word changed during read, retry
+                if last_high1 != last_high2 {
+                    continue;
+                }
+                
+                // Reconstruct 64-bit value
+                let last_time = ((last_high1 as u64) << 32) | (last_low as u64);
+                
+                let corrected_time = if calculated_time < last_time {
+                    // Time would go backwards - use last time to maintain monotonicity
+                    last_time
+                } else {
+                    // Time is moving forward - use calculated time
+                    calculated_time
+                };
+                
+                // Split into high and low words
+                let corrected_high = (corrected_time >> 32) as u32;
+                let corrected_low = corrected_time as u32;
+                
+                // Try to update atomically - update high word first, then low word
+                // If high word changed, retry
+                match self.last_corrected_time_us_high.compare_exchange_weak(
+                    last_high1,
+                    corrected_high,
+                    Ordering::Release,
+                    Ordering::Acquire,
+                ) {
+                    Ok(_) => {
+                        // High word updated successfully, now update low word
+                        self.last_corrected_time_us_low.store(corrected_low, Ordering::Release);
+                        return corrected_time;
+                    }
+                    Err(_) => continue, // Retry if value changed
+                }
+            }
         }
         #[cfg(not(all(
             feature = "network",
