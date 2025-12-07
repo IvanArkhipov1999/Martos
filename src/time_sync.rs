@@ -245,6 +245,8 @@ pub struct SyncMessage {
     pub timestamp_us: u64,
     /// Message sequence number for ordering
     pub sequence: u32,
+    /// Node ID for debugging and identification
+    pub node_id: u32,
     /// Additional data payload (currently unused)
     pub payload: Vec<u8>,
 }
@@ -255,15 +257,17 @@ impl SyncMessage {
     /// # Arguments
     ///
     /// * `timestamp_us` - Timestamp when the message was created (microseconds)
+    /// * `node_id` - Node ID for debugging and identification
     ///
     /// # Returns
     ///
     /// A new `SyncMessage` with `SyncRequest` type and empty payload.
-    pub fn new_sync_request(timestamp_us: u64) -> Self {
+    pub fn new_sync_request(timestamp_us: u64, node_id: u32) -> Self {
         Self {
             msg_type: SyncMessageType::SyncRequest,
             timestamp_us,
             sequence: 0,
+            node_id,
             payload: Vec::new(),
         }
     }
@@ -273,11 +277,10 @@ impl SyncMessage {
     /// Converts the synchronization message into a byte array suitable
     /// for transmission via ESP-NOW protocol. The format includes:
     /// - Message type (1 byte)
-    /// - Source node ID (4 bytes)
-    /// - Target node ID (4 bytes)
     /// - Timestamp (8 bytes)
     /// - Sequence number (4 bytes)
-    /// - Payload length (4 bytes)
+    /// - Node ID (4 bytes)
+    /// - Payload length (2 bytes)
     /// - Payload data (variable length)
     ///
     /// # Returns
@@ -294,6 +297,9 @@ impl SyncMessage {
 
         // Sequence number (4 bytes)
         data.extend_from_slice(&self.sequence.to_le_bytes());
+
+        // Node ID (4 bytes)
+        data.extend_from_slice(&self.node_id.to_le_bytes());
 
         // Payload length (2 bytes)
         data.extend_from_slice(&(self.payload.len() as u16).to_le_bytes());
@@ -318,8 +324,8 @@ impl SyncMessage {
     /// * `Some(message)` - Successfully parsed `SyncMessage`
     /// * `None` - Invalid or incomplete data
     pub fn from_bytes(data: &[u8]) -> Option<Self> {
-        if data.len() < 15 {
-            // Minimum message size
+        if data.len() < 19 {
+            // Minimum message size: 1 (type) + 8 (timestamp) + 4 (sequence) + 4 (node_id) + 2 (payload_len) = 19
             return None;
         }
 
@@ -355,6 +361,15 @@ impl SyncMessage {
         ]);
         offset += 4;
 
+        // Node ID
+        let node_id = u32::from_le_bytes([
+            data[offset],
+            data[offset + 1],
+            data[offset + 2],
+            data[offset + 3],
+        ]);
+        offset += 4;
+
         // Payload length
         let payload_len = u16::from_le_bytes([data[offset], data[offset + 1]]) as usize;
         offset += 2;
@@ -371,6 +386,7 @@ impl SyncMessage {
             msg_type,
             timestamp_us,
             sequence,
+            node_id,
             payload,
         })
     }

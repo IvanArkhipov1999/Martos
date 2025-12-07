@@ -68,6 +68,8 @@ static mut NEXT_SEND_TIME: Option<u64> = None;
 static mut SYNC_MANAGER: Option<TimeSyncManager<'static>> = None;
 /// LED output pin instance
 static mut LED: Option<Output<'static>> = None;
+/// Node ID for debugging and identification
+static mut NODE_ID: u32 = 5;
 
 /// Setup function for time synchronization task.
 ///
@@ -138,8 +140,8 @@ fn loop_fn() {
                         let time_diff =
                             received_sync_message.timestamp_us as i64 - corrected_time_us as i64;
                         println!(
-                            "ESP32: Received timestamp: {}μs, corrected time: {}μs, diff: {}μs",
-                            received_sync_message.timestamp_us, corrected_time_us, time_diff
+                            "ESP32: Node {} - Received timestamp: {}μs, corrected time: {}μs, diff: {}μs",
+                            received_sync_message.node_id, received_sync_message.timestamp_us, corrected_time_us, time_diff
                         );
                         if time_diff.abs() < 20_000 {
                             let mut led = LED.take().unwrap();
@@ -164,7 +166,7 @@ fn loop_fn() {
 
                 // Create SyncMessage with corrected time
                 let corrected_time_us = sync_manager.get_corrected_time_us();
-                let sync_message = SyncMessage::new_sync_request(corrected_time_us);
+                let sync_message = SyncMessage::new_sync_request(corrected_time_us, NODE_ID);
                 let message_data = sync_message.to_bytes();
 
                 if let Some(ref mut esp_now_protocol) = sync_manager.esp_now_protocol {
