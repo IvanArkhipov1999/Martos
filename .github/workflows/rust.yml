@@ -55,6 +55,31 @@ jobs:
       - name: Fmt
         run: cd ./examples/rust-examples/xtensa-esp32/hello-world && cargo fmt --all -- --check
 
+  xtensa-qemu-test:
+    runs-on: ubuntu-latest
+    container:
+      image: arkhipovivan1/qemu:latest
+      options: --user root
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build firmware
+        run: |
+          cd examples/rust-examples/xtensa-esp32/hello-world
+          . /root/export-esp.sh
+          cargo espflash save-image --chip esp32 --merge firmware.bin --release
+
+      - name: Run in QEMU
+        run: |
+          qemu-system-xtensa -nographic \
+            -machine esp32 \
+            -drive file=examples/rust-examples/xtensa-esp32/hello-world/firmware.bin,if=mtd,format=raw \
+            -serial mon:stdio \
+            -m 4M | tee qemu-output.log
+
+      - name: Check logs
+        run: |
+          grep "Hello World!" qemu-output.log || (echo "Test failed"; exit 1)
+
   xtensa-esp32-rust-example-dynamic-memory:
     runs-on: ubuntu-latest
     env:

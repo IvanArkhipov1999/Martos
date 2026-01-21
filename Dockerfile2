@@ -1,0 +1,5 @@
+FROM arkhipovivan1/xtensa-esp32-rust
+
+RUN apt-get update && apt-get install libudev-dev -y
+RUN apt-get install pkg-config -y
+RUN cargo install cargo-espflash --locked
