@@ -42,8 +42,6 @@
 //!
 //! - `sync_interval_ms`: How often to send sync messages (100ms)
 //! - `max_correction_threshold_us`: Max correction per cycle (100000μs)
-//! - `acceleration_factor`: Aggressiveness for large differences (0.8)
-//! - `deceleration_factor`: Conservativeness for small differences (0.6)
 
 #![no_std]
 #![no_main]
@@ -85,11 +83,12 @@ fn setup_fn() {
 
         // Initialize time sync manager
         let esp_now = ESP_NOW.take().unwrap();
+        const CORRECTION_FACTOR: f32 = 0.7;
         let config = SyncConfig {
             sync_interval_ms: 10,
-            max_correction_threshold_us: 100000, // 100ms instead of 1ms
-            acceleration_factor: 0.8,            // Much higher acceleration
-            deceleration_factor: 0.6,            // Much higher deceleration
+            max_correction_threshold_us: 100000, // 100ms
+            acceleration_factor: CORRECTION_FACTOR,
+            deceleration_factor: CORRECTION_FACTOR,
             max_peers: 10,
             adaptive_frequency: true,
         };
