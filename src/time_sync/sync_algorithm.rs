@@ -159,8 +159,8 @@ impl SyncAlgorithm {
             self.peers.insert(peer_id, new_peer);
         }
 
-        // Calculate correction using dynamic acceleration/deceleration
-        let correction = self.calculate_dynamic_correction(peer_id, time_diff)?;
+        // Calculate correction using Local Voting Protocol (softmax-weighted average)
+        let correction = self.calculate_dynamic_correction(peer_id, local_timestamp, time_diff)?;
 
         // Record synchronization event
         self.record_sync_event(local_timestamp, peer_id, time_diff, correction);
@@ -170,28 +170,29 @@ impl SyncAlgorithm {
 
     /// Calculate time correction using Local Voting Protocol.
     ///
-    /// Implements the core Local Voting Protocol algorithm by calculating
-    /// weighted average of time differences from all peers.
+    /// Uses softmax over (local time, peers' times) to get weights, then
+    /// consensus time = weighted average of times, correction = consensus - local.
     ///
     /// # Arguments
     ///
     /// * `peer_id` - ID of the peer that triggered the calculation
-    /// * `_time_diff` - Time difference (currently unused)
+    /// * `local_timestamp` - Local time when the message was processed (microseconds)
+    /// * `_time_diff` - Time difference (unused)
     ///
     /// # Returns
     ///
     /// * `Ok(correction)` - Calculated time correction in microseconds
     /// * `Err(SyncError)` - Error if peer not found
-    fn calculate_dynamic_correction(&mut self, peer_id: u32, _time_diff: i64) -> SyncResult<i64> {
+    fn calculate_dynamic_correction(
+        &mut self,
+        peer_id: u32,
+        local_timestamp: u64,
+        _time_diff: i64,
+    ) -> SyncResult<i64> {
         let _peer = self.peers.get(&peer_id).ok_or(SyncError::PeerNotFound)?;
 
-        // Local Voting Protocol: Calculate weighted average of time differences from all peers
-        let weighted_diff = self.calculate_weighted_average_diff();
-
-        // Apply Local Voting Protocol correction
-        // If our time is ahead (positive diff), we should slow down
-        // If our time is behind (negative diff), we should speed up
-        let correction = self.calculate_local_voting_correction(weighted_diff);
+        // Local Voting Protocol: softmax over (local, peers), then correction = t_avg - local
+        let correction = self.calculate_softmax_correction(local_timestamp);
 
         // Apply bounds checking
         let bounded_correction = self.apply_correction_bounds(correction);
@@ -203,6 +204,42 @@ impl SyncAlgorithm {
         self.update_peer_quality(peer_id, bounded_correction);
 
         Ok(bounded_correction)
+    }
+
+    /// Correction from softmax-weighted average of (local time, peers' times).
+    ///
+    /// Weights: w_i = exp((t_i - t_max) / T) / Z. Consensus time t_avg = sum w_i * t_i.
+    /// Correction = t_avg - local_timestamp. Temperature T = 1e6 us (1 s).
+    fn calculate_softmax_correction(&self, local_timestamp: u64) -> i64 {
+        const SOFTMAX_TEMPERATURE_US: f64 = 1e6;
+
+        // Collect times: local + each peer's last_timestamp
+        let mut times = Vec::with_capacity(self.peers.len() + 1);
+        times.push(local_timestamp);
+        for peer in self.peers.values() {
+            times.push(peer.last_timestamp);
+        }
+
+        if times.is_empty() {
+            return 0;
+        }
+
+        let t_max = *times.iter().max().unwrap_or(&0) as f64;
+        let mut sum_exp = 0.0_f64;
+        for &t in &times {
+            sum_exp += libm::exp((t as f64 - t_max) / SOFTMAX_TEMPERATURE_US);
+        }
+        if sum_exp <= 0.0 {
+            return 0;
+        }
+
+        let mut t_avg = 0.0_f64;
+        for &t in &times {
+            let w = libm::exp((t as f64 - t_max) / SOFTMAX_TEMPERATURE_US) / sum_exp;
+            t_avg += w * t as f64;
+        }
+
+        (t_avg - local_timestamp as f64) as i64
     }
 
     /// Calculate weighted average of time differences from all peers.

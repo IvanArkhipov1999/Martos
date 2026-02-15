@@ -236,12 +236,14 @@ pub enum SyncMessageType {
 /// # Serialization
 ///
 /// Messages can be serialized to/from bytes for ESP-NOW transmission using
-/// `to_bytes()` and `from_bytes()` methods.
+/// `to_bytes()` and `from_bytes()` methods. On the wire, the timestamp is
+/// sent as softmax: exp(timestamp_us / T) as f64; when receiving, timestamp_us
+/// is recovered as T * ln(value).
 #[derive(Debug, Clone)]
 pub struct SyncMessage {
     /// Type of synchronization message
     pub msg_type: SyncMessageType,
-    /// Timestamp when message was sent (microseconds)
+    /// Timestamp when message was sent (microseconds); when sending, this is encoded as softmax in `to_bytes()`
     pub timestamp_us: u64,
     /// Message sequence number for ordering
     pub sequence: u32,
@@ -281,19 +283,23 @@ impl SyncMessage {
     /// - Sequence number (4 bytes)
     /// - Node ID (4 bytes)
     /// - Payload length (2 bytes)
-    /// - Payload data (variable length)
-    ///
-    /// # Returns
-    ///
-    /// A `Vec<u8>` containing the serialized message data.
+/// - Payload data (variable length)
+///
+/// The timestamp is sent as softmax representation: exp(timestamp_us / SOFTMAX_TEMPERATURE_US).
+///
+/// # Returns
+///
+/// A `Vec<u8>` containing the serialized message data.
     pub fn to_bytes(&self) -> Vec<u8> {
         let mut data = Vec::with_capacity(24);
 
         // Message type (1 byte)
         data.push(self.msg_type as u8);
 
-        // Timestamp (8 bytes)
-        data.extend_from_slice(&self.timestamp_us.to_le_bytes());
+        // Softmax of timestamp: exp(timestamp_us / T) as f64 (8 bytes)
+        const SOFTMAX_TEMPERATURE_US: f64 = 1e14;
+        let softmax_val = libm::exp(self.timestamp_us as f64 / SOFTMAX_TEMPERATURE_US);
+        data.extend_from_slice(&softmax_val.to_le_bytes());
 
         // Sequence number (4 bytes)
         data.extend_from_slice(&self.sequence.to_le_bytes());
@@ -339,8 +345,9 @@ impl SyncMessage {
         };
         offset += 1;
 
-        // Timestamp
-        let timestamp_us = u64::from_le_bytes([
+        // Softmax of timestamp (f64): recover timestamp_us = T * ln(value)
+        const SOFTMAX_TEMPERATURE_US: f64 = 1e14;
+        let softmax_val = f64::from_le_bytes([
             data[offset],
             data[offset + 1],
             data[offset + 2],
@@ -350,6 +357,11 @@ impl SyncMessage {
             data[offset + 6],
             data[offset + 7],
         ]);
+        let timestamp_us = if softmax_val > 1e-300_f64 && softmax_val.is_finite() {
+            (SOFTMAX_TEMPERATURE_US * libm::log(softmax_val)) as u64
+        } else {
+            0
+        };
         offset += 8;
 
         // Sequence number
