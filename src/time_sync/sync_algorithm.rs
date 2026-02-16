@@ -206,10 +206,30 @@ impl SyncAlgorithm {
         Ok(bounded_correction)
     }
 
-    /// Correction from softmax-weighted average of (local time, peers' times).
+    /// Correction from softmax consensus over (local time, peers' times).
     ///
-    /// Weights: w_i = exp((t_i - t_max) / T) / Z. Consensus time t_avg = sum w_i * t_i.
-    /// Correction = t_avg - local_timestamp. Temperature T = 1e6 us (1 s).
+    /// This implements the SoftMax\_T operator from the attached PODC-style model,
+    /// using a numerically stable log-sum-exp formulation:
+    ///
+    /// SoftMax\_T(z\_1, …, z\_m) = T · log Σ\_k exp(z\_k / T)
+    ///
+    /// which can be rewritten as
+    ///
+    /// SoftMax\_T(z) = c + T · log Σ\_k exp((z\_k − c) / T),
+    ///
+    /// where c = max\_k z\_k. This guarantees
+    ///
+    ///   max\_k z\_k ≤ SoftMax\_T(z) ≤ max\_k z\_k + T log m,
+    ///
+    /// i.e. the consensus value tracks (and never goes below) the network maximum,
+    /// matching the virtual time definition x\*(t) = max\_i \~x\_i(t) in the PDF.
+    ///
+    /// In our case z\_k are the logical timestamps of the local node and all peers.
+    /// The correction returned here is:
+    ///
+    ///   correction = SoftMax\_T({local, peers}) − local\_timestamp
+    ///
+    /// Temperature T is chosen in microseconds; T → 0 approximates a hard maximum.
     fn calculate_softmax_correction(&self, local_timestamp: u64) -> i64 {
         const SOFTMAX_TEMPERATURE_US: f64 = 1e6;
 
@@ -224,22 +244,26 @@ impl SyncAlgorithm {
             return 0;
         }
 
-        let t_max = *times.iter().max().unwrap_or(&0) as f64;
+        // c = max_k z_k  (for numerical stability in the exponent)
+        let c = *times.iter().max().unwrap_or(&0) as f64;
+
+        // Σ exp((z_k - c) / T)
         let mut sum_exp = 0.0_f64;
         for &t in &times {
-            sum_exp += libm::exp((t as f64 - t_max) / SOFTMAX_TEMPERATURE_US);
+            let exponent = (t as f64 - c) / SOFTMAX_TEMPERATURE_US;
+            // exponent <= 0, so exp() is in (0, 1]; prevents overflow
+            sum_exp += libm::exp(exponent);
         }
-        if sum_exp <= 0.0 {
+
+        if sum_exp <= 0.0 || !sum_exp.is_finite() {
             return 0;
         }
 
-        let mut t_avg = 0.0_f64;
-        for &t in &times {
-            let w = libm::exp((t as f64 - t_max) / SOFTMAX_TEMPERATURE_US) / sum_exp;
-            t_avg += w * t as f64;
-        }
+        // SoftMax_T(z) = c + T * log(sum_exp)
+        let consensus_time = c + SOFTMAX_TEMPERATURE_US * libm::log(sum_exp);
 
-        (t_avg - local_timestamp as f64) as i64
+        // Correction needed to move local logical time toward SoftMax_T
+        (consensus_time - local_timestamp as f64) as i64
     }
 
     /// Calculate weighted average of time differences from all peers.
