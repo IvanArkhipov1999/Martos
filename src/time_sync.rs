@@ -437,14 +437,21 @@ pub struct TimeSyncManager<'a> {
     time_offset_us: AtomicI32,
     /// Last synchronization time in microseconds (atomic for thread safety)
     last_sync_time: AtomicU32,
-    /// Last corrected time to prevent time from going backwards (atomic for thread safety)
-    /// Stored as two u32 values (high and low) since AtomicU64 is not available on 32-bit platforms
-    last_corrected_time_us_high: AtomicU32,
-    last_corrected_time_us_low: AtomicU32,
     /// Map of synchronized peers (single anonymous peer in broadcast mode)
     peers: BTreeMap<u32, SyncPeer>,
     /// Current synchronization quality score (0.0-1.0 * 1000, atomic)
     sync_quality: AtomicU32,
+    /// PI controller phase correction γ_i(t) in microseconds (applied to increments)
+    pi_phase_correction_us: f64,
+    /// PI controller rate correction β_i(t) (dimensionless, Eq. (30))
+    pi_rate_correction: f64,
+    /// Logical clock value \tilde{x}_i(t) in microseconds (incremental model)
+    logical_time_us: u64,
+    /// Last hardware clock sample x_i(t) used for logical-clock increments
+    last_hw_for_clock_us: u64,
+    /// Last hardware clock sample x_i(t) used for PI update (microseconds)
+    /// Used to approximate x_i(t+1) − x_i(t) in Eq. (30).
+    last_hw_time_us: u64,
     /// ESP-NOW protocol handler (only available with network feature)
     #[cfg(feature = "network")]
     pub esp_now_protocol: Option<crate::time_sync::esp_now_protocol::EspNowTimeSyncProtocol<'a>>,
@@ -480,10 +487,13 @@ impl<'a> TimeSyncManager<'a> {
             sync_enabled: AtomicBool::new(false),
             time_offset_us: AtomicI32::new(0),
             last_sync_time: AtomicU32::new(0),
-            last_corrected_time_us_high: AtomicU32::new(0),
-            last_corrected_time_us_low: AtomicU32::new(0),
             peers: BTreeMap::new(),
             sync_quality: AtomicU32::new(1000), // Start with perfect quality
+            pi_phase_correction_us: 0.0,
+            pi_rate_correction: 0.0,
+            logical_time_us: 0,
+            last_hw_for_clock_us: 0,
+            last_hw_time_us: 0,
             #[cfg(feature = "network")]
             esp_now_protocol: None,
             #[cfg(feature = "network")]
@@ -598,7 +608,8 @@ impl<'a> TimeSyncManager<'a> {
         any(target_arch = "riscv32", target_arch = "xtensa")
     ))]
     fn handle_sync_request(&mut self, message: SyncMessage) {
-        // Treat sync request as time broadcast for synchronization
+        // Treat sync request as time broadcast for synchronization.
+        // Use current logical time for consensus (softmax) error computation.
         let corrected_time_us = self.get_corrected_time_us();
         let time_diff_us = message.timestamp_us as i64 - corrected_time_us as i64;
 
@@ -623,15 +634,16 @@ impl<'a> TimeSyncManager<'a> {
             self.peers.insert(anon_peer_id, new_peer);
         }
 
-        // Use sync algorithm to calculate correction
+        // Use sync algorithm to calculate consensus error e_i(t)
         if let Some(ref mut algorithm) = self.sync_algorithm {
-            if let Ok(correction) = algorithm.process_sync_message(
+            if let Ok(consensus_error) = algorithm.process_sync_message(
                 anon_peer_id,
                 message.timestamp_us,
                 corrected_time_us,
             ) {
-                // Apply correction to time offset
-                self.apply_time_correction(correction as i32);
+                // Apply PI control law (Eqs. (29)–(31)) to update
+                // phase γ_i(t) and rate β_i(t) corrections.
+                self.apply_pi_control(consensus_error);
             } else {
                 // esp_println::println!("Sync algorithm failed to process message");
             }
@@ -655,34 +667,66 @@ impl<'a> TimeSyncManager<'a> {
         // Mock implementation for non-ESP targets
     }
 
-    /// Apply time correction to the system.
+    /// Apply PI control law to update logical clock corrections.
     ///
-    /// Updates the virtual time offset based on the calculated correction.
-    /// Corrections are bounded by the maximum threshold to prevent instability.
+    /// This implements Eqs. (29)–(31) from the PODC article:
+    ///
+    ///   γ_i(t + 1) = k_p · e_i(t)
+    ///   β_i(t + 1) = β_i(t) + k_i · e_i(t) / (x_i(t + 1) − x_i(t)),
+    ///
+    /// with saturation |β_i(t)| ≤ β_max to prevent unbounded rate corrections.
     ///
     /// # Arguments
     ///
-    /// * `correction_us` - Time correction to apply in microseconds
-    fn apply_time_correction(&mut self, correction_us: i32) {
-        if correction_us.abs() > self.config.max_correction_threshold_us as i32 {
-            return; // Skip correction if too large
-        }
-
-        // For Local Voting Protocol, we apply correction directly to offset
-        // This represents how much we need to adjust our time perception
-        let current_offset = self.time_offset_us.load(Ordering::Acquire);
-        let new_offset = current_offset + correction_us;
-        self.time_offset_us.store(new_offset, Ordering::Release);
-
-        // Update last sync time
+    /// * `consensus_error_us` - Consensus error e_i(t) in microseconds
+    fn apply_pi_control(&mut self, consensus_error_us: i64) {
         #[cfg(all(
             feature = "network",
             any(target_arch = "riscv32", target_arch = "xtensa")
         ))]
         {
-            let current_time_us = time::now().duration_since_epoch().to_micros() as u32;
+            use libm::fabs;
+
+            // Proportional and integral gains (k_p, k_i) taken from configuration.
+            let kp = self.config.acceleration_factor as f64;
+            let ki = self.config.deceleration_factor as f64;
+
+            // Eq. (29): phase correction γ_i(t + 1) = k_p · e_i(t)
+            self.pi_phase_correction_us = kp * consensus_error_us as f64;
+
+            // Read current hardware clock x_i(t + 1)
+            let hw_time_us = time::now().duration_since_epoch().to_micros() as u64;
+
+            // Approximate hardware increment x_i(t + 1) − x_i(t)
+            if self.last_hw_time_us != 0 && hw_time_us > self.last_hw_time_us {
+                let delta_hw = (hw_time_us - self.last_hw_time_us) as f64;
+                if delta_hw > 0.0 && ki > 0.0 && fabs(consensus_error_us as f64) > 0.0 {
+                    // Eq. (30): rate correction update
+                    let delta_beta = ki * (consensus_error_us as f64) / delta_hw;
+                    self.pi_rate_correction += delta_beta;
+                }
+            }
+
+            self.last_hw_time_us = hw_time_us;
+
+            // Eq. (31): saturation β_i(t) ∈ [−β_max, β_max]
+            const BETA_MAX: f64 = 0.9;
+            if self.pi_rate_correction > BETA_MAX {
+                self.pi_rate_correction = BETA_MAX;
+            } else if self.pi_rate_correction < -BETA_MAX {
+                self.pi_rate_correction = -BETA_MAX;
+            }
+
+            // Update last sync time for diagnostics
             self.last_sync_time
-                .store(current_time_us, Ordering::Release);
+                .store(hw_time_us as u32, Ordering::Release);
+        }
+        #[cfg(not(all(
+            feature = "network",
+            any(target_arch = "riscv32", target_arch = "xtensa")
+        )))]
+        {
+            let _ = consensus_error_us;
         }
     }
 
@@ -692,60 +736,56 @@ impl<'a> TimeSyncManager<'a> {
     /// the last corrected time value and ensuring monotonicity. If the calculated
     /// time would be less than the last time, it returns the last time to prevent
     /// time from going backwards.
-    pub fn get_corrected_time_us(&self) -> u64 {
+    pub fn get_corrected_time_us(&mut self) -> u64 {
         #[cfg(all(
             feature = "network",
             any(target_arch = "riscv32", target_arch = "xtensa")
         ))]
         {
+            // Hardware clock reading x_i(t)
             let real_time_us = time::now().duration_since_epoch().to_micros() as u64;
-            let offset_us = self.time_offset_us.load(Ordering::Acquire) as i64;
-            let calculated_time = (real_time_us as i64 + offset_us) as u64;
-            
-            // Ensure time never goes backwards - read last time from two u32 values
-            // We need to read both values in a way that ensures consistency
-            loop {
-                // Read high word first, then low word, then verify high word hasn't changed
-                let last_high1 = self.last_corrected_time_us_high.load(Ordering::Acquire);
-                let last_low = self.last_corrected_time_us_low.load(Ordering::Acquire);
-                let last_high2 = self.last_corrected_time_us_high.load(Ordering::Acquire);
-                
-                // If high word changed during read, retry
-                if last_high1 != last_high2 {
-                    continue;
-                }
-                
-                // Reconstruct 64-bit value
-                let last_time = ((last_high1 as u64) << 32) | (last_low as u64);
-                
-                let corrected_time = if calculated_time < last_time {
-                    // Time would go backwards - use last time to maintain monotonicity
-                    last_time
+
+            // Initialize logical clock on first call: start aligned with hardware clock.
+            if self.last_hw_for_clock_us == 0 {
+                self.last_hw_for_clock_us = real_time_us;
+                self.logical_time_us = real_time_us;
+            } else {
+                // Incremental hardware advance Δx = x_i(t) − x_i(t_prev)
+                let delta_hw = real_time_us.saturating_sub(self.last_hw_for_clock_us);
+                self.last_hw_for_clock_us = real_time_us;
+
+                // Incremental logical advance:
+                //   Δ\tilde{x}_i(t) = (1 + β_i(t)) · Δx_i(t) + γ_i(t)
+                let beta = self.pi_rate_correction;
+                let gamma = self.pi_phase_correction_us;
+
+                let delta_logical_f = (1.0 + beta) * delta_hw as f64 + gamma;
+                let delta_logical = if delta_logical_f <= 0.0 {
+                    0_u64
                 } else {
-                    // Time is moving forward - use calculated time
-                    calculated_time
+                    delta_logical_f as u64
                 };
-                
-                // Split into high and low words
-                let corrected_high = (corrected_time >> 32) as u32;
-                let corrected_low = corrected_time as u32;
-                
-                // Try to update atomically - update high word first, then low word
-                // If high word changed, retry
-                match self.last_corrected_time_us_high.compare_exchange_weak(
-                    last_high1,
-                    corrected_high,
-                    Ordering::Release,
-                    Ordering::Acquire,
-                ) {
-                    Ok(_) => {
-                        // High word updated successfully, now update low word
-                        self.last_corrected_time_us_low.store(corrected_low, Ordering::Release);
-                        return corrected_time;
-                    }
-                    Err(_) => continue, // Retry if value changed
+
+                let proposed = self
+                    .logical_time_us
+                    .saturating_add(delta_logical);
+
+                // Enforce monotonicity: logical time must never go backwards.
+                if proposed > self.logical_time_us {
+                    self.logical_time_us = proposed;
                 }
             }
+
+            // Also expose the current logical offset via time_offset_us
+            // for compatibility with existing APIs:
+            //   offset = \tilde{x}_i(t) − x_i(t)
+            let offset_i64 = self.logical_time_us as i64 - real_time_us as i64;
+            let clamped = offset_i64
+                .max(i32::MIN as i64)
+                .min(i32::MAX as i64) as i32;
+            self.time_offset_us.store(clamped, Ordering::Release);
+
+            self.logical_time_us
         }
         #[cfg(not(all(
             feature = "network",

@@ -111,11 +111,12 @@ impl SyncAlgorithm {
         }
     }
 
-    /// Process a synchronization message and calculate time correction.
+    /// Process a synchronization message and calculate consensus error.
     ///
     /// This is the main entry point for the Local Voting Protocol algorithm.
     /// It processes incoming synchronization data, updates peer information,
-    /// and calculates the appropriate time correction to apply.
+    /// and calculates the consensus error that should be tracked by the
+    /// PI controller in `TimeSyncManager`.
     ///
     /// # Arguments
     ///
@@ -125,7 +126,7 @@ impl SyncAlgorithm {
     ///
     /// # Returns
     ///
-    /// * `Ok(correction)` - Time correction to apply in microseconds
+    /// * `Ok(error)` - Consensus error `e_i(t)` in microseconds
     /// * `Err(SyncError)` - Error if processing fails
     ///
     /// # Algorithm Steps
@@ -159,16 +160,16 @@ impl SyncAlgorithm {
             self.peers.insert(peer_id, new_peer);
         }
 
-        // Calculate correction using Local Voting Protocol (softmax-weighted average)
-        let correction = self.calculate_dynamic_correction(peer_id, local_timestamp, time_diff)?;
+        // Calculate consensus error using Local Voting Protocol (softmax consensus)
+        let error = self.calculate_dynamic_correction(peer_id, local_timestamp, time_diff)?;
 
         // Record synchronization event
-        self.record_sync_event(local_timestamp, peer_id, time_diff, correction);
+        self.record_sync_event(local_timestamp, peer_id, time_diff, error);
 
-        Ok(correction)
+        Ok(error)
     }
 
-    /// Calculate time correction using Local Voting Protocol.
+    /// Calculate consensus error using Local Voting Protocol.
     ///
     /// Uses softmax over (local time, peers' times) to get weights, then
     /// consensus time = weighted average of times, correction = consensus - local.
@@ -176,12 +177,12 @@ impl SyncAlgorithm {
     /// # Arguments
     ///
     /// * `peer_id` - ID of the peer that triggered the calculation
-    /// * `local_timestamp` - Local time when the message was processed (microseconds)
+    /// * `local_timestamp` - Local logical time when the message was processed (microseconds)
     /// * `_time_diff` - Time difference (unused)
     ///
     /// # Returns
     ///
-    /// * `Ok(correction)` - Calculated time correction in microseconds
+    /// * `Ok(error)` - Consensus error `e_i(t)` in microseconds
     /// * `Err(SyncError)` - Error if peer not found
     fn calculate_dynamic_correction(
         &mut self,
@@ -191,31 +192,29 @@ impl SyncAlgorithm {
     ) -> SyncResult<i64> {
         let _peer = self.peers.get(&peer_id).ok_or(SyncError::PeerNotFound)?;
 
-        // Local Voting Protocol: softmax over (local, peers), then correction = t_avg - local
-        let correction = self.calculate_softmax_correction(local_timestamp);
+        // Local Voting Protocol: softmax over (local, peers), then
+        // consensus error e_i(t) = SoftMax_T({local, peers}) − local_timestamp.
+        let error = self.calculate_softmax_correction(local_timestamp);
 
-        // Apply bounds checking
-        let bounded_correction = self.apply_correction_bounds(correction);
+        // Track accumulated error for debugging/analysis
+        self.current_correction += error;
 
-        // Update current correction
-        self.current_correction += bounded_correction;
+        // Update peer quality based on how large the consensus error is
+        self.update_peer_quality(peer_id, error);
 
-        // Update peer quality based on correction success
-        self.update_peer_quality(peer_id, bounded_correction);
-
-        Ok(bounded_correction)
+        Ok(error)
     }
 
     /// Correction from softmax consensus over (local time, peers' times).
     ///
     /// This implements the SoftMax\_T operator from the attached PODC-style model,
-    /// using a numerically stable log-sum-exp formulation:
+    /// using a numerically stable log-sum-exp formulation with proper normalization:
     ///
-    /// SoftMax\_T(z\_1, …, z\_m) = T · log Σ\_k exp(z\_k / T)
+    /// SoftMax\_T(z\_1, …, z\_m) = T · log ( (1/m) · Σ\_k exp(z\_k / T) )
     ///
     /// which can be rewritten as
     ///
-    /// SoftMax\_T(z) = c + T · log Σ\_k exp((z\_k − c) / T),
+    /// SoftMax\_T(z) = c + T · log ( (1/m) · Σ\_k exp((z\_k − c) / T) ),
     ///
     /// where c = max\_k z\_k. This guarantees
     ///
@@ -259,8 +258,11 @@ impl SyncAlgorithm {
             return 0;
         }
 
-        // SoftMax_T(z) = c + T * log(sum_exp)
-        let consensus_time = c + SOFTMAX_TEMPERATURE_US * libm::log(sum_exp);
+        // SoftMax_T(z) = c + T * (log(sum_exp) − log(m))
+        // Normalization by m ensures SoftMax_T(z) = z when all z_k are equal.
+        let m = times.len() as f64;
+        let consensus_time =
+            c + SOFTMAX_TEMPERATURE_US * (libm::log(sum_exp) - libm::log(m));
 
         // Correction needed to move local logical time toward SoftMax_T
         (consensus_time - local_timestamp as f64) as i64

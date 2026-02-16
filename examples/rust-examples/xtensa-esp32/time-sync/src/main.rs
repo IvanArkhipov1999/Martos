@@ -67,7 +67,7 @@ static mut SYNC_MANAGER: Option<TimeSyncManager<'static>> = None;
 /// LED output pin instance
 static mut LED: Option<Output<'static>> = None;
 /// Node ID for debugging and identification
-static mut NODE_ID: u32 = 2;
+static mut NODE_ID: u32 = 1;
 
 /// Setup function for time synchronization task.
 ///
