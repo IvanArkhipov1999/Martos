@@ -154,6 +154,11 @@ fn loop_fn() {
 
                         // Process message for synchronization
                         sync_manager.handle_sync_message(received_sync_message);
+                        let beta = sync_manager.get_pi_rate_correction();
+                        println!(
+                            "ESP32: Node {} - β (rate correction, Eq. 30): {}",
+                            NODE_ID, beta
+                        );
                     }
                 }
             }

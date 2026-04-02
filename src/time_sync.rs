@@ -553,6 +553,13 @@ impl<'a> TimeSyncManager<'a> {
         self.sync_quality.load(Ordering::Acquire) as f32 / 1000.0
     }
 
+    /// Get PI rate correction β_i(t) from Eq. (30).
+    ///
+    /// Dimensionless skew correction; in [-β_max, β_max] (typically ±0.9).
+    pub fn get_pi_rate_correction(&self) -> f64 {
+        self.pi_rate_correction
+    }
+
     /// Process one synchronization cycle.
     ///
     /// This method should be called periodically from the main application loop
