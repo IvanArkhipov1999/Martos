@@ -134,6 +134,24 @@ pub struct SyncConfig {
     pub max_peers: usize,
     /// Enable adaptive synchronization frequency
     pub adaptive_frequency: bool,
+
+    // --- Delay-resilient tracking (SOSP'26) parameters ---
+    /// SoftMax temperature (microseconds) used by the tracking operator.
+    pub softmax_temperature_us: f64,
+    /// Input-correction (IC) sliding window size W (number of recent errors).
+    pub ic_window: usize,
+    /// IC gating gain κ in Eq. (10).
+    pub ic_kappa: f64,
+    /// IC gating epsilon (small positive) in Eq. (10) denominator.
+    pub ic_epsilon: f64,
+    /// IC gating calibration constant c in Eq. (10).
+    pub ic_c: f64,
+    /// Beta-consensus coupling strength λ_BC in Eq. (13)/(18).
+    pub lambda_bc: f64,
+    /// Dead-zone leak strength λ_L in Eq. (14)/(18).
+    pub lambda_l: f64,
+    /// Dead-zone half-width d in Eq. (14)/(18).
+    pub beta_deadzone_d: f64,
 }
 
 impl Default for SyncConfig {
@@ -149,6 +167,16 @@ impl Default for SyncConfig {
             deceleration_factor: 0.05,
             max_peers: 10,
             adaptive_frequency: true,
+
+            // SOSP'26-ish defaults (safe / mostly-off unless enabled)
+            softmax_temperature_us: 1e6, // 1s in microseconds
+            ic_window: 25,
+            ic_kappa: 1.0,
+            ic_epsilon: 1e-9,
+            ic_c: 1.0,
+            lambda_bc: 0.0, // start disabled; enable for experiments
+            lambda_l: 0.0,  // start disabled; enable for experiments
+            beta_deadzone_d: 0.3,
         }
     }
 }
@@ -180,6 +208,10 @@ pub struct SyncPeer {
     pub mac_address: [u8; 6],
     /// Last received timestamp from this peer (microseconds)
     pub last_timestamp: u64,
+    /// Last accepted per-sender sequence number from this peer
+    pub last_sequence: u32,
+    /// Last accepted rate-correction state β from this peer (dimensionless)
+    pub last_beta: f64,
     /// Time difference with this peer (microseconds, positive = peer ahead)
     pub time_diff_us: i64,
     /// Quality score for this peer (0.0 to 1.0, higher = more reliable)
@@ -204,6 +236,8 @@ impl SyncPeer {
         Self {
             mac_address,
             last_timestamp: 0,
+            last_sequence: 0,
+            last_beta: 0.0,
             time_diff_us: 0,
             quality_score: 1.0,
             sync_count: 0,
@@ -243,12 +277,15 @@ pub enum SyncMessageType {
 pub struct SyncMessage {
     /// Type of synchronization message
     pub msg_type: SyncMessageType,
-    /// Timestamp when message was sent (microseconds); when sending, this is encoded as softmax in `to_bytes()`
+    /// Published logical time \tilde{x} when message was sent (microseconds)
     pub timestamp_us: u64,
-    /// Message sequence number for ordering
+    /// Per-sender sequence number for freshness under reordering/duplication
     pub sequence: u32,
     /// Node ID for debugging and identification
     pub node_id: u32,
+    /// Sender's rate-correction state β (dimensionless) encoded as fixed-point
+    /// beta_scaled = round(beta * BETA_SCALE)
+    pub beta_scaled: i32,
     /// Additional data payload (currently unused)
     pub payload: Vec<u8>,
 }
@@ -264,14 +301,23 @@ impl SyncMessage {
     /// # Returns
     ///
     /// A new `SyncMessage` with `SyncRequest` type and empty payload.
-    pub fn new_sync_request(timestamp_us: u64, node_id: u32) -> Self {
+    pub fn new_sync_request(timestamp_us: u64, node_id: u32, sequence: u32, beta: f64) -> Self {
+        const BETA_SCALE: f64 = 1_000_000.0;
+        let beta_scaled = (beta * BETA_SCALE) as i32;
         Self {
             msg_type: SyncMessageType::SyncRequest,
             timestamp_us,
-            sequence: 0,
+            sequence,
             node_id,
+            beta_scaled,
             payload: Vec::new(),
         }
+    }
+
+    /// Decode beta from fixed-point representation.
+    pub fn beta(&self) -> f64 {
+        const BETA_SCALE: f64 = 1_000_000.0;
+        self.beta_scaled as f64 / BETA_SCALE
     }
 
     /// Serialize message to bytes for ESP-NOW transmission.
@@ -291,21 +337,30 @@ impl SyncMessage {
 ///
 /// A `Vec<u8>` containing the serialized message data.
     pub fn to_bytes(&self) -> Vec<u8> {
-        let mut data = Vec::with_capacity(24);
+        // Format:
+        // 1  byte  msg_type
+        // 8  bytes timestamp_us (u64 LE)
+        // 4  bytes sequence (u32 LE)
+        // 4  bytes node_id (u32 LE)
+        // 4  bytes beta_scaled (i32 LE)
+        // 2  bytes payload_len (u16 LE)
+        // N  bytes payload
+        let mut data = Vec::with_capacity(1 + 8 + 4 + 4 + 4 + 2 + self.payload.len());
 
         // Message type (1 byte)
         data.push(self.msg_type as u8);
 
-        // Softmax of timestamp: exp(timestamp_us / T) as f64 (8 bytes)
-        const SOFTMAX_TEMPERATURE_US: f64 = 1e14;
-        let softmax_val = libm::exp(self.timestamp_us as f64 / SOFTMAX_TEMPERATURE_US);
-        data.extend_from_slice(&softmax_val.to_le_bytes());
+        // Timestamp (8 bytes)
+        data.extend_from_slice(&self.timestamp_us.to_le_bytes());
 
         // Sequence number (4 bytes)
         data.extend_from_slice(&self.sequence.to_le_bytes());
 
         // Node ID (4 bytes)
         data.extend_from_slice(&self.node_id.to_le_bytes());
+
+        // Beta (4 bytes)
+        data.extend_from_slice(&self.beta_scaled.to_le_bytes());
 
         // Payload length (2 bytes)
         data.extend_from_slice(&(self.payload.len() as u16).to_le_bytes());
@@ -330,8 +385,9 @@ impl SyncMessage {
     /// * `Some(message)` - Successfully parsed `SyncMessage`
     /// * `None` - Invalid or incomplete data
     pub fn from_bytes(data: &[u8]) -> Option<Self> {
-        if data.len() < 19 {
-            // Minimum message size: 1 (type) + 8 (timestamp) + 4 (sequence) + 4 (node_id) + 2 (payload_len) = 19
+        if data.len() < 23 {
+            // Minimum message size:
+            // 1 (type) + 8 (timestamp) + 4 (sequence) + 4 (node_id) + 4 (beta) + 2 (payload_len) = 23
             return None;
         }
 
@@ -345,9 +401,8 @@ impl SyncMessage {
         };
         offset += 1;
 
-        // Softmax of timestamp (f64): recover timestamp_us = T * ln(value)
-        const SOFTMAX_TEMPERATURE_US: f64 = 1e14;
-        let softmax_val = f64::from_le_bytes([
+        // Timestamp (u64)
+        let timestamp_us = u64::from_le_bytes([
             data[offset],
             data[offset + 1],
             data[offset + 2],
@@ -357,11 +412,6 @@ impl SyncMessage {
             data[offset + 6],
             data[offset + 7],
         ]);
-        let timestamp_us = if softmax_val > 1e-300_f64 && softmax_val.is_finite() {
-            (SOFTMAX_TEMPERATURE_US * libm::log(softmax_val)) as u64
-        } else {
-            0
-        };
         offset += 8;
 
         // Sequence number
@@ -375,6 +425,15 @@ impl SyncMessage {
 
         // Node ID
         let node_id = u32::from_le_bytes([
+            data[offset],
+            data[offset + 1],
+            data[offset + 2],
+            data[offset + 3],
+        ]);
+        offset += 4;
+
+        // Beta
+        let beta_scaled = i32::from_le_bytes([
             data[offset],
             data[offset + 1],
             data[offset + 2],
@@ -399,6 +458,7 @@ impl SyncMessage {
             timestamp_us,
             sequence,
             node_id,
+            beta_scaled,
             payload,
         })
     }
@@ -445,10 +505,16 @@ pub struct TimeSyncManager<'a> {
     pi_phase_correction_us: f64,
     /// PI controller rate correction β_i(t) (dimensionless, Eq. (30))
     pi_rate_correction: f64,
+    /// Input-correction (IC) recent error window e_i(t) (microseconds)
+    ic_error_window: Vec<i64>,
+    /// Last error e_i(t-1) (microseconds) for Δe statistics
+    ic_last_error: Option<i64>,
     /// Logical clock value \tilde{x}_i(t) in microseconds (incremental model)
     logical_time_us: u64,
     /// Last hardware clock sample x_i(t) used for logical-clock increments
     last_hw_for_clock_us: u64,
+    /// Outgoing per-sender sequence number (incremented on each publish)
+    outgoing_sequence: u32,
     /// Last hardware clock sample x_i(t) used for PI update (microseconds)
     /// Used to approximate x_i(t+1) − x_i(t) in Eq. (30).
     last_hw_time_us: u64,
@@ -491,14 +557,77 @@ impl<'a> TimeSyncManager<'a> {
             sync_quality: AtomicU32::new(1000), // Start with perfect quality
             pi_phase_correction_us: 0.0,
             pi_rate_correction: 0.0,
+            ic_error_window: Vec::new(),
+            ic_last_error: None,
             logical_time_us: 0,
             last_hw_for_clock_us: 0,
+            outgoing_sequence: 0,
             last_hw_time_us: 0,
             #[cfg(feature = "network")]
             esp_now_protocol: None,
             #[cfg(feature = "network")]
             sync_algorithm,
         }
+    }
+
+    fn ic_push_error(&mut self, e_us: i64) {
+        if self.config.ic_window == 0 {
+            return;
+        }
+        self.ic_error_window.push(e_us);
+        if self.ic_error_window.len() > self.config.ic_window {
+            // Remove oldest (small window sizes; O(W) is fine)
+            self.ic_error_window.remove(0);
+        }
+    }
+
+    /// Compute IC bias estimate \hat{b}_i and gating Ω_i (Eqs. (9)–(11)).
+    fn ic_bias_and_gate(&self) -> (f64, f64) {
+        let w = self.ic_error_window.len();
+        if w < 4 {
+            return (0.0, 0.0);
+        }
+
+        // Bias estimate: half-sample range estimator (Eq. (9))
+        let mut sorted = self.ic_error_window.clone();
+        sorted.sort_unstable();
+        let half = w / 2;
+        let lower = &sorted[..half];
+        let upper = &sorted[half..];
+        let mean_lower = lower.iter().map(|&x| x as f64).sum::<f64>() / lower.len() as f64;
+        let mean_upper = upper.iter().map(|&x| x as f64).sum::<f64>() / upper.len() as f64;
+        let b_hat = (mean_upper - mean_lower) / 2.0;
+
+        // Gating (Eq. (10)): mean(e)^2 / (var(Δe) + ε) then sigmoid
+        let mean_e =
+            self.ic_error_window.iter().map(|&x| x as f64).sum::<f64>() / w as f64;
+
+        // Δe(t) = e(t) - e(t-1) (Eq. (11))
+        let mut deltas = Vec::with_capacity(w.saturating_sub(1));
+        for k in 1..w {
+            deltas.push(self.ic_error_window[k] as f64 - self.ic_error_window[k - 1] as f64);
+        }
+        let mean_d = deltas.iter().sum::<f64>() / deltas.len() as f64;
+        let var_d = deltas
+            .iter()
+            .map(|d| {
+                let v = d - mean_d;
+                v * v
+            })
+            .sum::<f64>()
+            / deltas.len() as f64;
+
+        let score = (mean_e * mean_e) / (var_d + self.config.ic_epsilon) - self.config.ic_c;
+        let omega = 1.0 / (1.0 + libm::exp(-self.config.ic_kappa * score));
+
+        (b_hat, omega)
+    }
+
+    /// Allocate the next outgoing per-sender sequence number.
+    pub fn next_outgoing_sequence(&mut self) -> u32 {
+        let seq = self.outgoing_sequence;
+        self.outgoing_sequence = self.outgoing_sequence.wrapping_add(1);
+        seq
     }
 
     /// Enable time synchronization.
@@ -620,9 +749,16 @@ impl<'a> TimeSyncManager<'a> {
         let corrected_time_us = self.get_corrected_time_us();
         let time_diff_us = message.timestamp_us as i64 - corrected_time_us as i64;
 
-        // Use single anonymous peer (broadcast-only mode)
-        let anon_peer_id: u32 = 0;
-        if let Some(peer) = self.peers.get_mut(&anon_peer_id) {
+        // Track per-sender freshness by node_id + sequence (ignore stale/duplicate)
+        let peer_id: u32 = message.node_id;
+        let msg_beta = message.beta();
+        if let Some(peer) = self.peers.get_mut(&peer_id) {
+            if message.sequence <= peer.last_sequence {
+                return;
+            }
+            peer.last_sequence = message.sequence;
+            peer.last_beta = msg_beta;
+            peer.last_timestamp = message.timestamp_us;
             peer.time_diff_us = time_diff_us;
             peer.sync_count += 1;
 
@@ -633,30 +769,73 @@ impl<'a> TimeSyncManager<'a> {
                 peer.quality_score = (peer.quality_score * 0.95 + 0.5 * 0.05).max(0.1);
             }
         } else {
-            // Create anonymous peer if not exists
+            // Create peer slot
             let mut new_peer = SyncPeer::new([0; 6]);
+            new_peer.last_sequence = message.sequence;
+            new_peer.last_beta = msg_beta;
+            new_peer.last_timestamp = message.timestamp_us;
             new_peer.time_diff_us = time_diff_us;
             new_peer.sync_count = 1;
             new_peer.quality_score = 0.5;
-            self.peers.insert(anon_peer_id, new_peer);
+            self.peers.insert(peer_id, new_peer);
         }
 
-        // Use sync algorithm to calculate consensus error e_i(t)
-        if let Some(ref mut algorithm) = self.sync_algorithm {
-            if let Ok(consensus_error) = algorithm.process_sync_message(
-                anon_peer_id,
-                message.timestamp_us,
-                corrected_time_us,
-            ) {
-                // Apply PI control law (Eqs. (29)–(31)) to update
-                // phase γ_i(t) and rate β_i(t) corrections.
-                self.apply_pi_control(consensus_error);
-            } else {
-                // esp_println::println!("Sync algorithm failed to process message");
-            }
-        } else {
-            // esp_println::println!("Sync algorithm is None!");
+        // --- Delay-resilient tracking dynamics (IC + SoftMax error) ---
+        // IC uses a node-local bias estimate and gate to correct all incoming readings.
+        let (b_hat, omega) = self.ic_bias_and_gate();
+
+        // Build corrected neighbor readings \hat{y}_{ij}(t) (Eq. (12))
+        let mut corrected_neighbor_times: Vec<u64> = Vec::with_capacity(self.peers.len());
+        for p in self.peers.values() {
+            // \hat{y} = \tilde{y} + Ω * \hat{b}
+            let corr = (omega * b_hat) as i64;
+            let t = (p.last_timestamp as i64 + corr).max(0) as u64;
+            corrected_neighbor_times.push(t);
         }
+
+        // Compute tracking error e_i(t) = SoftMax(\tilde{x}_i, \hat{y}) - \tilde{x}_i (Eq. (6)/(16))
+        let consensus_error = self.softmax_error(corrected_time_us, &corrected_neighbor_times);
+
+        // Push error history for IC stats
+        self.ic_push_error(consensus_error);
+
+        // Apply tracking/control update: γ, β with BC + leak (Eqs. (17)–(18))
+        self.apply_pi_control(consensus_error);
+    }
+
+    /// SoftMax tracking error using log-sum-exp (max-like; monotone).
+    fn softmax_error(&self, local_time_us: u64, neighbor_times_us: &[u64]) -> i64 {
+        let t = self.config.softmax_temperature_us;
+        if t <= 0.0 {
+            return 0;
+        }
+
+        let mut c = local_time_us;
+        for &nt in neighbor_times_us {
+            if nt > c {
+                c = nt;
+            }
+        }
+
+        let c_f = c as f64;
+        let mut sum_exp = 0.0_f64;
+
+        // include local
+        sum_exp += libm::exp(((local_time_us as f64) - c_f) / t);
+        for &nt in neighbor_times_us {
+            sum_exp += libm::exp(((nt as f64) - c_f) / t);
+        }
+        if sum_exp <= 0.0 || !sum_exp.is_finite() {
+            return 0;
+        }
+
+        // Normalized log-sum-exp (as used in our PODC/SOSP drafts):
+        //   SoftMax_T(z) = c + T * (log(sum_exp) - log(m))
+        // This keeps SoftMax in [max(z) - T log(m), max(z)] and avoids
+        // permanently positive error for the leading node.
+        let m = (neighbor_times_us.len() + 1) as f64;
+        let target = c_f + t * (libm::log(sum_exp) - libm::log(m));
+        (target - local_time_us as f64) as i64
     }
 
     /// Handle synchronization request from a peer (mock implementation).
@@ -701,6 +880,16 @@ impl<'a> TimeSyncManager<'a> {
             // Eq. (29): phase correction γ_i(t + 1) = k_p · e_i(t)
             self.pi_phase_correction_us = kp * consensus_error_us as f64;
 
+            // Apply phase correction once per control iteration (Eq. (2)):
+            //   \tilde{x}_i(t+1) = \tilde{x}_i(t) + ... + γ_i(t+1),
+            // with monotone commitment.
+            let old = self.logical_time_us;
+            let gamma_i64 = self.pi_phase_correction_us as i64;
+            let candidate = (old as i64).saturating_add(gamma_i64).max(0) as u64;
+            if candidate > old {
+                self.logical_time_us = candidate;
+            }
+
             // Read current hardware clock x_i(t + 1)
             let hw_time_us = time::now().duration_since_epoch().to_micros() as u64;
 
@@ -708,7 +897,7 @@ impl<'a> TimeSyncManager<'a> {
             if self.last_hw_time_us != 0 && hw_time_us > self.last_hw_time_us {
                 let delta_hw = (hw_time_us - self.last_hw_time_us) as f64;
                 if delta_hw > 0.0 && ki > 0.0 && fabs(consensus_error_us as f64) > 0.0 {
-                    // Eq. (30): rate correction update
+                    // Base integral update (Eq. (8))
                     let delta_beta = ki * (consensus_error_us as f64) / delta_hw;
                     self.pi_rate_correction += delta_beta;
                 }
@@ -716,7 +905,25 @@ impl<'a> TimeSyncManager<'a> {
 
             self.last_hw_time_us = hw_time_us;
 
-            // Eq. (31): saturation β_i(t) ∈ [−β_max, β_max]
+            // BC: beta consensus coupling (Eq. (13)/(18))
+            if self.config.lambda_bc > 0.0 && !self.peers.is_empty() {
+                let mut lap = 0.0_f64;
+                for p in self.peers.values() {
+                    lap += self.pi_rate_correction - p.last_beta;
+                }
+                self.pi_rate_correction -= self.config.lambda_bc * lap;
+            }
+
+            // Dead-zone leaky integrator (Eq. (14)/(18))
+            if self.config.lambda_l > 0.0 {
+                let absb = fabs(self.pi_rate_correction);
+                let excess = (absb - self.config.beta_deadzone_d).max(0.0);
+                if excess > 0.0 {
+                    self.pi_rate_correction -= self.config.lambda_l * excess * self.pi_rate_correction;
+                }
+            }
+
+            // Keep a hard bound as a final safety net (still matches typical β_max usage)
             const BETA_MAX: f64 = 0.9;
             if self.pi_rate_correction > BETA_MAX {
                 self.pi_rate_correction = BETA_MAX;
@@ -764,9 +971,9 @@ impl<'a> TimeSyncManager<'a> {
                 // Incremental logical advance:
                 //   Δ\tilde{x}_i(t) = (1 + β_i(t)) · Δx_i(t) + γ_i(t)
                 let beta = self.pi_rate_correction;
-                let gamma = self.pi_phase_correction_us;
-
-                let delta_logical_f = (1.0 + beta) * delta_hw as f64 + gamma;
+                // IMPORTANT: γ is applied once per control iteration in apply_pi_control()
+                // (Eq. (2)), not on every read/update here.
+                let delta_logical_f = (1.0 + beta) * delta_hw as f64;
                 let delta_logical = if delta_logical_f <= 0.0 {
                     0_u64
                 } else {

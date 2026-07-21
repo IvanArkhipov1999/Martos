@@ -36,7 +36,7 @@
 //! let mut protocol = EspNowTimeSyncProtocol::new(esp_now_instance);
 //!
 //! // Send synchronization message (broadcast)
-//! let message = SyncMessage::new_sync_request(timestamp, node_id);
+//! let message = SyncMessage::new_sync_request(timestamp, node_id, seq, beta);
 //! protocol.send_sync_request(&BROADCAST_ADDRESS, timestamp, node_id)?;
 //!
 //! // Receive messages
@@ -158,7 +158,7 @@ impl<'a> EspNowTimeSyncProtocol<'a> {
     /// * `Ok(())` - Message sent successfully
     /// * `Err(SyncError)` - Communication error occurred
     pub fn send_sync_request(&mut self, target_mac: &[u8; 6], timestamp_us: u64, node_id: u32) -> SyncResult<()> {
-        let message = SyncMessage::new_sync_request(timestamp_us, node_id);
+        let message = SyncMessage::new_sync_request(timestamp_us, node_id, 0, 0.0);
         // Note: Debug info would be added here in real implementation
         self.send_message(&message, target_mac)
     }
@@ -228,12 +228,13 @@ mod tests {
 
     #[test]
     fn test_sync_message_serialization() {
-        let message = SyncMessage::new_sync_request(789012345, 42);
+        let message = SyncMessage::new_sync_request(789012345, 42, 7, 0.123);
         let data = message.to_bytes();
         let deserialized = SyncMessage::from_bytes(&data).unwrap();
 
         assert_eq!(message.msg_type as u8, deserialized.msg_type as u8);
         assert_eq!(message.timestamp_us, deserialized.timestamp_us);
+        assert_eq!(message.sequence, deserialized.sequence);
     }
 
     #[test]

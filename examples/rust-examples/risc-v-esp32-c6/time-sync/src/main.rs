@@ -88,10 +88,14 @@ fn setup_fn() {
         let config = SyncConfig {
             sync_interval_ms: 10,
             max_correction_threshold_us: 100000, // 100ms instead of 1ms
-            acceleration_factor: 0.8,            // Much higher acceleration
-            deceleration_factor: 0.6,            // Much higher deceleration
+            acceleration_factor: 0.1,
+            deceleration_factor: 0.01,
             max_peers: 10,
             adaptive_frequency: true,
+            lambda_bc: 0.01,
+            lambda_l: 0.05,
+            beta_deadzone_d: 0.3,
+            ..SyncConfig::default()
         };
         let mut sync_manager = TimeSyncManager::new(config);
         sync_manager.init_esp_now_protocol(esp_now);
@@ -159,9 +163,10 @@ fn loop_fn() {
 
                 // Create SyncMessage with corrected time
                 let corrected_time_us = sync_manager.get_corrected_time_us();
-                let sync_message = SyncMessage::new_sync_request(
-                    corrected_time_us,
-                );
+                let beta = sync_manager.get_pi_rate_correction();
+                let seq = sync_manager.next_outgoing_sequence();
+                let sync_message =
+                    SyncMessage::new_sync_request(corrected_time_us, NODE_ID, seq, beta);
                 let message_data = sync_message.to_bytes();
 
                 if let Some(ref mut esp_now_protocol) = sync_manager.esp_now_protocol {

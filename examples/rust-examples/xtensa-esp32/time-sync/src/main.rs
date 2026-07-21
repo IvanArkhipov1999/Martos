@@ -83,14 +83,21 @@ fn setup_fn() {
 
         // Initialize time sync manager
         let esp_now = ESP_NOW.take().unwrap();
-        const CORRECTION_FACTOR: f32 = 0.7;
+        // Controller gains (start conservative; tune experimentally)
+        const KP: f32 = 0.1;
+        const KI: f32 = 0.01;
         let config = SyncConfig {
             sync_interval_ms: 10,
             max_correction_threshold_us: 100000, // 100ms
-            acceleration_factor: CORRECTION_FACTOR,
-            deceleration_factor: CORRECTION_FACTOR,
+            acceleration_factor: KP,
+            deceleration_factor: KI,
             max_peers: 10,
             adaptive_frequency: true,
+            // Enable SOSP'26 anti-drift mechanisms
+            lambda_bc: 0.01,
+            lambda_l: 0.05,
+            beta_deadzone_d: 0.3,
+            ..SyncConfig::default()
         };
         let mut sync_manager = TimeSyncManager::new(config);
         sync_manager.init_esp_now_protocol(esp_now);
@@ -152,12 +159,20 @@ fn loop_fn() {
                             LED = Some(led);
                         }
 
+                        // Grab sender fields before moving the message.
+                        let sender_id = received_sync_message.node_id;
+                        let beta_rx = received_sync_message.beta();
+
                         // Process message for synchronization
                         sync_manager.handle_sync_message(received_sync_message);
                         let beta = sync_manager.get_pi_rate_correction();
                         println!(
                             "ESP32: Node {} - β (rate correction, Eq. 30): {}",
                             NODE_ID, beta
+                        );
+                        println!(
+                            "ESP32: Node {} - β_rx (from sender {}): {}",
+                            NODE_ID, sender_id, beta_rx
                         );
                     }
                 }
@@ -170,7 +185,10 @@ fn loop_fn() {
 
                 // Create SyncMessage with corrected time
                 let corrected_time_us = sync_manager.get_corrected_time_us();
-                let sync_message = SyncMessage::new_sync_request(corrected_time_us, NODE_ID);
+                let beta = sync_manager.get_pi_rate_correction();
+                let seq = sync_manager.next_outgoing_sequence();
+                let sync_message =
+                    SyncMessage::new_sync_request(corrected_time_us, NODE_ID, seq, beta);
                 let message_data = sync_message.to_bytes();
 
                 if let Some(ref mut esp_now_protocol) = sync_manager.esp_now_protocol {

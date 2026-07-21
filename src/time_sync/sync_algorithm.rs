@@ -111,12 +111,13 @@ impl SyncAlgorithm {
         }
     }
 
-    /// Process a synchronization message and calculate consensus error.
+    /// Process a synchronization message and update peer data.
     ///
     /// This is the main entry point for the Local Voting Protocol algorithm.
     /// It processes incoming synchronization data, updates peer information,
-    /// and calculates the consensus error that should be tracked by the
-    /// PI controller in `TimeSyncManager`.
+    /// and updates peer information. For SOSP'26 delay-resilient tracking,
+    /// the error is computed in `TimeSyncManager` where IC/BC/leak terms
+    /// are available and neighbor β samples are stored.
     ///
     /// # Arguments
     ///
@@ -126,7 +127,7 @@ impl SyncAlgorithm {
     ///
     /// # Returns
     ///
-    /// * `Ok(error)` - Consensus error `e_i(t)` in microseconds
+    /// * `Ok(())` - Success
     /// * `Err(SyncError)` - Error if processing fails
     ///
     /// # Algorithm Steps
@@ -142,7 +143,7 @@ impl SyncAlgorithm {
         peer_id: u32,
         remote_timestamp: u64,
         local_timestamp: u64,
-    ) -> SyncResult<i64> {
+    ) -> SyncResult<()> {
         // Calculate time difference
         let time_diff = remote_timestamp as i64 - local_timestamp as i64;
 
@@ -160,13 +161,10 @@ impl SyncAlgorithm {
             self.peers.insert(peer_id, new_peer);
         }
 
-        // Calculate consensus error using Local Voting Protocol (softmax consensus)
-        let error = self.calculate_dynamic_correction(peer_id, local_timestamp, time_diff)?;
+        // For compatibility we keep recording an event; correction_applied stores time_diff here.
+        self.record_sync_event(local_timestamp, peer_id, time_diff, 0);
 
-        // Record synchronization event
-        self.record_sync_event(local_timestamp, peer_id, time_diff, error);
-
-        Ok(error)
+        Ok(())
     }
 
     /// Calculate consensus error using Local Voting Protocol.
@@ -473,10 +471,10 @@ mod tests {
         let config = SyncConfig::default();
         let mut algorithm = SyncAlgorithm::new(config);
 
-        let correction = algorithm.process_sync_message(123, 1000, 1100).unwrap();
+        let res = algorithm.process_sync_message(123, 1000, 1100).unwrap();
 
         // Should calculate correction based on time difference
-        assert!(correction != 0);
+        let _ = res;
         assert!(algorithm.peers.contains_key(&123));
     }
 
