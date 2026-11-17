@@ -150,6 +150,9 @@ jobs:
     env:
       CARGO_HOME: /root/.cargo
       RUSTUP_HOME: /root/.rustup
+      # Keep intermediate artifacts (build script out dirs with linker scripts)
+      # in a known location even if the image config relocates them.
+      CARGO_BUILD_BUILD_DIR: ${{ github.workspace }}/cargo-build-dir
     container:
       image: arkhipovivan1/xtensa-esp32-rust:latest
       options: --user root
@@ -157,6 +160,24 @@ jobs:
       - uses: actions/checkout@v3
       - name: Build
         run: cd ./c-library/xtensa-esp32 && . /root/export-esp.sh && cargo build --release
+      - name: Collect linker scripts
+        run: |
+          cd c-library/xtensa-esp32
+          REL=target/xtensa-esp32-none-elf/release
+          OUTS=$( { find target -type d -path "*/build/*/out"; if [ -n "${CARGO_BUILD_BUILD_DIR:-}" ]; then find "$CARGO_BUILD_BUILD_DIR" -type d -path "*/build/*/out"; fi; } 2>/dev/null | grep -E '/(esp-hal|esp32|esp32c6|xtensa-lx-rt|esp-riscv-rt|esp-rom-sys)-[^/]*/out$' | sort -u || true)
+          if [ -z "$OUTS" ]; then
+            echo "ERROR: esp-hal linker script out dirs not found after build"
+            find target -maxdepth 5 -type d | head -50
+            exit 1
+          fi
+          for d in $OUTS; do
+            case "$d" in "$REL"/build/*) continue ;; esac
+            mkdir -p "$REL/build/$(basename "$(dirname "$d")")"
+            cp -r "$d" "$REL/build/$(basename "$(dirname "$d")")/out"
+          done
+          A=$(find target "${CARGO_BUILD_BUILD_DIR:-target}" -name libxtensa_esp32_static_lib.a 2>/dev/null | head -1)
+          case "$A" in "$REL"/*) ;; *) cp -f "$A" "$REL/" ;; esac
+          ls "$REL/build"
       - name: Fmt
         run: cd ./c-library/xtensa-esp32 && cargo fmt --all -- --check
       - name: Package static library with linker scripts
@@ -290,6 +311,9 @@ jobs:
     env:
       CARGO_HOME: /root/.cargo
       RUSTUP_HOME: /root/.rustup
+      # Keep intermediate artifacts (build script out dirs with linker scripts)
+      # in a known location even if the image config relocates them.
+      CARGO_BUILD_BUILD_DIR: ${{ github.workspace }}/cargo-build-dir
     container:
       image: arkhipovivan1/xtensa-esp32-rust:latest
       options: --user root
@@ -297,6 +321,24 @@ jobs:
       - uses: actions/checkout@v3
       - name: Build
         run: cd ./c-library/risc-v-esp32-c6 && . /root/export-esp.sh && cargo build --release
+      - name: Collect linker scripts
+        run: |
+          cd c-library/risc-v-esp32-c6
+          REL=target/riscv32imac-unknown-none-elf/release
+          OUTS=$( { find target -type d -path "*/build/*/out"; if [ -n "${CARGO_BUILD_BUILD_DIR:-}" ]; then find "$CARGO_BUILD_BUILD_DIR" -type d -path "*/build/*/out"; fi; } 2>/dev/null | grep -E '/(esp-hal|esp32|esp32c6|xtensa-lx-rt|esp-riscv-rt|esp-rom-sys)-[^/]*/out$' | sort -u || true)
+          if [ -z "$OUTS" ]; then
+            echo "ERROR: esp-hal linker script out dirs not found after build"
+            find target -maxdepth 5 -type d | head -50
+            exit 1
+          fi
+          for d in $OUTS; do
+            case "$d" in "$REL"/build/*) continue ;; esac
+            mkdir -p "$REL/build/$(basename "$(dirname "$d")")"
+            cp -r "$d" "$REL/build/$(basename "$(dirname "$d")")/out"
+          done
+          A=$(find target "${CARGO_BUILD_BUILD_DIR:-target}" -name librisc_v_esp32c6_static_lib.a 2>/dev/null | head -1)
+          case "$A" in "$REL"/*) ;; *) cp -f "$A" "$REL/" ;; esac
+          ls "$REL/build"
       - name: Fmt
         run: cd ./c-library/risc-v-esp32-c6 && cargo fmt --all -- --check
       - name: Package static library with linker scripts
