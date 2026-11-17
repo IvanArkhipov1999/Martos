@@ -54,9 +54,9 @@
 #![no_main]
 
 use esp_backtrace as _;
-use esp_hal::{entry, time};
+use esp_hal::{main, time};
 use esp_println::println;
-use esp_wifi::esp_now::{EspNow, BROADCAST_ADDRESS};
+use esp_radio::esp_now::{EspNow, BROADCAST_ADDRESS};
 use martos::get_esp_now;
 use martos::{
     init_system,
@@ -69,7 +69,7 @@ static mut ESP_NOW: Option<EspNow> = None;
 /// Next scheduled time to send broadcast message (milliseconds)
 static mut NEXT_SEND_TIME: Option<u64> = None;
 /// Time synchronization manager instance
-static mut SYNC_MANAGER: Option<TimeSyncManager<'static>> = None;
+static mut SYNC_MANAGER: Option<TimeSyncManager> = None;
 
 /// Setup function for time synchronization task.
 ///
@@ -81,7 +81,7 @@ fn setup_fn() {
     println!("ESP32-C6: Setup time synchronization!");
     unsafe {
         ESP_NOW = Some(get_esp_now());
-        NEXT_SEND_TIME = Some(time::now().duration_since_epoch().to_millis() + 10);
+        NEXT_SEND_TIME = Some(time::Instant::now().duration_since_epoch().as_millis() + 10);
 
         // Initialize time sync manager
         let esp_now = ESP_NOW.take().unwrap();
@@ -132,7 +132,7 @@ fn loop_fn() {
                 // Process broadcast messages for time synchronization
                 if r.info.dst_address == BROADCAST_ADDRESS {
                     // Try to create SyncMessage from received data
-                    if let Some(received_sync_message) = SyncMessage::from_bytes(&r.data) {
+                    if let Some(received_sync_message) = SyncMessage::from_bytes(r.data()) {
                         let corrected_time_us = sync_manager.get_corrected_time_us();
                         let time_diff =
                             received_sync_message.timestamp_us as i64 - corrected_time_us as i64;
@@ -149,14 +149,12 @@ fn loop_fn() {
 
             // Send broadcast every 100ms
             let mut next_send_time = NEXT_SEND_TIME.take().expect("Next send time error in main");
-            if time::now().duration_since_epoch().to_millis() >= next_send_time {
-                next_send_time = time::now().duration_since_epoch().to_millis() + 10;
+            if time::Instant::now().duration_since_epoch().as_millis() >= next_send_time {
+                next_send_time = time::Instant::now().duration_since_epoch().as_millis() + 10;
 
                 // Create SyncMessage with corrected time
                 let corrected_time_us = sync_manager.get_corrected_time_us();
-                let sync_message = SyncMessage::new_sync_request(
-                    corrected_time_us,
-                );
+                let sync_message = SyncMessage::new_sync_request(corrected_time_us);
                 let message_data = sync_message.to_bytes();
 
                 if let Some(ref mut esp_now_protocol) = sync_manager.esp_now_protocol {
@@ -185,7 +183,7 @@ fn stop_condition_fn() -> bool {
     return false;
 }
 
-#[entry]
+#[main]
 fn main() -> ! {
     // Initialize Martos.
     init_system();

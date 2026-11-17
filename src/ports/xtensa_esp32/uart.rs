@@ -1,12 +1,12 @@
-//! UART module for ESP32 - handles UART2 and IO peripherals
+//! UART module for ESP32 - handles UART and GPIO pin peripherals
 
 use super::peripherals::init_peripherals;
-use super::peripherals::{UartPeriph, PERIFERALS_GPIO, PERIFERALS_IO_MUX, PERIFERALS_UART};
+use super::peripherals::{UartPeriph, PERIFERALS_GPIO16, PERIFERALS_GPIO17, PERIFERALS_UART};
 use core::sync::atomic::{AtomicBool, Ordering};
-use esp_hal::{gpio::*, peripherals::*};
+use esp_hal::peripherals::{GPIO16, GPIO17};
 
-// Static variables for UART peripherals
-pub static mut IO: Option<Io> = None;
+// Static storage for UART RX/TX pins
+pub static mut UART_PINS: Option<IoType> = None;
 
 // Flag to ensure UART is initialized only once
 static UART_INITIALIZED: AtomicBool = AtomicBool::new(false);
@@ -14,14 +14,14 @@ static UART_INITIALIZED: AtomicBool = AtomicBool::new(false);
 /// ESP32 UART type alias (depends on arch)
 pub type Uart2Type = UartPeriph;
 
-/// ESP32 IO type alias  
-pub type IoType = Io;
+/// ESP32 UART pin pair type alias (RX, TX)
+pub type IoType = (GPIO16<'static>, GPIO17<'static>);
 
 /// Initialize UART subsystem for ESP32
 ///
-/// This function initializes the UART2 and IO peripherals separately from
-/// the hardware timer initialization. It calls esp_hal::init to get fresh
-/// peripheral instances.
+/// This function initializes the UART pins separately from the hardware
+/// timer initialization. It calls init_peripherals to get fresh peripheral
+/// instances.
 pub fn setup_uart() {
     if UART_INITIALIZED
         .compare_exchange(false, true, Ordering::Acquire, Ordering::Relaxed)
@@ -29,17 +29,16 @@ pub fn setup_uart() {
     {
         init_peripherals();
         unsafe {
-            let gpio = PERIFERALS_GPIO.take().expect("GPIO peripherals error");
-            let io_mux = PERIFERALS_IO_MUX.take().expect("IO_MUX peripherals error");
-            let io = Io::new(gpio, io_mux);
-            IO = Some(io);
+            let gpio16 = PERIFERALS_GPIO16.take().expect("GPIO16 peripherals error");
+            let gpio17 = PERIFERALS_GPIO17.take().expect("GPIO17 peripherals error");
+            UART_PINS = Some((gpio16, gpio17));
         }
     }
 }
 
-/// Get UART2 peripheral instance
+/// Get UART peripheral instance
 ///
-/// Returns the UART2 peripheral for configuration. Can only be called once.
+/// Returns the UART peripheral for configuration. Can only be called once.
 pub fn get_uart2() -> UartPeriph {
     unsafe {
         PERIFERALS_UART
@@ -48,11 +47,15 @@ pub fn get_uart2() -> UartPeriph {
     }
 }
 
-/// Get IO peripheral instance
+/// Get UART RX/TX pin instances
 ///
-/// Returns the IO peripheral for pin configuration. Can only be called once.
-pub fn get_io() -> Io {
-    unsafe { IO.take().expect("IO not available - call setup_uart first") }
+/// Returns the (RX, TX) pin pair for UART configuration. Can only be called once.
+pub fn get_io() -> IoType {
+    unsafe {
+        UART_PINS
+            .take()
+            .expect("UART pins not available - call setup_uart first")
+    }
 }
 
 /// Check if UART is initialized

@@ -3,9 +3,9 @@
 
 use core::sync::atomic::{AtomicU32, Ordering};
 use esp_backtrace as _;
-use esp_hal::uart::config::{Config, DataBits, StopBits};
+use esp_hal::main;
+use esp_hal::uart::{Config, DataBits, Parity, StopBits, Uart};
 use esp_hal::Blocking;
-use esp_hal::{entry, uart::Uart};
 use esp_println::println;
 use martos::{
     get_io, get_uart2, init_system,
@@ -16,32 +16,29 @@ use martos::{
 static BYTE_COUNTER: AtomicU32 = AtomicU32::new(0);
 
 /// UART instance (initialized in setup)
-static mut UART_INSTANCE: Option<Uart<'static, esp_hal::peripherals::UART0, Blocking>> = None;
+static mut UART_INSTANCE: Option<Uart<'static, Blocking>> = None;
 
 /// Setup function for task to execute.
 fn setup_fn() {
     println!("UART Echo Setup started");
 
     unsafe {
-        // Get UART0 and IO from Martos (ESP32-C6 uses UART0)
+        // Get UART0 and RX/TX pins from Martos (ESP32-C6 uses UART0)
         let uart0 = get_uart2();
-        let io = get_io();
+        let (rx_pin, tx_pin) = get_io();
 
         // UART configuration: 19200 baud, 8N1
         let config = Config::default()
-            .baudrate(19200)
-            .data_bits(DataBits::DataBits8)
-            .parity_none()
-            .stop_bits(StopBits::STOP1);
+            .with_baudrate(19200)
+            .with_data_bits(DataBits::_8)
+            .with_parity(Parity::None)
+            .with_stop_bits(StopBits::_1);
 
         // Initialize UART
-        let uart = Uart::new_with_config(
-            uart0,
-            config,
-            io.pins.gpio16, // RX pin
-            io.pins.gpio17, // TX pin
-        )
-        .expect("UART init failed");
+        let uart = Uart::new(uart0, config)
+            .expect("UART init failed")
+            .with_rx(rx_pin) // RX pin
+            .with_tx(tx_pin); // TX pin
 
         UART_INSTANCE = Some(uart);
 
@@ -55,25 +52,30 @@ fn loop_fn() {
         if let Some(ref mut uart) = UART_INSTANCE {
             let mut buffer = [0u8; 1];
 
-            // Try to read a byte using read_bytes method
-            if uart.read_bytes(&mut buffer).is_ok() {
-                let byte = buffer[0];
-                let count = BYTE_COUNTER.fetch_add(1, Ordering::Relaxed) + 1;
-
-                println!(
-                    "Received byte #{}: 0x{:02X} ('{}') - echoing back",
-                    count,
-                    byte,
-                    if byte.is_ascii_graphic() || byte == b' ' {
-                        byte as char
-                    } else {
-                        '.'
+            // Try to read a byte (non-blocking)
+            if uart.read_ready() {
+                if let Ok(n) = uart.read(&mut buffer) {
+                    if n == 0 {
+                        return;
                     }
-                );
+                    let byte = buffer[0];
+                    let count = BYTE_COUNTER.fetch_add(1, Ordering::Relaxed) + 1;
 
-                // Echo the byte back using write_bytes method
-                if uart.write_bytes(&buffer).is_err() {
-                    println!("Failed to echo byte!");
+                    println!(
+                        "Received byte #{}: 0x{:02X} ('{}') - echoing back",
+                        count,
+                        byte,
+                        if byte.is_ascii_graphic() || byte == b' ' {
+                            byte as char
+                        } else {
+                            '.'
+                        }
+                    );
+
+                    // Echo the byte back
+                    if uart.write(&buffer[..n]).is_err() {
+                        println!("Failed to echo byte!");
+                    }
                 }
             }
         }
@@ -86,7 +88,7 @@ fn stop_condition_fn() -> bool {
     false
 }
 
-#[entry]
+#[main]
 fn main() -> ! {
     // Initialize Martos (including UART)
     init_system();

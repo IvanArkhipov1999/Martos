@@ -5,11 +5,11 @@ edition = "2021"
 
 [dependencies]
 martos = { path = "../../../../", features = ["network"] }
-esp-hal = { version = "0.21.1", features = ["esp32"] }
-esp-backtrace = { version = "0.14.1", features = ["esp32", "panic-handler", "exception-handler", "println"] }
-esp-println = { version = "0.11.0", features = ["esp32"] }
-esp-wifi = { version = "0.10.1", features = ["wifi", "esp-now", "esp32"] }
+esp-hal = "~1.2.0"
+esp-backtrace = { version = "0.20", features = ["esp32", "panic-handler", "println"] }
+esp-println = { version = "0.18", features = ["esp32"] }
+esp-radio = { version = "1.0.0-beta.1", features = ["wifi", "esp-now", "unstable"] }
 static_cell = "2.0.0"
 
 [features]
-default = ["esp-hal/esp32", "esp-backtrace/esp32", "esp-println/esp32", "esp-wifi/esp32"]
+default = ["martos/esp32", "esp-backtrace/esp32", "esp-println/esp32"]

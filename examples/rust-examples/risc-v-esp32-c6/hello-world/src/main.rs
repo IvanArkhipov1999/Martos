@@ -3,7 +3,7 @@
 
 use core::sync::atomic::{AtomicU32, Ordering};
 use esp_backtrace as _;
-use esp_hal::entry;
+use esp_hal::main;
 use esp_println::println;
 use martos::{
     init_system,
@@ -34,7 +34,7 @@ fn stop_condition_fn() -> bool {
     return false;
 }
 
-#[entry]
+#[main]
 fn main() -> ! {
     // Initialize Martos.
     init_system();

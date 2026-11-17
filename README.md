@@ -46,12 +46,12 @@ edition = "2021"
 [dependencies]
 # Specify the path to your local Martos clone
 martos = { path = "../Martos" } 
-esp-hal = "0.21.1"
-esp-backtrace = { version = "0.14.1", features = ["esp32", "panic-handler", "exception-handler", "println"] }
-esp-println = { version = "0.11.0", features = ["esp32"] }
+esp-hal = "~1.2.0"
+esp-backtrace = { version = "0.20", features = ["esp32", "panic-handler", "println"] }
+esp-println = { version = "0.18", features = ["esp32"] }
 
 [features]
-default = ["esp-hal/esp32", "esp-backtrace/esp32", "esp-println/esp32"]
+default = ["martos/esp32", "esp-backtrace/esp32", "esp-println/esp32"]
 ```
 
 
@@ -65,7 +65,7 @@ Martos applications are structured around tasks defined by `setup`, `loop`, and 
 
 use core::sync::atomic::{AtomicU32, Ordering};
 use esp_backtrace as _;
-use esp_hal::entry;
+use esp_hal::main;
 use esp_println::println;
 use martos::{
     init_system,
@@ -97,7 +97,7 @@ fn stop_condition_fn() -> bool {
     false
 }
 
-#[entry]
+#[main]
 fn main() -> ! {
     // Initialize the Martos system.
     init_system();

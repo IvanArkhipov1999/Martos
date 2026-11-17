@@ -14,9 +14,12 @@ Below is an illustrative example demonstrating the installation of building tool
 apt-get -qq update
 apt-get install -y -q build-essential curl
 curl https://sh.rustup.rs -sSf | sh -s -- -y
-cargo install espup
-espup install
+rustup target add riscv32imac-unknown-none-elf
+cargo install espflash
 ```
+
+Note: ESP32-C6 (RISC-V) builds use the stable Rust toolchain; the `esp` toolchain
+installed by `espup` is only required for Xtensa targets (ESP32).
 
 ## How to build the example
 
@@ -24,7 +27,6 @@ For a thorough guide on developing projects for the RISC-V ESP32-C6 architecture
 we recommend consulting [the official website](https://docs.esp-rs.org/book/installation/riscv-and-xtensa.html#3-set-up-the-environment-variables).
 Below, you will find an illustrative example showcasing the building process on a Linux system (Ubuntu/Debian):
 ```
-. $HOME/export-esp.sh
 cargo build
 ```
 
