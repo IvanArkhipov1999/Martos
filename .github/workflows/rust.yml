@@ -164,10 +164,15 @@ jobs:
         run: |
           cd c-library/xtensa-esp32
           REL=target/xtensa-esp32-none-elf/release
-          OUTS=$( { find target -type d -path "*/build/*/out"; if [ -n "${CARGO_BUILD_BUILD_DIR:-}" ]; then find "$CARGO_BUILD_BUILD_DIR" -type d -path "*/build/*/out"; fi; } 2>/dev/null | grep -E '/(esp-hal|esp32|esp32c6|xtensa-lx-rt|esp-riscv-rt|esp-rom-sys)-[^/]*/out$' | sort -u || true)
+          echo "--- cargo/rustup env:"
+          env | grep -iE 'cargo|rustup' || true
+          cargo --version
+          echo "--- release dir:"
+          ls -la "$REL" || true
+          OUTS=$(find / -xdev -type d -path "*/build/*/out" 2>/dev/null | grep -E '/(esp-hal|esp32|esp32c6|xtensa-lx-rt|esp-riscv-rt|esp-rom-sys)-[^/]*/out$' | sort -u || true)
           if [ -z "$OUTS" ]; then
             echo "ERROR: esp-hal linker script out dirs not found after build"
-            find target -maxdepth 5 -type d | head -50
+            find / -xdev -maxdepth 8 -type d -name "esp-hal-*" 2>/dev/null | head -20
             exit 1
           fi
           for d in $OUTS; do
@@ -175,7 +180,7 @@ jobs:
             mkdir -p "$REL/build/$(basename "$(dirname "$d")")"
             cp -r "$d" "$REL/build/$(basename "$(dirname "$d")")/out"
           done
-          A=$(find target "${CARGO_BUILD_BUILD_DIR:-target}" -name libxtensa_esp32_static_lib.a 2>/dev/null | head -1)
+          A=$(find / -xdev -name libxtensa_esp32_static_lib.a 2>/dev/null | head -1)
           case "$A" in "$REL"/*) ;; *) cp -f "$A" "$REL/" ;; esac
           ls "$REL/build"
       - name: Fmt
@@ -325,10 +330,15 @@ jobs:
         run: |
           cd c-library/risc-v-esp32-c6
           REL=target/riscv32imac-unknown-none-elf/release
-          OUTS=$( { find target -type d -path "*/build/*/out"; if [ -n "${CARGO_BUILD_BUILD_DIR:-}" ]; then find "$CARGO_BUILD_BUILD_DIR" -type d -path "*/build/*/out"; fi; } 2>/dev/null | grep -E '/(esp-hal|esp32|esp32c6|xtensa-lx-rt|esp-riscv-rt|esp-rom-sys)-[^/]*/out$' | sort -u || true)
+          echo "--- cargo/rustup env:"
+          env | grep -iE 'cargo|rustup' || true
+          cargo --version
+          echo "--- release dir:"
+          ls -la "$REL" || true
+          OUTS=$(find / -xdev -type d -path "*/build/*/out" 2>/dev/null | grep -E '/(esp-hal|esp32|esp32c6|xtensa-lx-rt|esp-riscv-rt|esp-rom-sys)-[^/]*/out$' | sort -u || true)
           if [ -z "$OUTS" ]; then
             echo "ERROR: esp-hal linker script out dirs not found after build"
-            find target -maxdepth 5 -type d | head -50
+            find / -xdev -maxdepth 8 -type d -name "esp-hal-*" 2>/dev/null | head -20
             exit 1
           fi
           for d in $OUTS; do
@@ -336,7 +346,7 @@ jobs:
             mkdir -p "$REL/build/$(basename "$(dirname "$d")")"
             cp -r "$d" "$REL/build/$(basename "$(dirname "$d")")/out"
           done
-          A=$(find target "${CARGO_BUILD_BUILD_DIR:-target}" -name librisc_v_esp32c6_static_lib.a 2>/dev/null | head -1)
+          A=$(find / -xdev -name librisc_v_esp32c6_static_lib.a 2>/dev/null | head -1)
           case "$A" in "$REL"/*) ;; *) cp -f "$A" "$REL/" ;; esac
           ls "$REL/build"
       - name: Fmt
