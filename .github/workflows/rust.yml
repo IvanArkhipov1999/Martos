@@ -159,16 +159,17 @@ jobs:
         run: cd ./c-library/xtensa-esp32 && . /root/export-esp.sh && cargo build --release
       - name: Fmt
         run: cd ./c-library/xtensa-esp32 && cargo fmt --all -- --check
+      - name: Package static library with linker scripts
+        run: |
+          cd c-library/xtensa-esp32/target/xtensa-esp32-none-elf/release
+          tar czf "$GITHUB_WORKSPACE/xtensa-esp32-static-library.tar.gz" \
+            libxtensa_esp32_static_lib.a \
+            build/esp-hal-*/out build/esp32-*/out build/xtensa-lx-rt-*/out build/esp-rom-sys-*/out
       - name: Archive production artifacts
         uses: actions/upload-artifact@v4
         with:
           name: xtensa-esp32-static-library
-          path: |
-            c-library/xtensa-esp32/target/xtensa-esp32-none-elf/release/libxtensa_esp32_static_lib.a
-            c-library/xtensa-esp32/target/xtensa-esp32-none-elf/release/build/esp-hal-*/out
-            c-library/xtensa-esp32/target/xtensa-esp32-none-elf/release/build/esp32-*/out
-            c-library/xtensa-esp32/target/xtensa-esp32-none-elf/release/build/xtensa-lx-rt-*/out
-            c-library/xtensa-esp32/target/xtensa-esp32-none-elf/release/build/esp-rom-sys-*/out
+          path: xtensa-esp32-static-library.tar.gz
           retention-days: 7
 
   xtensa-esp32-c-example:
@@ -186,9 +187,12 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: xtensa-esp32-static-library
-          path: c-library/xtensa-esp32/target/xtensa-esp32-none-elf/release
+      - name: Extract static library
+        run: |
+          mkdir -p c-library/xtensa-esp32/target/xtensa-esp32-none-elf/release
+          tar xzf xtensa-esp32-static-library.tar.gz -C c-library/xtensa-esp32/target/xtensa-esp32-none-elf/release
       - name: Build
-        run: cd ./examples/c-examples/xtensa-esp32 && . /root/esp/esp-idf/export.sh && make && esptool.py --chip esp32 elf2image --flash_mode="dio" --flash_freq "40m" --flash_size "4MB" -o main.bin main.elf
+        run: cd ./examples/c-examples/xtensa-esp32 && . /root/esp/esp-idf/export.sh && make && esptool.py --chip esp32 elf2image --flash_mode="dio" --flash_freq="40m" --flash_size="4MB" -o main.bin main.elf
 
 
   risc-v-esp32c6-rust-example-hello-world:
@@ -295,16 +299,17 @@ jobs:
         run: cd ./c-library/risc-v-esp32-c6 && . /root/export-esp.sh && cargo build --release
       - name: Fmt
         run: cd ./c-library/risc-v-esp32-c6 && cargo fmt --all -- --check
+      - name: Package static library with linker scripts
+        run: |
+          cd c-library/risc-v-esp32-c6/target/riscv32imac-unknown-none-elf/release
+          tar czf "$GITHUB_WORKSPACE/risc-v-esp32c6-static-library.tar.gz" \
+            librisc_v_esp32c6_static_lib.a \
+            build/esp-hal-*/out build/esp32c6-*/out build/esp-riscv-rt-*/out build/esp-rom-sys-*/out
       - name: Archive production artifacts
         uses: actions/upload-artifact@v4
         with:
           name: risc-v-esp32c6-static-library
-          path: |
-            c-library/risc-v-esp32-c6/target/riscv32imac-unknown-none-elf/release/librisc_v_esp32c6_static_lib.a
-            c-library/risc-v-esp32-c6/target/riscv32imac-unknown-none-elf/release/build/esp-hal-*/out
-            c-library/risc-v-esp32-c6/target/riscv32imac-unknown-none-elf/release/build/esp32c6-*/out
-            c-library/risc-v-esp32-c6/target/riscv32imac-unknown-none-elf/release/build/esp-riscv-rt-*/out
-            c-library/risc-v-esp32-c6/target/riscv32imac-unknown-none-elf/release/build/esp-rom-sys-*/out
+          path: risc-v-esp32c6-static-library.tar.gz
           retention-days: 7
 
   risc-v-esp32c6-c-example:
@@ -322,11 +327,13 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: risc-v-esp32c6-static-library
-          path: c-library/risc-v-esp32-c6/target/riscv32imac-unknown-none-elf/release
+      - name: Extract static library
+        run: |
+          mkdir -p c-library/risc-v-esp32-c6/target/riscv32imac-unknown-none-elf/release
+          tar xzf risc-v-esp32c6-static-library.tar.gz -C c-library/risc-v-esp32-c6/target/riscv32imac-unknown-none-elf/release
       - name: Build
         run: |
-          sed -i 's/0x4086E610/0x408663A0/' "$IDF_PATH/components/esp_system/ld/esp32c6/memory.ld.in" &&
-          cd ./examples/c-examples/risc-v-esp32c6 && . /root/esp/esp-idf/export.sh && make && esptool.py --chip esp32c6 elf2image --flash_mode="dio" --flash_freq "40m" --flash_size "4MB" -o main.bin main.elf
+          cd ./examples/c-examples/risc-v-esp32c6 && . /root/esp/esp-idf/export.sh && make && esptool.py --chip esp32c6 elf2image --flash_mode="dio" --flash_freq "40m" --flash_size="4MB" -o main.bin main.elf
 
 
   mips64-rust-example-hello-world:

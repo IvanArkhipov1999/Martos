@@ -14,6 +14,9 @@ CFLAGS += -fdata-sections -ffunction-sections
 CFLAGS += -Os -g
 
 MARTOS_RELEASE = ../../../c-library/risc-v-esp32-c6/target/riscv32imac-unknown-none-elf/release
+ifeq ($(wildcard $(MARTOS_RELEASE)/build/esp-hal-*/out),)
+$(error esp-hal linker scripts not found under $(MARTOS_RELEASE)/build - they must be extracted from the static-library artifact)
+endif
 LDFLAGS += -L$(MARTOS_RELEASE) -lrisc_v_esp32c6_static_lib
 LDFLAGS += $(addprefix -L,$(wildcard $(MARTOS_RELEASE)/build/esp-hal-*/out) $(wildcard $(MARTOS_RELEASE)/build/esp32c6-*/out) $(wildcard $(MARTOS_RELEASE)/build/esp-riscv-rt-*/out) $(wildcard $(MARTOS_RELEASE)/build/esp-rom-sys-*/out))
 LDFLAGS += -nostdlib -Tlinkall.x -Wl,-Map=$@.map -Wl,--cref -Wl,--gc-sections
