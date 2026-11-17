@@ -163,7 +163,12 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: xtensa-esp32-static-library
-          path: c-library/xtensa-esp32/target/xtensa-esp32-none-elf/release/libxtensa_esp32_static_lib.a
+          path: |
+            c-library/xtensa-esp32/target/xtensa-esp32-none-elf/release/libxtensa_esp32_static_lib.a
+            c-library/xtensa-esp32/target/xtensa-esp32-none-elf/release/build/esp-hal-*/out
+            c-library/xtensa-esp32/target/xtensa-esp32-none-elf/release/build/esp32-*/out
+            c-library/xtensa-esp32/target/xtensa-esp32-none-elf/release/build/xtensa-lx-rt-*/out
+            c-library/xtensa-esp32/target/xtensa-esp32-none-elf/release/build/esp-rom-sys-*/out
           retention-days: 7
 
   xtensa-esp32-c-example:
@@ -294,7 +299,12 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: risc-v-esp32c6-static-library
-          path: c-library/risc-v-esp32-c6/target/riscv32imac-unknown-none-elf/release/librisc_v_esp32c6_static_lib.a
+          path: |
+            c-library/risc-v-esp32-c6/target/riscv32imac-unknown-none-elf/release/librisc_v_esp32c6_static_lib.a
+            c-library/risc-v-esp32-c6/target/riscv32imac-unknown-none-elf/release/build/esp-hal-*/out
+            c-library/risc-v-esp32-c6/target/riscv32imac-unknown-none-elf/release/build/esp32c6-*/out
+            c-library/risc-v-esp32-c6/target/riscv32imac-unknown-none-elf/release/build/esp-riscv-rt-*/out
+            c-library/risc-v-esp32-c6/target/riscv32imac-unknown-none-elf/release/build/esp-rom-sys-*/out
           retention-days: 7
 
   risc-v-esp32c6-c-example:

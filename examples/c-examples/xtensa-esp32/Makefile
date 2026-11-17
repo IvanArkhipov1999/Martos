@@ -14,8 +14,8 @@ LD = $(TOOLCHAIN)ld
 OC = $(TOOLCHAIN)objcopy
 OS = $(TOOLCHAIN)size
 
-# Linker script location.
-LDSCRIPT       = ./ld/esp32.ld
+# Linker scripts are provided by the esp-hal build of the static library
+# (memory map, interrupt vectors, ROM functions), see the -L paths below.
 # Set C/LD/AS flags.
 CFLAGS += $(INC) -Wall -Werror -std=gnu11 -nostdlib $(CFLAGS_PLATFORM) $(COPT)
 # (Allow access to the same memory location w/ different data widths.)
@@ -23,10 +23,12 @@ CFLAGS += -fno-strict-aliasing
 CFLAGS += -fdata-sections -ffunction-sections
 CFLAGS += -Os -g
 # Link with martos
-LDFLAGS += -L../../../c-library/xtensa-esp32/target/xtensa-esp32-none-elf/release/ -lxtensa_esp32_static_lib
-LDFLAGS += -nostdlib -T$(LDSCRIPT) -Wl,-Map=$@.map -Wl,--cref -Wl,--gc-sections
+MARTOS_RELEASE = ../../../c-library/xtensa-esp32/target/xtensa-esp32-none-elf/release
+LDFLAGS += -L$(MARTOS_RELEASE) -lxtensa_esp32_static_lib
+LDFLAGS += $(addprefix -L,$(wildcard $(MARTOS_RELEASE)/build/esp-hal-*/out) $(wildcard $(MARTOS_RELEASE)/build/esp32-*/out) $(wildcard $(MARTOS_RELEASE)/build/xtensa-lx-rt-*/out) $(wildcard $(MARTOS_RELEASE)/build/esp-rom-sys-*/out))
+LDFLAGS += -nostdlib -Tlinkall.x -Wl,-Map=$@.map -Wl,--cref -Wl,--gc-sections
 LDFLAGS += $(LDFLAGS_PLATFORM)
-LDFLAGS += -lm -lgcc -Wl,--allow-multiple-definition -z noexecstack
+LDFLAGS += -lm -lgcc -lesp_rom_sys -lesp_rom -Wl,--allow-multiple-definition -z noexecstack
 ASFLAGS += -c -O0 -Wall -fmessage-length=0
 ASFLAGS += $(ASFLAGS_PLATFORM)
 
