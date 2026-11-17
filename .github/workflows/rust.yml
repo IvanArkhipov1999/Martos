@@ -169,17 +169,26 @@ jobs:
           cargo --version
           echo "--- release dir:"
           ls -la "$REL" || true
-          OUTS=$(find / \( -path /proc -o -path /sys -o -path /dev \) -prune -o -type d -name out -print 2>/dev/null | grep -v '/registry/src/' | grep -E '/(esp-hal|esp32|esp32c6|xtensa-lx-rt|esp-riscv-rt|esp-rom-sys)-[^/]*/out$' | sort -u || true)
-          if [ -z "$OUTS" ]; then
-            echo "ERROR: esp-hal linker script out dirs not found after build"
-            find / \( -path /proc -o -path /sys -o -path /dev \) -prune -o -type d -name "esp-hal-*" -print 2>/dev/null | head -20
+          # Locate build-script out dirs by unique marker files, independent of
+          # cargo's build-dir layout and directory naming.
+          collect() {
+            for f in $(find / \( -path /proc -o -path /sys -o -path /dev \) -prune -o -type f -name "$1" -print 2>/dev/null | grep -v '/registry/src/'); do
+              d=$(dirname "$f")
+              case "$d" in "$REL"/build/*) continue ;; esac
+              if [ -d "$REL/build/$2/out" ]; then continue; fi
+              mkdir -p "$REL/build/$2"
+              cp -r "$d" "$REL/build/$2/out"
+            done
+          }
+          collect linkall.x esp-hal-ci
+          collect device.x esp32-ci
+          collect rom-functions.x esp-rom-sys-ci
+          collect exception.x xtensa-lx-rt-ci
+          if [ ! -d "$REL/build/esp-hal-ci/out" ]; then
+            echo "ERROR: esp-hal linker scripts not found after build"
+            find "${CARGO_BUILD_BUILD_DIR:-/nonexistent}" -maxdepth 6 -type d 2>/dev/null | head -40
             exit 1
           fi
-          for d in $OUTS; do
-            case "$d" in "$REL"/build/*) continue ;; esac
-            mkdir -p "$REL/build/$(basename "$(dirname "$d")")"
-            cp -r "$d" "$REL/build/$(basename "$(dirname "$d")")/out"
-          done
           A=$(find / \( -path /proc -o -path /sys -o -path /dev \) -prune -o -name libxtensa_esp32_static_lib.a -print 2>/dev/null | head -1)
           case "$A" in "$REL"/*) ;; *) cp -f "$A" "$REL/" ;; esac
           ls "$REL/build"
@@ -190,7 +199,7 @@ jobs:
           cd c-library/xtensa-esp32/target/xtensa-esp32-none-elf/release
           tar czf "$GITHUB_WORKSPACE/xtensa-esp32-static-library.tar.gz" \
             libxtensa_esp32_static_lib.a \
-            build/esp-hal-*/out build/esp32-*/out build/xtensa-lx-rt-*/out build/esp-rom-sys-*/out
+            build/esp-hal-ci/out build/esp32-ci/out build/xtensa-lx-rt-ci/out build/esp-rom-sys-ci/out
       - name: Archive production artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -335,17 +344,25 @@ jobs:
           cargo --version
           echo "--- release dir:"
           ls -la "$REL" || true
-          OUTS=$(find / \( -path /proc -o -path /sys -o -path /dev \) -prune -o -type d -name out -print 2>/dev/null | grep -v '/registry/src/' | grep -E '/(esp-hal|esp32|esp32c6|xtensa-lx-rt|esp-riscv-rt|esp-rom-sys)-[^/]*/out$' | sort -u || true)
-          if [ -z "$OUTS" ]; then
-            echo "ERROR: esp-hal linker script out dirs not found after build"
-            find / \( -path /proc -o -path /sys -o -path /dev \) -prune -o -type d -name "esp-hal-*" -print 2>/dev/null | head -20
+          # Locate build-script out dirs by unique marker files, independent of
+          # cargo's build-dir layout and directory naming.
+          collect() {
+            for f in $(find / \( -path /proc -o -path /sys -o -path /dev \) -prune -o -type f -name "$1" -print 2>/dev/null | grep -v '/registry/src/'); do
+              d=$(dirname "$f")
+              case "$d" in "$REL"/build/*) continue ;; esac
+              if [ -d "$REL/build/$2/out" ]; then continue; fi
+              mkdir -p "$REL/build/$2"
+              cp -r "$d" "$REL/build/$2/out"
+            done
+          }
+          collect linkall.x esp-hal-ci
+          collect device.x esp32c6-ci
+          collect rom-functions.x esp-rom-sys-ci
+          if [ ! -d "$REL/build/esp-hal-ci/out" ]; then
+            echo "ERROR: esp-hal linker scripts not found after build"
+            find "${CARGO_BUILD_BUILD_DIR:-/nonexistent}" -maxdepth 6 -type d 2>/dev/null | head -40
             exit 1
           fi
-          for d in $OUTS; do
-            case "$d" in "$REL"/build/*) continue ;; esac
-            mkdir -p "$REL/build/$(basename "$(dirname "$d")")"
-            cp -r "$d" "$REL/build/$(basename "$(dirname "$d")")/out"
-          done
           A=$(find / \( -path /proc -o -path /sys -o -path /dev \) -prune -o -name librisc_v_esp32c6_static_lib.a -print 2>/dev/null | head -1)
           case "$A" in "$REL"/*) ;; *) cp -f "$A" "$REL/" ;; esac
           ls "$REL/build"
@@ -356,7 +373,7 @@ jobs:
           cd c-library/risc-v-esp32-c6/target/riscv32imac-unknown-none-elf/release
           tar czf "$GITHUB_WORKSPACE/risc-v-esp32c6-static-library.tar.gz" \
             librisc_v_esp32c6_static_lib.a \
-            build/esp-hal-*/out build/esp32c6-*/out build/esp-riscv-rt-*/out build/esp-rom-sys-*/out
+            build/esp-hal-ci/out build/esp32c6-ci/out build/esp-rom-sys-ci/out
       - name: Archive production artifacts
         uses: actions/upload-artifact@v4
         with:
