@@ -163,7 +163,7 @@ jobs:
       - name: Collect linker scripts
         run: |
           cd c-library/xtensa-esp32
-          REL=target/xtensa-esp32-none-elf/release
+          REL="$(pwd)/target/xtensa-esp32-none-elf/release"
           echo "--- cargo/rustup env:"
           env | grep -iE 'cargo|rustup' || true
           cargo --version
@@ -329,7 +329,7 @@ jobs:
       - name: Collect linker scripts
         run: |
           cd c-library/risc-v-esp32-c6
-          REL=target/riscv32imac-unknown-none-elf/release
+          REL="$(pwd)/target/riscv32imac-unknown-none-elf/release"
           echo "--- cargo/rustup env:"
           env | grep -iE 'cargo|rustup' || true
           cargo --version
