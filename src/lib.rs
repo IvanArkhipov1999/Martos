@@ -1,6 +1,15 @@
 #![no_std]
 extern crate alloc;
 
+// esp-rtos owns context switching when the radio is enabled, so the Martos
+// preemptive scheduler cannot be combined with the network feature.
+#[cfg(all(feature = "preemptive", feature = "network"))]
+compile_error!(
+    "The `preemptive` feature cannot be combined with `network`: \
+     esp-rtos owns context switching when the radio is enabled. \
+     Use the cooperative task manager with `network`."
+);
+
 mod ports;
 use ports::PortTrait;
 #[cfg(feature = "c-library")]
@@ -11,7 +20,7 @@ pub mod time_sync;
 pub mod timer;
 #[cfg(any(target_arch = "riscv32", target_arch = "xtensa"))]
 #[cfg(feature = "network")]
-use esp_wifi::esp_now::EspNow;
+use esp_radio::esp_now::EspNow;
 
 /// Martos initialization. Should be called before using Martos functions.
 pub fn init_system() {
@@ -35,7 +44,7 @@ pub fn init_system() {
 
 #[cfg(any(target_arch = "riscv32", target_arch = "xtensa"))]
 #[cfg(feature = "network")]
-pub fn get_esp_now() -> EspNow<'static> {
+pub fn get_esp_now() -> EspNow {
     return ports::Port::get_esp_now();
 }
 

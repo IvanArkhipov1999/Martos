@@ -29,7 +29,7 @@
 //!
 //! ```rust
 //! use martos::time_sync::{TimeSyncManager, SyncConfig};
-//! use esp_wifi::esp_now::EspNow;
+//! use esp_radio::esp_now::EspNow;
 //!
 //! // Create configuration
 //! let config = SyncConfig {
@@ -400,7 +400,7 @@ impl SyncMessage {
 ///
 /// All internal state is protected by atomic operations, making the manager
 /// safe for use in multi-threaded environments.
-pub struct TimeSyncManager<'a> {
+pub struct TimeSyncManager {
     /// Configuration parameters for synchronization behavior
     config: SyncConfig,
     /// Synchronization enabled flag (atomic for thread safety)
@@ -415,13 +415,13 @@ pub struct TimeSyncManager<'a> {
     sync_quality: AtomicU32,
     /// ESP-NOW protocol handler (only available with network feature)
     #[cfg(feature = "network")]
-    pub esp_now_protocol: Option<crate::time_sync::esp_now_protocol::EspNowTimeSyncProtocol<'a>>,
+    pub esp_now_protocol: Option<crate::time_sync::esp_now_protocol::EspNowTimeSyncProtocol>,
     /// Synchronization algorithm instance (only available with network feature)
     #[cfg(feature = "network")]
     sync_algorithm: Option<crate::time_sync::sync_algorithm::SyncAlgorithm>,
 }
 
-impl<'a> TimeSyncManager<'a> {
+impl TimeSyncManager {
     /// Create a new time synchronization manager.
     ///
     /// Initializes a new `TimeSyncManager` with the provided configuration.
@@ -646,7 +646,7 @@ impl<'a> TimeSyncManager<'a> {
             any(target_arch = "riscv32", target_arch = "xtensa")
         ))]
         {
-            let current_time_us = time::now().duration_since_epoch().to_micros() as u32;
+            let current_time_us = time::Instant::now().duration_since_epoch().as_micros() as u32;
             self.last_sync_time
                 .store(current_time_us, Ordering::Release);
         }
@@ -659,7 +659,7 @@ impl<'a> TimeSyncManager<'a> {
             any(target_arch = "riscv32", target_arch = "xtensa")
         ))]
         {
-            let real_time_us = time::now().duration_since_epoch().to_micros() as u64;
+            let real_time_us = time::Instant::now().duration_since_epoch().as_micros() as u64;
             let offset_us = self.time_offset_us.load(Ordering::Acquire) as i64;
             (real_time_us as i64 + offset_us) as u64
         }
@@ -683,10 +683,7 @@ impl<'a> TimeSyncManager<'a> {
     ///
     /// * `esp_now` - ESP-NOW communication instance
     #[cfg(feature = "network")]
-    pub fn init_esp_now_protocol(
-        &mut self,
-        esp_now: crate::time_sync::esp_now_protocol::EspNow<'static>,
-    ) {
+    pub fn init_esp_now_protocol(&mut self, esp_now: crate::time_sync::esp_now_protocol::EspNow) {
         self.esp_now_protocol =
             Some(crate::time_sync::esp_now_protocol::EspNowTimeSyncProtocol::new(esp_now));
     }

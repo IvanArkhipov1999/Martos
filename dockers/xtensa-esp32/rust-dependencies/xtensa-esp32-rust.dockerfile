@@ -11,4 +11,6 @@ ENV PATH="/root/.cargo/bin:${PATH}"
 # Install dependencies
 RUN cargo install espup
 RUN espup install
+# ESP32-C6 examples build with the stable toolchain (no esp toolchain needed)
+RUN rustup target add riscv32imac-unknown-none-elf
 RUN rustup toolchain list

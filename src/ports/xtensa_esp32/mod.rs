@@ -8,7 +8,7 @@ mod preempt;
 
 use crate::ports::PortTrait;
 #[cfg(feature = "network")]
-use esp_wifi::esp_now::EspNow;
+use esp_radio::esp_now::EspNow;
 #[cfg(feature = "uart")]
 pub mod uart;
 
@@ -68,7 +68,7 @@ impl PortTrait for XtensaEsp32 {
     }
 
     #[cfg(feature = "network")]
-    fn get_esp_now() -> EspNow<'static> {
+    fn get_esp_now() -> EspNow {
         network::get_esp_now()
     }
 

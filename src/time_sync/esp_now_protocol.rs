@@ -23,14 +23,14 @@
 //!
 //! The module uses conditional compilation to provide different implementations:
 //!
-//! - **ESP Targets**: Uses real `esp-wifi` ESP-NOW implementation
+//! - **ESP Targets**: Uses real `esp-radio` ESP-NOW implementation
 //! - **Test/Other Targets**: Provides mock implementations for testing
 //!
 //! # Usage Example
 //!
 //! ```rust
 //! use martos::time_sync::esp_now_protocol::EspNowTimeSyncProtocol;
-//! use esp_wifi::esp_now::EspNow;
+//! use esp_radio::esp_now::EspNow;
 //!
 //! // Initialize protocol with ESP-NOW instance
 //! let mut protocol = EspNowTimeSyncProtocol::new(esp_now_instance);
@@ -50,41 +50,53 @@ use alloc::vec::Vec;
 
 #[cfg(all(
     feature = "network",
-    feature = "esp-wifi",
+    feature = "esp-radio",
     not(test),
     any(target_arch = "riscv32", target_arch = "xtensa")
 ))]
-pub use esp_wifi::esp_now::{EspNow, EspNowReceiver, PeerInfo, ReceivedData, BROADCAST_ADDRESS};
+pub use esp_radio::esp_now::{EspNow, EspNowReceiver, PeerInfo, ReceivedData, BROADCAST_ADDRESS};
 
-#[cfg(any(not(feature = "network"), not(feature = "esp-wifi"), test))]
+#[cfg(any(not(feature = "network"), not(feature = "esp-radio"), test))]
 pub struct EspNow {}
-#[cfg(any(not(feature = "network"), not(feature = "esp-wifi"), test))]
+#[cfg(any(not(feature = "network"), not(feature = "esp-radio"), test))]
 pub struct PeerInfo {
     pub peer_address: [u8; 6],
     pub lmk: Option<[u8; 16]>,
     pub channel: Option<u8>,
     pub encrypt: bool,
 }
-#[cfg(any(not(feature = "network"), not(feature = "esp-wifi"), test))]
+#[cfg(any(not(feature = "network"), not(feature = "esp-radio"), test))]
 pub const BROADCAST_ADDRESS: [u8; 6] = [0xFF; 6];
-#[cfg(any(not(feature = "network"), not(feature = "esp-wifi"), test))]
+#[cfg(any(not(feature = "network"), not(feature = "esp-radio"), test))]
 pub struct EspNowReceive {
     pub data: Vec<u8>,
 }
-#[cfg(any(not(feature = "network"), not(feature = "esp-wifi"), test))]
+#[cfg(any(not(feature = "network"), not(feature = "esp-radio"), test))]
+impl EspNowReceive {
+    pub fn data(&self) -> &[u8] {
+        &self.data
+    }
+}
+#[cfg(any(not(feature = "network"), not(feature = "esp-radio"), test))]
 pub struct EspNowReceiveInfo {
     pub src_address: [u8; 6],
     pub dst_address: [u8; 6],
 }
-#[cfg(any(not(feature = "network"), not(feature = "esp-wifi"), test))]
+#[cfg(any(not(feature = "network"), not(feature = "esp-radio"), test))]
 pub struct EspNowReceiver {}
-#[cfg(any(not(feature = "network"), not(feature = "esp-wifi"), test))]
+#[cfg(any(not(feature = "network"), not(feature = "esp-radio"), test))]
 pub struct ReceivedData {
     pub info: EspNowReceiveInfo,
     pub data: Vec<u8>,
 }
+#[cfg(any(not(feature = "network"), not(feature = "esp-radio"), test))]
+impl ReceivedData {
+    pub fn data(&self) -> &[u8] {
+        &self.data
+    }
+}
 
-#[cfg(any(not(feature = "network"), not(feature = "esp-wifi"), test))]
+#[cfg(any(not(feature = "network"), not(feature = "esp-radio"), test))]
 impl EspNow {
     pub fn send(&self, _mac: &[u8; 6], _data: &[u8]) -> Result<(), ()> {
         Ok(())
@@ -120,13 +132,13 @@ pub struct EspNowReceiveInfo {
 /// The protocol handler is designed for single-threaded use and maintains
 /// internal state for peer management and message handling.
 #[cfg(feature = "network")]
-pub struct EspNowTimeSyncProtocol<'a> {
+pub struct EspNowTimeSyncProtocol {
     /// ESP-NOW communication instance
-    pub esp_now: EspNow<'a>,
+    pub esp_now: EspNow,
 }
 
 #[cfg(feature = "network")]
-impl<'a> EspNowTimeSyncProtocol<'a> {
+impl EspNowTimeSyncProtocol {
     /// Create a new ESP-NOW time synchronization protocol handler.
     ///
     /// Initializes the protocol handler with ESP-NOW communication instance.
@@ -138,7 +150,7 @@ impl<'a> EspNowTimeSyncProtocol<'a> {
     /// # Returns
     ///
     /// A new `EspNowTimeSyncProtocol` instance ready for use.
-    pub fn new(esp_now: EspNow<'a>) -> Self {
+    pub fn new(esp_now: EspNow) -> Self {
         Self { esp_now }
     }
 
@@ -177,7 +189,17 @@ impl<'a> EspNowTimeSyncProtocol<'a> {
     /// * `Err(SyncError)` - Communication error occurred
     fn send_message(&mut self, message: &SyncMessage, target_mac: &[u8; 6]) -> SyncResult<()> {
         let data = message.to_bytes();
-        match self.esp_now.send(target_mac, &data) {
+        let sent = self.esp_now.send(target_mac, &data);
+        // On ESP targets `send` returns a waiter that must be waited on
+        // to get the actual send status.
+        #[cfg(all(
+            feature = "network",
+            feature = "esp-radio",
+            not(test),
+            any(target_arch = "riscv32", target_arch = "xtensa")
+        ))]
+        let sent = sent.and_then(|waiter| waiter.wait());
+        match sent {
             Ok(_) => Ok(()),
             Err(_) => Err(SyncError::NetworkError),
         }
@@ -210,7 +232,7 @@ impl<'a> EspNowTimeSyncProtocol<'a> {
 
         // Process all available messages
         while let Some(received) = self.esp_now.receive() {
-            if let Some(message) = SyncMessage::from_bytes(&received.data) {
+            if let Some(message) = SyncMessage::from_bytes(received.data()) {
                 messages.push(message);
             }
         }

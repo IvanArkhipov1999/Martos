@@ -11,9 +11,9 @@ debug = true
 #martos = "0.3.0"
 # Specifying current Martos version path for ci
 martos = { path = "../../../../../", features = ["cooperative"] }
-esp-hal = "0.21.1"
-esp-backtrace = { version = "0.14.1", features = ["esp32c6", "panic-handler", "exception-handler", "println"] }
-esp-println = { version = "0.11.0", features = ["esp32c6"] }
+esp-hal = "~1.2.0"
+esp-backtrace = { version = "0.20", features = ["esp32c6", "panic-handler", "println"] }
+esp-println = { version = "0.18", features = ["esp32c6"] }
 
 [features]
-default = ["esp-hal/esp32c6", "esp-backtrace/esp32c6", "esp-println/esp32c6"]
+default = ["martos/esp32c6", "esp-backtrace/esp32c6", "esp-println/esp32c6"]

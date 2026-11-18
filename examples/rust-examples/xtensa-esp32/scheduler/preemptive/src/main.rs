@@ -3,7 +3,7 @@
 
 use core::sync::atomic::{AtomicU32, Ordering};
 use esp_backtrace as _;
-use esp_hal::entry;
+use esp_hal::main;
 use esp_hal::xtensa_lx_rt::xtensa_lx::timer::delay;
 use esp_println::println;
 use martos::{
@@ -38,7 +38,7 @@ fn stop() -> bool {
     }
 }
 
-#[entry]
+#[main]
 fn main() -> ! {
     // Initialize Martos.
     init_system();

@@ -1,12 +1,12 @@
 use super::peripherals::{PERIFERALS_TIMG0, PERIFERALS_TIMG1};
 use core::sync::atomic::{AtomicBool, Ordering};
 use core::time::Duration;
-use esp_hal::timer::timg::{Timer, Timer0, TimerGroup};
-use esp_hal::{peripherals::*, prelude::*};
+use esp_hal::timer::timg::{Timer, TimerGroup};
+use esp_hal::timer::Timer as _;
 
 // Timer instances derived from stored raw peripherals
-pub static mut TIMER00: Option<Timer<Timer0<TIMG0>, esp_hal::Blocking>> = None;
-pub static mut TIMER10: Option<Timer<Timer0<TIMG1>, esp_hal::Blocking>> = None;
+pub static mut TIMER00: Option<Timer<'static>> = None;
+pub static mut TIMER10: Option<Timer<'static>> = None;
 
 static TIMER_BUSY: AtomicBool = AtomicBool::new(false);
 
@@ -51,9 +51,9 @@ pub fn change_period_timer(_period: Duration) {}
 pub fn get_time() -> Duration {
     unsafe {
         let timer00 = TIMER00.take().expect("Timer error");
-        let tick_counter = timer00.now();
+        let now = timer00.now();
         TIMER00 = Some(timer00);
-        Duration::from_micros(tick_counter.ticks())
+        Duration::from_micros(now.duration_since_epoch().as_micros())
     }
 }
 

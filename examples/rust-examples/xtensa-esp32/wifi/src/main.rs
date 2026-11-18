@@ -2,9 +2,9 @@
 #![no_main]
 
 use esp_backtrace as _;
-use esp_hal::{entry, time};
+use esp_hal::{main, time};
 use esp_println::println;
-use esp_wifi::esp_now::{EspNow, PeerInfo, BROADCAST_ADDRESS};
+use esp_radio::esp_now::{EspNow, EspNowWifiInterface, PeerInfo, BROADCAST_ADDRESS};
 use martos::get_esp_now;
 use martos::{
     init_system,
@@ -21,7 +21,7 @@ fn setup_fn() {
     println!("Setup hello world!");
     unsafe {
         ESP_NOW = Some(get_esp_now());
-        NEXT_SEND_TIME = Some(time::now().duration_since_epoch().to_millis() + 5 * 1000);
+        NEXT_SEND_TIME = Some(time::Instant::now().duration_since_epoch().as_millis() + 5 * 1000);
     }
 }
 
@@ -38,6 +38,7 @@ fn loop_fn() {
                 if !esp_now.peer_exists(&r.info.src_address) {
                     esp_now
                         .add_peer(PeerInfo {
+                            interface: EspNowWifiInterface::Station,
                             peer_address: r.info.src_address,
                             lmk: None,
                             channel: None,
@@ -54,8 +55,8 @@ fn loop_fn() {
         }
 
         let mut next_send_time = NEXT_SEND_TIME.take().expect("Next send time error in main");
-        if time::now().duration_since_epoch().to_millis() >= next_send_time {
-            next_send_time = time::now().duration_since_epoch().to_millis() + 5 * 1000;
+        if time::Instant::now().duration_since_epoch().as_millis() >= next_send_time {
+            next_send_time = time::Instant::now().duration_since_epoch().as_millis() + 5 * 1000;
             println!("Send");
             let status = esp_now
                 .send(&BROADCAST_ADDRESS, b"0123456789")
@@ -74,7 +75,7 @@ fn stop_condition_fn() -> bool {
     return false;
 }
 
-#[entry]
+#[main]
 fn main() -> ! {
     // Initialize Martos.
     init_system();

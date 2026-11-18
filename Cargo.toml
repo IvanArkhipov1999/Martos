@@ -11,11 +11,14 @@ license = "MIT OR Apache-2.0"
 
 [features]
 default = []
+# Chip selection: forwarded to all ESP crates that require exactly one chip feature
+esp32 = ["esp-hal/esp32", "esp-alloc/esp32", "esp-radio?/esp32", "esp-rtos?/esp32"]
+esp32c6 = ["esp-hal/esp32c6", "esp-alloc/esp32c6", "esp-radio?/esp32c6", "esp-rtos?/esp32c6"]
 c-library = []
 cooperative = []
 preemptive = []
 uart = []
-network = ["esp-wifi"]
+network = ["esp-radio", "esp-rtos"]
 mips64_timer_tests = []
 cooperative_tests = []
 
@@ -23,9 +26,11 @@ cooperative_tests = []
 cfg-if = "1.0.0"
 
 [target.'cfg(any(target_arch = "riscv32", target_arch = "xtensa"))'.dependencies]
-esp-alloc = "0.5.0"
-esp-hal = "0.21.1"
-esp-wifi = { version = "0.10.1", features = ["wifi"], optional = true }
+esp-alloc = "0.11"
+# Timers, interrupts and trapframe are unstable in esp-hal 1.x: pin the minor version.
+esp-hal = { version = "~1.2.0", features = ["unstable", "rt"] }
+esp-radio = { version = "1.0.0-beta.1", features = ["wifi", "esp-now", "unstable"], optional = true }
+esp-rtos = { version = "0.4", features = ["esp-radio"], optional = true }
 
 [dev-dependencies]
 sequential-test = "0.2.4"

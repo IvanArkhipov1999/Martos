@@ -370,6 +370,21 @@ let mut sync_manager = TimeSyncManager::new(SyncConfig::default());
 sync_manager.enable_sync();
 ```
 
+### Network Initialization
+
+On ESP32/ESP32-C6 the network stack is initialized by `martos::init_system()`
+when the `network` feature is enabled:
+
+1. `esp_rtos::start(...)` starts the esp-rtos scheduler (required by esp-radio);
+   it owns context switching and runs the radio tasks.
+2. `WifiController::new(...)` initializes Wi-Fi via `esp-radio`.
+3. `controller.esp_now()` creates the ESP-NOW instance, retrieved later with
+   `martos::get_esp_now()`.
+
+Martos tasks run cooperatively inside the esp-rtos main task, so the
+`preemptive` feature cannot be combined with `network` (enforced with a
+compile-time error).
+
 ### Advanced Configuration
 
 ```rust

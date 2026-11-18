@@ -26,8 +26,3 @@ int main( void ) {
     start_task_manager();
     return 0;
 }
-
-void __attribute__( ( noreturn ) ) call_start_cpu0() {
-    main();
-    while( 1 ) {}
-}

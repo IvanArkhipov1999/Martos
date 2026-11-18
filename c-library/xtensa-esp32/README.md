@@ -5,7 +5,7 @@ This README provides detailed instructions on how to build the Martos C static l
 ## How to install dependencies
 
 For comprehensive guidance on installing the necessary dependencies for developing applications targeting the Xtensa ESP32 architecture,
-please refer to [the official website](https://docs.esp-rs.org/book/installation/riscv-and-xtensa.html).
+please refer to [the official website](https://docs.espressif.com/projects/rust/book/getting-started/toolchain.html).
 Below is an illustrative example demonstrating the installation of building toolchains on a Linux (Ubuntu/Debian):
 ```
 apt-get -qq update
@@ -18,7 +18,7 @@ espup install
 ## How to build the library
 
 For a thorough guide on developing projects for the Xtensa ESP32 architecture across various operating systems,
-we recommend consulting [the official website](https://docs.esp-rs.org/book/installation/riscv-and-xtensa.html#3-set-up-the-environment-variables).
+we recommend consulting [the official website](https://docs.espressif.com/projects/rust/book/getting-started/toolchain.html#xtensa-devices).
 Below, you will find an illustrative example showcasing the building process on a Linux system (Ubuntu/Debian):
 ```
 . $HOME/export-esp.sh

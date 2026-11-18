@@ -1,7 +1,7 @@
 use core::time::Duration;
 #[cfg(any(target_arch = "riscv32", target_arch = "xtensa"))]
 #[cfg(feature = "network")]
-use esp_wifi::esp_now::EspNow;
+use esp_radio::esp_now::EspNow;
 
 /// PortTrait contains all the platform specific functions.
 pub trait PortTrait {
@@ -32,7 +32,7 @@ pub trait PortTrait {
     #[cfg(any(target_arch = "riscv32", target_arch = "xtensa"))]
     #[cfg(feature = "network")]
     /// Function for getting esp-now object for network.
-    fn get_esp_now() -> EspNow<'static>;
+    fn get_esp_now() -> EspNow;
     #[cfg(feature = "uart")]
     type Uart2Type;
     #[cfg(feature = "uart")]
@@ -76,21 +76,22 @@ pub trait PortTrait {
     /// the "uart" feature is enabled.
     #[cfg(feature = "uart")]
     fn get_uart2() -> Self::Uart2Type;
-    /// Returns a GPIO/IO peripheral instance for pin configuration.
+    /// Returns GPIO pins for UART RX/TX configuration.
     ///
-    /// This function transfers ownership of the GPIO peripheral from the system
-    /// pool to user code for configuring input/output pins. After calling this
-    /// function, attempting to retrieve the same instance again will fail.
+    /// This function transfers ownership of the UART RX/TX pins from the system
+    /// pool to user code for configuring the UART peripheral. After calling this
+    /// function, attempting to retrieve the same pins again will fail.
     ///
     /// # Returns
     ///
-    /// Returns `esp_hal::gpio::Io` - a GPIO peripheral instance that provides
-    /// access to individual pins through the `pins` field.
+    /// Returns a `(RX, TX)` pair of GPIO pin peripheral singletons
+    /// (`esp_hal::peripherals::GPIO16`/`GPIO17`) ready to be passed to
+    /// `Uart::with_rx`/`Uart::with_tx`.
     ///
     /// # Panics
     ///
     /// This function panics if:
-    /// - The IO peripheral has already been retrieved previously
+    /// - The pins have already been retrieved previously
     /// - The system was not initialized via `setup_uart()`
     ///
     /// # Availability
